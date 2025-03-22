@@ -8,7 +8,7 @@ new class extends Component {
     #[Session]
     public $message = 'hello';
 
-    public function updateMessage(): void
+    public function updateMessage()
     {
         $this->message = 'world';
     }
@@ -16,6 +16,5 @@ new class extends Component {
 
 ?>
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        {{ $message ?? '' }}
-        <flux:button wire:click="updateMessage">Update</flux:button>
+        <x-page-heading heading="Linked Accounts" subheading="Account Transactions"></x-page-heading>
     </div>
