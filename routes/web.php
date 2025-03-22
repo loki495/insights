@@ -10,6 +10,12 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('dashboard', 'admin.dashboard')->name('dashboard');
     Volt::route('edit', 'admin.edit')->name('edit');
+    Route::name('linked-accounts.')->group(function () {
+        Volt::route('linked-accounts', 'admin.linked-accounts.index')->name('index');
+        Volt::route('linked-accounts/create', 'admin.linked-accounts.edit')->name('create');
+        Volt::route('linked-accounts/{linkedAccount}', 'admin.linked-accounts.show')->name('show');
+        Volt::route('linked-accounts/{linkedAccount}/edit', 'admin.linked-accounts.edit')->name('edit');
+    });
 });
 
 Route::middleware(['auth'])->group(function () {
