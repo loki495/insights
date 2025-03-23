@@ -16,14 +16,21 @@
         "livewire/volt": "^1.7.0"
     },
     "require-dev": {
+        "calebdw/larastan-livewire": "^2.1",
         "fakerphp/faker": "^1.24.1",
+        "larastan/larastan": "^3.0",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.21.2",
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.7",
+        "peckphp/peck": "^0.1.2",
         "pestphp/pest": "^3.7.4",
-        "pestphp/pest-plugin-laravel": "^3.1"
+        "pestphp/pest-plugin-laravel": "^3.1",
+        "pestphp/pest-plugin-type-coverage": "^3.4",
+        "phpstan/extension-installer": "^1.4",
+        "rector/rector": "^2.0",
+        "tomasvotruba/bladestan": "^0.11.2"
     },
     "autoload": {
         "psr-4": {
@@ -38,24 +45,26 @@
         }
     },
     "scripts": {
-        "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
-        ],
-        "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
-        ],
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
-        "post-create-project-cmd": [
-            "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
-        ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+        ],
+        "rector": "rector",
+        "pint": "pint",
+        "test:rector": "rector --dry-run",
+        "test:pint": "pint --test",
+        "test:typos": "peck",
+        "test:types": "phpstan analyse --ansi --memory-limit=1G",
+        "test:unit": [
+            "@putenv XDEBUG_MODE=coverage",
+            "pest --colors=always --coverage --parallel --min=100"
+        ],
+        "test": [
+            "@test:rector",
+            "@test:pint",
+            "@test:typos",
+            "@test:types",
+            "@test:unit"
         ]
     },
     "extra": {
@@ -69,7 +78,8 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true
         }
     },
     "minimum-stability": "stable",

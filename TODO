@@ -1,0 +1,17 @@
+* add 'standard' changes / setup
+    - nuno
+    - pint
+    - rector
+* change database for tests
+* plaid integration
+    - generic request maker?
+* models
+    - roles
+    - permissions
+    - linked accounts
+    - accounts
+    - transactions
+    - categories
+    - balances
+    - tags
+
