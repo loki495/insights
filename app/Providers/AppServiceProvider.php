@@ -2,23 +2,52 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Vite;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
     /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
-        //
+        $this->configureCommands();
+        $this->configureModels();
+        $this->configureUrl();
+        $this->configureVite();
+    }
+
+    public function configureCommands(): void
+    {
+        DB::prohibitDestructiveCommands(
+            $this->app->isProduction(),
+        );
+    }
+
+    public function configureModels(): void
+    {
+        Model::shouldBeStrict();
+        Model::unguard();
+    }
+
+    public function configureUrl(): void
+    {
+        if (! $this->app->isLocal()) {
+            URL::forceScheme('https');
+        }
+    }
+
+    public function configureVite(): void
+    {
+        Vite::usePrefetchStrategy('aggressive');
     }
 }
