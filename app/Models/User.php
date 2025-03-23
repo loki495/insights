@@ -52,6 +52,9 @@ class User extends Authenticatable
      */
     public function initials(): string
     {
+        /**
+         * @phpstan-param model-property<\App\User> $name
+         */
         return Str::of($this->name)
             ->explode(' ')
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
