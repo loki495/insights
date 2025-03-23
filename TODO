@@ -2,8 +2,6 @@
     - models
         - factory create, expect(array_keys($model->toArray()))->toBe([...])
 * change database for tests
-* plaid integration
-    - generic request maker?
 * models
     - roles
     - permissions
@@ -13,4 +11,5 @@
     - categories
     - balances
     - tags
-
+* plaid integration
+    - generic request maker?
