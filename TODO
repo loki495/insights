@@ -1,7 +1,6 @@
-* add 'standard' changes / setup
-    - nuno
-    - pint
-    - rector
+* tests
+    - models
+        - factory create, expect(array_keys($model->toArray()))->toBe([...])
 * change database for tests
 * plaid integration
     - generic request maker?
