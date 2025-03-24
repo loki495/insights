@@ -16,6 +16,10 @@
         <include>
             <directory suffix=".php">./app</directory>
         </include>
+        <exclude>
+            <file>app/Console/Commands/GitRebaseOrigin.php</file>
+            <file>app/Console/Commands/GitRebaseCurrent.php</file>
+        </exclude>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
