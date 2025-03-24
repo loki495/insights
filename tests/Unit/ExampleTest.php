@@ -1,5 +1,7 @@
 <?php
 
-test('that true is true', function (): void {
-    expect(true)->toBeTrue();
+test('home page loads', function (): void {
+    $this->get('/')
+        ->assertSuccessful()
+        ->assertSee('Laravel');
 });
