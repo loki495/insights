@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Livewire\Volt\Volt;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);

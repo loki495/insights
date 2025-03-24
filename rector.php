@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
-use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
+use Rector\TypeDeclaration\Rector\StmtsAwareInterface\DeclareStrictTypesRector;
 
 return RectorConfig::configure()
     ->withPaths([
@@ -12,7 +12,7 @@ return RectorConfig::configure()
         __DIR__.'/tests',
     ])
     ->withSkip([
-        AddOverrideAttributeToOverriddenMethodsRector::class,
+        DeclareStrictTypesRector::class => [__DIR__.'/resources/views'],
     ])
     ->withPreparedSets(
         deadCode: true,
@@ -22,4 +22,7 @@ return RectorConfig::configure()
         earlyReturn: true,
         strictBooleans: true,
     )
+    ->withRules([
+        DeclareStrictTypesRector::class,
+    ])
     ->withPhpSets();
