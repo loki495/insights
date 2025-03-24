@@ -8,7 +8,7 @@ new class extends Component {
     #[Session]
     public $message = 'hello';
 
-    public function updateMessage()
+    public function updateMessage(): void
     {
         $this->message = 'world';
     }
