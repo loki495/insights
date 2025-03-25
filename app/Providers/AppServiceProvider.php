@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Plaid\PlaidService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +17,10 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->configureServices();
+    }
 
     /**
      * Bootstrap any application services.
@@ -51,5 +56,14 @@ class AppServiceProvider extends ServiceProvider
     public function configureVite(): void
     {
         Vite::usePrefetchStrategy('aggressive');
+    }
+
+    public function configureServices(): void
+    {
+        $this->app->singleton(PlaidService::class, fn (Application $app, array $args): PlaidService => new PlaidService(
+            $args['environment'],
+            config('plaid.clientId'),
+            config('plaid.apiKey'),
+        ));
     }
 }
