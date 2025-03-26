@@ -22,7 +22,7 @@ class Request
         return $this;
     }
 
-    public function addDataItem(string $key, string $value): static
+    public function addDataItem(string $key, mixed $value): static
     {
         $this->data[$key] = $value;
 
@@ -50,16 +50,24 @@ class Request
 
         curl_setopt($ch, CURLOPT_URL, $this->url);
 
+
         if ($this->method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $this->data ?? []);
+            if ($this->headers["Content-Type"] === "application/json") {
+                if (! empty($this->data)) {
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->data ?? []));
+                }
+            } else {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $this->data ?? []);
+            }
         } else {
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($this->data ?? []));
         }
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $this->headers ?? []);
+        $headers = array_map(fn ($header) => "$header: {$this->headers[$header]}", array_keys($this->headers ?? []));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers ?? []);
 
         $response = curl_exec($ch);
         curl_close($ch);
