@@ -7,11 +7,20 @@ namespace App\Services\Curl;
 class API
 {
     public array $endpoints = [];
+    public array $baseHeaders = [];
 
     public function __construct(
         public readonly string $type,
         public readonly string $baseUrl,
     ) {}
+
+    /**
+     * @param  array<string, strine>  $headers
+     */
+    public function addBaseHeaders(array $headers): void
+    {
+        $this->baseHeaders = $headers;
+    }
 
     /**
      * @param  array<mixed>  $arguments
@@ -24,15 +33,18 @@ class API
         }
 
         $endpoint = new $className;
-        $data = $arguments[0] ?? [];
-        $headers = $arguments[1] ?? [];
+        $data = $arguments['data'] ?? [];
+        $headers = [
+            ...$arguments['headers'] ?? [],
+            ...$this->baseHeaders,
+        ];
 
         $url = $this->baseUrl.$endpoint->path;
 
         $request = new Request(
             $url,
             $endpoint->method,
-        )->addHeader('Accept', 'application/json');
+        )->addHeader('Content-Type', 'application/json');
 
         foreach ($headers as $key => $value) {
             $request->addHeader($key, $value);
