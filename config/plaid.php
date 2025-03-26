@@ -15,7 +15,7 @@ return [
     */
 
     'clientId' => env('PLAID_CLIENT_ID', ''),
-    'apiKey' => env('PLAID_API_KEY_PRODUCTION', ''),
-    'apiKey' => env('PLAID_API_KEY_SANDBOX', ''),
+    'secret_production' => env('PLAID_API_KEY_PRODUCTION', ''),
+    'secret_sandbox' => env('PLAID_API_KEY_SANDBOX', ''),
 
 ];

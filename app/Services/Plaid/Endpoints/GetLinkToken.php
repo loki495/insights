@@ -6,9 +6,9 @@ namespace App\Services\Plaid\Endpoints;
 
 use App\Services\Plaid\Endpoint;
 
-class GetAPIStatus extends Endpoint
+class GetLinkToken extends Endpoint
 {
-    public $path = 'api/v2/status.json';
+    public $path = 'link/token/create';
 
-    public $method = 'GET';
+    public $method = 'POST';
 }
