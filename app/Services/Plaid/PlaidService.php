@@ -15,13 +15,27 @@ class PlaidService extends API
     public function __construct(
         public readonly string $environment,
         public readonly string $clientId,
-        public readonly string $apiKey,
-
     ) {
         parent::__construct(
             'plaid',
             $this->baseUrl(),
         );
+
+        $this->addBaseHeaders([
+            'PLAID-CLIENT-ID' => $this->clientId,
+            'PLAID-SECRET' => $this->getSecret(),
+        ]);
+    }
+
+    public function getSecret(): string
+    {
+        if ($this->environment === self::ENV_SANDBOX) {
+            return config('plaid.secret_sandbox');
+        }
+
+        if ($this->environment === self::ENV_PRODUCTION) {
+            return config('plaid.secret_production');
+        }
     }
 
     public function baseUrl(): string
