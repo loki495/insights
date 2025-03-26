@@ -1,13 +1,19 @@
 <?php
 
+use App\Models\LinkedAccount;
 use Livewire\Volt\Component;
-use Livewire\Attributes\Session;
 
 new class extends Component {
 
+    public ?LinkedAccount $linkedAccount;
+
+    public function mount(LinkedAccount $linkedAccount)
+    {
+        $this->linkedAccount = $linkedAccount;
+    }
 }
 
 ?>
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <x-page-heading heading="Linked Accounts" subheading="Create / Edit Linked Account"></x-page-heading>
+        <x-page-heading heading="Linked Accounts" subheading="Edit Linked Account"></x-page-heading>
     </div>

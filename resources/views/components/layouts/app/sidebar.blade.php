@@ -18,7 +18,7 @@
 
                 <flux:navlist.group heading="Linked Accounts" expandable :expanded="request()->routeIs('linked-accounts.*')">
                     <flux:navlist.item icon="list-bullet" :href="route('linked-accounts.index')" :current="request()->routeIs('linked-accounts.index')" wire:navigate>{{ __('View Linked Accounts') }}</flux:navlist.item>
-                    <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item>
+                    {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
                 </flux:navlist.group>
 
 

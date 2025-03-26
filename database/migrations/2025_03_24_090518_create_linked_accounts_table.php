@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('linked_accounts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained();
+            $table->string('item_id');
+            $table->string('provider_name')->nullable();
+            $table->string('access_token');
             $table->timestamps();
         });
     }
