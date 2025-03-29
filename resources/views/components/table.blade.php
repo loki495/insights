@@ -1,12 +1,9 @@
-@props([
-])
-
 <table class="w-full border-collapse">
     <thead class="border-b border-gray-300">
-    {{ $head }}
+        {{ $head }}
     </thead>
 
     <tbody>
-    {{ $body }}
+        {{ $body }}
     </tbody>
 </table>

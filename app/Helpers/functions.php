@@ -10,11 +10,13 @@ function currency($amount, $currency = 'USD')
         'USD' => $symbol = '$',
     };
 
-    $color = 'white';
+    $color = 'zinc-700';
+    $darkColor = 'white';
     if ($amount < 0) {
         $amount = $amount * -1;
         $symbol = '-' . $symbol;
-        $color = 'red-500';
+        $color = 'red-700';
+        $darkColor = 'red-500';
     }
-    return '<span class="text-' . $color . '">' . $symbol . number_format($amount, 2, '.', ',') . '</span>';
+    return '<span class="text-' . $color . ' dark:text-' . $darkColor . '">' . $symbol . number_format($amount, 2, '.', ',') . '</span>';
 }

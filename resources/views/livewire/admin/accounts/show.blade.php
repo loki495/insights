@@ -44,7 +44,7 @@ new class extends Component {
         <x-table>
             <x-slot name="head">
                 <x-table.tr>
-                    <x-table.th>Date</x-table.th>
+                    <x-table.th class="text-center w-8">Date</x-table.th>
                     <x-table.th>Source</x-table.th>
                     <x-table.th>Amount</x-table.th>
                     <x-table.th>Running Balance</x-table.th>
@@ -52,8 +52,8 @@ new class extends Component {
             </x-slot>
             <x-slot name="body">
             @foreach($transactions ?? [] as $transaction)
-                <x-table.tr class="hover:bg-zinc-900/20 border-b border-gray-800 cursor-normal">
-                    <x-table.td>{{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }}</x-table.td>
+                <x-table.tr class="hover:bg-zinc-100 dark:hover:bg-zinc-900/20 border-b border-zinc-300 dark:border-zinc-700 cursor-normal">
+                    <x-table.td class="text-center">{{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }}</x-table.td>
                     <x-table.td class="max-w-lg">
                         {{ $transaction['name'] }}
                         <br>
