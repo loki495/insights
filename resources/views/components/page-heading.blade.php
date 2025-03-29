@@ -1,9 +1,31 @@
 @props([
     'heading' => null,
     'subheading' => null,
+    'breadcrumbs' => [],
 ])
-<div class="relative mb-6 w-full">
+<div class="relative w-full page-heading">
+
+    @if ($breadcrumbs)
+    <flux:breadcrumbs class="text-zinc-700 mb-4">
+        @foreach ($breadcrumbs as $text => $route)
+        <flux:breadcrumbs.item href="{{ (strpos($route, 'http') === 0) ? $route : route($route) }}">{{ $text }}</flux:breadcrumbs.item>
+        @endforeach
+
+        <flux:breadcrumbs.item>{{ __($subheading) }}</flux:breadcrumbs.item>
+
+    </flux:breadcrumbs>
+    @endif
+
     <flux:heading size="xl" level="1">{{ $heading }}</flux:heading>
-    <flux:subheading size="lg" class="mb-6">{{ __($subheading) }}</flux:subheading>
-    <flux:separator variant="subtle" />
+
+    <flux:subheading size="lg" class="mb-6">
+        <div class="flex items-center justify-between">
+            {{ __($subheading) }}
+
+            {{ $actions ?? '' }}
+        </div>
+    </flux:subheading>
+
+    <flux:separator variant="subtle"></flux:separator>
+
 </div>

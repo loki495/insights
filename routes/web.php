@@ -10,11 +10,13 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('dashboard', 'admin.dashboard')->name('dashboard');
     Volt::route('edit', 'admin.edit')->name('edit');
+
     Route::name('linked-accounts.')->group(function () {
         Volt::route('linked-accounts', 'admin.linked-accounts.index')->name('index');
-        Volt::route('linked-accounts/create', 'admin.linked-accounts.edit')->name('create');
-        Volt::route('linked-accounts/{linkedAccount}', 'admin.linked-accounts.show')->name('show');
-        Volt::route('linked-accounts/{linkedAccount}/edit', 'admin.linked-accounts.edit')->name('edit');
+        //Volt::route('linked-accounts/create', 'admin.linked-accounts.edit')->name('create');
+        //Volt::route('linked-accounts/{linkedAccount}/edit', 'admin.linked-accounts.edit')->name('edit');
+        Volt::route('linked-accounts/{linkedAccount}/accounts', 'admin.accounts.index')->name('accounts.index');
+        Volt::route('linked-accounts/{linkedAccount}/account/{account}/transactions', 'admin.accounts.show')->name('accounts.show');
     });
 });
 
@@ -24,6 +26,11 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+});
+
+Route::get('/test', function () {
+    $account = \App\Models\LinkedAccount::first()->updateInfo();
+    dd($account);
 });
 
 require __DIR__.'/auth.php';

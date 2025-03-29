@@ -11,7 +11,7 @@ new class extends Component {
 
     public array $linkedAccounts;
 
-    public string $environment = PlaidService::ENV_SANDBOX;
+    public string $environment = '';
 
     private $plaid_instance;
 
@@ -27,9 +27,7 @@ new class extends Component {
     private function plaid() {
 
         if (! $this->plaid_instance) {
-            $this->plaid_instance = app(PlaidService::class, [
-                'environment' => $this->environment,
-            ]);
+            $this->plaid_instance = plaid();
         }
 
         return $this->plaid_instance;
@@ -43,7 +41,7 @@ new class extends Component {
             'language' => 'en',
             'user' => [
                 'client_user_id' => (string)auth()->user()->id,
-                'phone_number' => '415-555-0012',
+                //'phone_number' => '415-555-0012',
             ]
         ]);
 
@@ -66,9 +64,7 @@ new class extends Component {
 }
 
 ?>
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <x-page-heading heading="Linked Accounts" subheading="Manage your linked accounts."></x-page-heading>
-
+    <x-page-wrapper heading="Linked Institutions" subheading="Manage your linked institutions.">
         <x-table>
             <x-slot name="head">
                 <x-table.tr>
@@ -82,8 +78,7 @@ new class extends Component {
                         <x-table.td>{{ $linkedAccount['provider_name'] }}</x-table.td>
                         <x-table.td>
                             <div class="flex gap-2">
-                                <x-button icon="pencil" title="edit" class="cursor-pointer" wire:click="edit({{ $linkedAccount['id'] }})"></x-button>
-                                <x-button icon="list-bullet" title="View Transactions" class="!bg-yellow-400 stroke-slate-800 hover:!bg-yellow-300 cursor-pointer" wire:click="edit({{ $linkedAccount['id'] }})"></x-button>
+                                <x-button icon="list-bullet" title="View Accounts" class="!bg-yellow-400 stroke-slate-800 hover:!bg-yellow-300 cursor-pointer" href="{{ route('linked-accounts.accounts.index', $linkedAccount['id']) }}" wire:navigate></x-button>
                                 <x-button icon="trash" title="Unlink" variant="danger" class="cursor-pointer" wire:click="delete({{ $linkedAccount['id'] }})"></x-button>
                             </div>
                         </x-table.td>
@@ -93,9 +88,9 @@ new class extends Component {
         </x-table>
 
         <div class="w-48">
-            <flux:button type="primary" wire:click="linkAccount" class="w-full cursor-pointer">Create Linked Account</flux:button>
+            <x-button type="primary" wire:click="linkAccount" class="w-full">Link Institution</x-button>
         </div>
-    </div>
+    </x-page-wrapper>
 
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 
@@ -122,12 +117,14 @@ document.addEventListener('livewire:init', () => {
                 // The user exited the Link flow.
                 if (err != null) {
                     // The user encountered a Plaid API error prior to exiting.
+                    console.log(err, metadata);
                 }
                   // metadata contains information about the institution
                   // that the user selected and the most recent API request IDs.
                   // Storing this information can be helpful for support.
             },
             onEvent: function(eventName, metadata) {
+                console.log(eventName, metadata);
                 // Optionally capture Link flow events, streamed through
                 // this callback as your users connect an Item to Plaid.
                 // For example:
