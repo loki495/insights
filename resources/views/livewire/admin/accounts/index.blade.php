@@ -40,9 +40,9 @@ new class extends Component {
         <x-table>
             <x-slot name="head">
                 <x-table.tr>
-                    <x-table.th>Name</x-table.th>
-                    <x-table.th>Current Balance</x-table.th>
-                    <x-table.th>Available Balance</x-table.th>
+                    <x-table.th class="text-center">Name</x-table.th>
+                    <x-table.th class="text-center">Current Balance</x-table.th>
+                    <x-table.th class="text-center">Available Balance</x-table.th>
                     <x-table.th></x-table.th>
                 </x-table.tr>
             </x-slot>
@@ -50,10 +50,10 @@ new class extends Component {
             @foreach($accounts ?? [] as $account)
             <x-table.tr>
                 <x-table.td>{{ $account['name'] }}</x-table.td>
-                <x-table.td>{!! currency($account['current_balance']) !!}</x-table.td>
-                <x-table.td>{!! currency($account['available_balance']) !!}</x-table.td>
+                <x-table.td class="text-right">{!! currency($account['current_balance']) !!}</x-table.td>
+                <x-table.td class="text-right">{!! currency($account['available_balance']) !!}</x-table.td>
                 <x-table.td>
-                    <x-button icon="list-bullet" title="View Transactions" class="!bg-yellow-400 stroke-slate-800 hover:!bg-yellow-300 cursor-pointer" href="{{ route('linked-accounts.accounts.show', [ $this->linkedAccount, $account['id'] ]) }}" wire:navigate></x-button>
+                    <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('linked-accounts.accounts.show', [ $this->linkedAccount, $account['id'] ]) }}" wire:navigate></x-button>
                 </x-table.td>
             </x-table.tr>
             @endforeach

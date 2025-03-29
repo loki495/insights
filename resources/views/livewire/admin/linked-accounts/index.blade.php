@@ -78,8 +78,8 @@ new class extends Component {
                         <x-table.td>{{ $linkedAccount['provider_name'] }}</x-table.td>
                         <x-table.td>
                             <div class="flex gap-2">
-                                <x-button icon="list-bullet" title="View Accounts" class="!bg-yellow-400 stroke-slate-800 hover:!bg-yellow-300 cursor-pointer" href="{{ route('linked-accounts.accounts.index', $linkedAccount['id']) }}" wire:navigate></x-button>
-                                <x-button icon="trash" title="Unlink" variant="danger" class="cursor-pointer" wire:click="delete({{ $linkedAccount['id'] }})"></x-button>
+                                <x-button icon="list-bullet" title="View Accounts" class="cursor-pointer hover:bg-zinc-200" href="{{ route('linked-accounts.accounts.index', $linkedAccount['id']) }}" wire:navigate></x-button>
+                                <x-button icon="trash" title="Unlink" class="cursor-pointer !bg-red-600 hover:!bg-red-500 dark:!bg-red-700 dark:!border-red-700 dark:hover:!bg-red-600" wire:click="delete({{ $linkedAccount['id'] }})"></x-button>
                             </div>
                         </x-table.td>
                     </x-table.tr>
