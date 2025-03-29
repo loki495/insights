@@ -1,15 +1,8 @@
-* tests
-    - models
-        - factory create, expect(array_keys($model->toArray()))->toBe([...])
-* change database for tests
+* pull / reconcile TEST
 * models
+    - categories
+        - original
+        - custom
     - roles
     - permissions
-    - linked accounts
-    - accounts
-    - transactions
-    - categories
-    - balances
-    - tags
-* plaid integration
-    - generic request maker?
+- actual insights / graphs
