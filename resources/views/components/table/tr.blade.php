@@ -1,6 +1,6 @@
 @props([
 ])
 
-<tr>
+<tr {{ $attributes->merge(['class' => '']) }}>
     {{ $slot}}
 </tr>
