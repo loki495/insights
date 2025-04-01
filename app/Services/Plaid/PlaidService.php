@@ -38,6 +38,8 @@ class PlaidService extends API
         if ($this->environment === self::ENV_PRODUCTION) {
             return config('plaid.secret_production');
         }
+
+        return $this->environment;
     }
 
     public function baseUrl(): string

@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-function plaid()
+function plaid($force_environment = ''): \App\Services\Plaid\PlaidService
 {
-    return app(\App\Services\Plaid\PlaidService::class, ['environment' => config('plaid.environment')]);
+    $environment = $force_environment ?? config('plaid.environment');
+
+    return app(\App\Services\Plaid\PlaidService::class, ['environment' => $environment]);
 }
 
 function currency($amount, $currency = 'USD'): string
