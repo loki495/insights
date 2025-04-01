@@ -6,6 +6,11 @@ namespace App\Services\Plaid;
 
 use App\Services\Curl\API;
 
+/**
+ * @method static array{accounts: ?array<array>, added: ?array<array>, removed: ?array<array>, modified: ?array<array>} getItemTransactions(array{access_token: string} $data)
+ *
+ */
+
 class PlaidService extends API
 {
     const ENV_SANDBOX = 'sandbox';

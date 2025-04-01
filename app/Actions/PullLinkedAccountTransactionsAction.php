@@ -26,12 +26,12 @@ final class PullLinkedAccountTransactionsAction
             'modified',
         ];
 
-        foreach ($result['accounts'] as $account) {
+        foreach ($result['accounts'] ?? [] as $account) {
             UpdateAccountAction::run($account, $linkedAccount);
         }
 
         foreach ($types as $type) {
-            foreach ($result[$type] as $transaction) {
+            foreach ($result[$type] ?? [] as $transaction) {
                 UpdateAccountTransactionsAction::run($transaction, $type);
             }
         }
