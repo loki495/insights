@@ -7,29 +7,24 @@ namespace App\Actions;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
-use App\Services\Plaid\PlaidService;
 
 final class PullLinkedAccountTransactionsAction
 {
-    static public function run(LinkedAccount $linkedAccount)
+    public static function run(LinkedAccount $linkedAccount): void
     {
         Account::truncate();
         Transaction::truncate();
 
         $plaid = plaid();
         $result = $plaid->getItemTransactions(data: [
-            'access_token' => $linkedAccount->access_token
+            'access_token' => $linkedAccount->access_token,
         ]);
-
-        $has_more = $result['has_more'] ?? false;
 
         $types = [
             'added',
             'removed',
             'modified',
         ];
-
-        $transactions = [];
 
         foreach ($result['accounts'] as $account) {
             UpdateAccountAction::run($account, $linkedAccount);

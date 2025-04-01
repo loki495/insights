@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,16 +18,16 @@ class Transaction extends Model
     ];
 
     /**
-    * @return BelongsTo<Account>
-    */
+     * @return BelongsTo<Account>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
     /**
-    * @return BelongsTo<OriginalCategory>
-    */
+     * @return BelongsTo<OriginalCategory>
+     */
     public function originalCategory(): BelongsTo
     {
         return $this->belongsTo(OriginalCategory::class);

@@ -7,6 +7,7 @@ namespace App\Services\Curl;
 class API
 {
     public array $endpoints = [];
+
     public array $baseHeaders = [];
 
     public function __construct(

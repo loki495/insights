@@ -7,9 +7,9 @@ namespace App\Services\Plaid;
 class Endpoint
 {
     /**
-     * @param array<string,string> $data
+     * @param  array<string,string>  $data
      */
     public function __construct(
         public readonly array $data = [],
-    ) { }
+    ) {}
 }

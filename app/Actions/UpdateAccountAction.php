@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Models\LinkedAccount;
 use App\Models\Account;
+use App\Models\LinkedAccount;
 
 final class UpdateAccountAction
 {
-    static public function run(array $account_info, LinkedAccount $linkedAccount)
+    public static function run(array $account_info, LinkedAccount $linkedAccount): void
     {
         $account = Account::where('plaid_id', $account_info['account_id']);
         if ($account->exists()) {
@@ -27,7 +27,7 @@ final class UpdateAccountAction
             return;
         }
 
-        $account = Account::create([
+        Account::create([
             'name' => $account_info['name'],
             'official_name' => $account_info['official_name'],
             'type' => $account_info['type'],
@@ -41,4 +41,3 @@ final class UpdateAccountAction
         ]);
     }
 }
-

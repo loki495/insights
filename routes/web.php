@@ -13,8 +13,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::name('linked-accounts.')->group(function () {
         Volt::route('linked-accounts', 'admin.linked-accounts.index')->name('index');
-        //Volt::route('linked-accounts/create', 'admin.linked-accounts.edit')->name('create');
-        //Volt::route('linked-accounts/{linkedAccount}/edit', 'admin.linked-accounts.edit')->name('edit');
+        // Volt::route('linked-accounts/create', 'admin.linked-accounts.edit')->name('create');
+        // Volt::route('linked-accounts/{linkedAccount}/edit', 'admin.linked-accounts.edit')->name('edit');
         Volt::route('linked-accounts/{linkedAccount}/accounts', 'admin.accounts.index')->name('accounts.index');
         Volt::route('linked-accounts/{linkedAccount}/account/{account}/transactions', 'admin.accounts.show')->name('accounts.show');
     });
