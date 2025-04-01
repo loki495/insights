@@ -24,10 +24,12 @@ new class extends Component {
 
     public function with(): array
     {
+        $transactions = $this->account->transactions()->with('originalCategory')->paginate(10);
         return [
-            'transactions' => $this->account->transactions()->paginate(10),
+            'transactions' => $transactions,
         ];
     }
+
 }
 
 ?>
@@ -48,6 +50,7 @@ new class extends Component {
                     <x-table.th>Source</x-table.th>
                     <x-table.th>Amount</x-table.th>
                     <x-table.th>Running Balance</x-table.th>
+                    <x-table.th></x-table.th>
                 </x-table.tr>
             </x-slot>
             <x-slot name="body">
@@ -57,6 +60,7 @@ new class extends Component {
                     <x-table.td class="max-w-lg">
                         {{ $transaction['name'] }}
                         <br>
+                        <small>{{ $transaction['originalCategory']['name'] }}</small>:
                         <small>{{ $transaction['merchant_name'] }} ({{ $transaction['payment_channel'] }}) </small>
                     </x-table.td>
                     <x-table.td class="text-right">{!! currency(-$transaction['amount'], $transaction['currency']) !!}</x-table.td>
