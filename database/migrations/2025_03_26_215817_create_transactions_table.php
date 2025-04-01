@@ -27,6 +27,8 @@ return new class extends Migration
             $table->datetime('authorized_at')->nullable();
             $table->integer('logo_url')->nullable();
             $table->integer('website')->nullable();
+            $table->string('original');
+            $table->foreignId('original_category_id');
             $table->timestamps();
         });
     }

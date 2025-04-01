@@ -2,6 +2,7 @@
     'heading' => null,
     'subheading' => null,
     'breadcrumbs' => [],
+    'actions' => null,
 ])
 <div class="relative w-full page-heading">
 
@@ -16,7 +17,7 @@
     </flux:breadcrumbs>
     @endif
 
-    <flux:heading size="xl" level="1">{{ $heading }}</flux:heading>
+    <flux:heading class="!text-3xl" accent="true" level="1">{{ $heading }}</flux:heading>
 
     <flux:subheading size="lg" class="mb-6">
         <div class="flex items-center justify-between">
