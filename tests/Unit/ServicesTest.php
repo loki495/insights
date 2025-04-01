@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 it('calls existing service endpoint', function (): void {
-    $plaid = app(\App\Services\Plaid\PlaidService::class);
+    $plaid = plaid('status');
 
     $response = $plaid->getAPIStatus();
 
@@ -19,7 +19,7 @@ it('calls existing service endpoint', function (): void {
 });
 
 it('fails if endpoint class does not exist', function (): void {
-    $plaid = app(\App\Services\Plaid\PlaidService::class);
+    $plaid = plaid('sandbox');
 
     $plaid->getNonExistentEndpoint();
 
