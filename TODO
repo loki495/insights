@@ -1,8 +1,9 @@
 * pull / reconcile TEST
 * models
     - categories
-        - original
         - custom
+            - create and edit
+            - associate with transaction
     - roles
     - permissions
 - actual insights / graphs
