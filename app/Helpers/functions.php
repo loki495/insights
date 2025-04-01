@@ -16,7 +16,7 @@ function currency($amount, $currency = 'USD')
         $amount = $amount * -1;
         $symbol = '-' . $symbol;
         $color = 'red-700';
-        $darkColor = 'red-500';
+        $darkColor = 'red-400';
     }
     return '<span class="text-' . $color . ' dark:text-' . $darkColor . '">' . $symbol . number_format($amount, 2, '.', ',') . '</span>';
 }
