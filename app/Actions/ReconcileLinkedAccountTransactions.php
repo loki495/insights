@@ -8,7 +8,7 @@ use App\Models\LinkedAccount;
 
 final class ReconcileLinkedAccountTransactions
 {
-    static public function run(LinkedAccount $linkedAccount): void
+    public static function run(LinkedAccount $linkedAccount): void
     {
         foreach ($linkedAccount->accounts as $account) {
             $balance = $account->current_balance;

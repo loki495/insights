@@ -9,7 +9,9 @@ use App\Services\Curl\API;
 class PlaidService extends API
 {
     const ENV_SANDBOX = 'sandbox';
+
     const ENV_PRODUCTION = 'production';
+
     const ENV_STATUS = 'status';
 
     public function __construct(

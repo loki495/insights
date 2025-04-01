@@ -5,9 +5,9 @@ use Livewire\Volt\Component;
 
 new class extends Component {
 
-    public ?LinkedAccount $linkedAccount;
+    public ?LinkedAccount $linkedAccount = null;
 
-    public function mount(LinkedAccount $linkedAccount)
+    public function mount(LinkedAccount $linkedAccount): void
     {
         $this->linkedAccount = $linkedAccount;
     }

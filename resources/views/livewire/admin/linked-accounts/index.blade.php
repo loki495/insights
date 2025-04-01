@@ -19,7 +19,7 @@ new class extends Component {
         'exchangePublicToken' => '$refresh'
     ];
 
-    public function mount() {
+    public function mount(): void {
         $this->linkedAccounts = auth()->user()->linkedAccounts->toArray();
     }
 
@@ -33,7 +33,7 @@ new class extends Component {
         return $this->plaid_instance;
     }
 
-    public function linkAccount() {
+    public function linkAccount(): void {
         $response = $this->plaid->getLinkToken(data: [
             'client_name' => 'Insights',
             'products' => ['auth', 'transactions'],
@@ -51,7 +51,7 @@ new class extends Component {
     }
 
     #[On('exchangePublicToken')]
-    public function exchangePublicToken($public_token) {
+    public function exchangePublicToken($public_token): void {
         $result = $this->plaid->exchangePublicToken(data: [
             'public_token' => $public_token
         ]);
