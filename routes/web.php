@@ -18,6 +18,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Volt::route('linked-accounts/{linkedAccount}/accounts', 'admin.accounts.index')->name('accounts.index');
         Volt::route('linked-accounts/{linkedAccount}/account/{account}/transactions', 'admin.accounts.show')->name('accounts.show');
     });
+
+    Volt::route('categories', 'admin.categories.index')->name('categories.index');
+
+    Route::name('reports.')->group(function () {
+        Volt::route('reports', 'admin.reports.index')->name('index');
+        Volt::route('reports/category/{category?}', 'admin.reports.category.index')->name('category.index');
+    });
 });
 
 Route::middleware(['auth'])->group(function () {

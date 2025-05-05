@@ -20,7 +20,7 @@ new class extends Component {
     ];
 
     public function mount(): void {
-        $this->linkedAccounts = auth()->user()->linkedAccounts->toArray();
+        $this->updateLinkedAccount();
     }
 
     #[Computed]
@@ -33,17 +33,24 @@ new class extends Component {
         return $this->plaid_instance;
     }
 
-    public function linkAccount(): void {
-        $response = $this->plaid->getLinkToken(data: [
+    public function linkAccount(LinkedAccount $linkedAccount = null) : void {
+        $data = [
             'client_name' => 'Insights',
-            'products' => ['auth', 'transactions'],
+            'products' => [ 'transactions' ],
+            'required_if_supported_products' => [ 'auth' ],
             'country_codes' => ['US'],
             'language' => 'en',
             'user' => [
                 'client_user_id' => (string)auth()->user()->id,
                 //'phone_number' => '415-555-0012',
             ]
-        ]);
+        ];
+
+        if ($linkedAccount->id > 0) {
+            $data['access_token'] = $linkedAccount->access_token;
+        }
+
+        $response = $this->plaid->getLinkToken(data: $data);
 
         $link_token = $response['link_token'];
 
@@ -60,6 +67,15 @@ new class extends Component {
             'item_id' => $result['item_id'],
             'access_token' => $result['access_token'],
         ])->updateInfo();
+    }
+
+    public function updateLinkedAccount(): void {
+        $this->linkedAccounts = auth()->user()->linkedAccounts->toArray();
+    }
+
+    public function delete(LinkedAccount $linkedAccount): void {
+        $linkedAccount->delete();
+        $this->updateLinkedAccount();
     }
 }
 
@@ -79,6 +95,7 @@ new class extends Component {
                         <x-table.td>
                             <div class="flex gap-2">
                                 <x-button icon="list-bullet" title="View Accounts" class="cursor-pointer hover:bg-zinc-200" href="{{ route('linked-accounts.accounts.index', $linkedAccount['id']) }}" wire:navigate></x-button>
+                                <x-button icon="arrow-path" title="Update Access Token" class="cursor-pointer !bg-orange-600 hover:!bg-orange-500 dark:!bg-orange-700 dark:!border-orange-700 dark:hover:!bg-orange-600" wire:click="linkAccount({{ $linkedAccount['id'] }})"></x-button>
                                 <x-button icon="trash" title="Unlink" class="cursor-pointer !bg-red-600 hover:!bg-red-500 dark:!bg-red-700 dark:!border-red-700 dark:hover:!bg-red-600" wire:click="delete({{ $linkedAccount['id'] }})"></x-button>
                             </div>
                         </x-table.td>

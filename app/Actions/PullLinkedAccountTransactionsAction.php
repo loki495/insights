@@ -12,10 +12,8 @@ final class PullLinkedAccountTransactionsAction
 {
     public static function run(LinkedAccount $linkedAccount): void
     {
-        Account::truncate();
-        Transaction::truncate();
-
         $plaid = plaid();
+
         $result = $plaid->getItemTransactions(data: [
             'access_token' => $linkedAccount->access_token,
         ]);

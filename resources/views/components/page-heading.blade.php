@@ -9,7 +9,11 @@
     @if ($breadcrumbs)
     <flux:breadcrumbs class="text-zinc-700 mb-4">
         @foreach ($breadcrumbs as $text => $route)
-        <flux:breadcrumbs.item href="{{ (strpos($route, 'http') === 0) ? $route : route($route) }}">{{ $text }}</flux:breadcrumbs.item>
+            @if ($route)
+                <flux:breadcrumbs.item href="{{ (strpos($route, 'http') === 0) ? $route : route($route) }}">{{ $text }}</flux:breadcrumbs.item>
+            @else
+                <flux:breadcrumbs.item>{{ $text }}</flux:breadcrumbs.item>
+            @endif
         @endforeach
 
         <flux:breadcrumbs.item>{{ __($subheading) }}</flux:breadcrumbs.item>

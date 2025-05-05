@@ -16,11 +16,16 @@
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                 </flux:navlist.group>
 
-                <flux:navlist.group heading="Linked Accounts" expandable :expanded="request()->routeIs('linked-accounts.*')">
+                <flux:navlist.group class="!cursor-pointer" heading="Linked Accounts" expandable :expanded="request()->routeIs('linked-accounts.*')">
                     <flux:navlist.item icon="list-bullet" :href="route('linked-accounts.index')" :current="request()->routeIs('linked-accounts.*')" wire:navigate>{{ __('View Linked Accounts') }}</flux:navlist.item>
                     {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
                 </flux:navlist.group>
 
+                <flux:navlist.item icon="list-bullet" :href="route('categories.index')" :current="request()->routeIs('categories.*')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
+
+                <flux:navlist.group class="!cursor-pointer" heading="Reports" expandable :expanded="request()->routeIs('reports.*')">
+                    <flux:navlist.item icon="list-bullet" :href="route('reports.category.index')" :current="request()->routeIs('reports.category.*')" wire:navigate>{{ __('By Categories') }}</flux:navlist.item>
+                </flux:navlist.group>
 
             </flux:navlist>
 

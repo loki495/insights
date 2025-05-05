@@ -30,7 +30,7 @@ class API
     {
         $className = '\\App\\Services\\'.ucwords($this->type).'\\Endpoints\\'.ucwords($class);
         if (! class_exists($className)) {
-            throw new \Exception('Unknown endpoint: '.$class);
+            throw new \Exception('Unknown endpoint: '.$class . ' ('.$className.')');
         }
 
         $endpoint = new $className;

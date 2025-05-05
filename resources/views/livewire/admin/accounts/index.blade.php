@@ -25,7 +25,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'accounts' => Account::paginate(10),
+            'accounts' => $this->linkedAccount->accounts()->paginate(10),
         ];
     }
 }
