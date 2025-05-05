@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\Account;
@@ -58,10 +59,17 @@ new class extends Component {
                 <x-table.tr class="hover:bg-zinc-100 dark:hover:bg-zinc-900/20 border-b border-zinc-300 dark:border-zinc-700 cursor-normal">
                     <x-table.td class="text-center">{{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }}</x-table.td>
                     <x-table.td class="max-w-lg">
-                        {{ $transaction['name'] }}
-                        <br>
-                        <small>{{ $transaction['originalCategory']['name'] }}</small>:
-                        <small>{{ $transaction['merchant_name'] }} ({{ $transaction['payment_channel'] }}) </small>
+                        <div class="text-sm flex items-center gap-4">
+                            <div>
+                                <img title="{{ $transaction['originalCategory']['name'] }}" alt="{{ $transaction['originalCategory']['name'] }}" class="w-8 invert" src="{{ $transaction['originalCategory']['logo_url'] }}">
+                            </div>
+                            <div>
+                                {{ $transaction['name'] }}
+                                <br>
+                                <small>{{ $transaction['originalCategory']['name'] }} - {{ $transaction['originalCategory']['details'] }}</small>
+                                <small>({{ $transaction['payment_channel'] }}) </small>
+                            </div>
+                        </div>
                     </x-table.td>
                     <x-table.td class="text-right">{!! currency(-$transaction['amount'], $transaction['currency']) !!}</x-table.td>
                     <x-table.td class="text-right">{!! currency($transaction['running_balance'], $transaction['currency']) !!}</x-table.td>

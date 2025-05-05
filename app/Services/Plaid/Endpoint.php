@@ -12,4 +12,5 @@ class Endpoint
     public function __construct(
         public readonly array $data = [],
     ) {}
+
 }
