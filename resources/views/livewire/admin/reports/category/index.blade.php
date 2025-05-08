@@ -4,13 +4,14 @@ use App\Models\OriginalCategory;
 use App\Models\Transaction;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 
 new class extends Component {
 
     use WithPagination;
 
     public ?int $category_id;
-    public ?OriginalCategory $category;
+    public OriginalCategory $category;
 
     public string $search = '';
 
@@ -18,11 +19,10 @@ new class extends Component {
 
     public string $date_to = '';
 
-
-    public function mount($category_id = null): void
+    public function mount(?OriginalCategory $category): void
     {
-        $this->category_id = $category_id;
-        $this->category = OriginalCategory::find($category_id);
+        $this->category = $category;
+        $this->category_id = $category->id;
         $this->search = '';
         $this->date_from = carbon('-1 month')->startOfMonth()->toDateTimeLocalString();
         $this->date_to = carbon()->now();
@@ -31,7 +31,7 @@ new class extends Component {
     public function with(): array
     {
         $query = Transaction::query()
-            ->when($this->category_id, function ($query) {
+            ->when($this->category_id ?? false, function ($query) {
                 return $query->where('original_category_id', $this->category_id);
             })
             ->with('originalCategory')
