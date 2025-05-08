@@ -44,13 +44,41 @@ new class extends Component {
                     ->orWhereRelation('originalCategory', 'description', 'like', '%' . $this->search . '%');
             });
 
-       return [
+        $chart_data = $query
+            ->clone()
+            ->select('original_category_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('original_category_id')
+            ->get()
+            ->map(function ($item) {
+                $cat = OriginalCategory::find($item->original_category_id);
+                return [
+                    'id' => $item->original_category_id,
+                    'label' => $cat->details,
+                    'value' => $item->total
+                ];
+            });
+
+        $chart_ids = $chart_data->pluck('id')->toArray();
+        $chart_labels = $chart_data->pluck('label')->toArray();
+        $chart_values = $chart_data->pluck('value')->toArray();
+        $chart_tooltip_labels = $chart_data->pluck('value')->map(fn($value) => strip_tags(currency($value)))->toArray();
+
+        $values = $query
+            ->clone()
+            ->pluck('amount')
+            ->toArray();
+
+        return [
             'transactions' => $query
                 ->clone()
                 ->orderBy('created_at', 'desc')
                 ->paginate(25),
             'count' => $query->count(),
             'total' => $query->sum('amount'),
+            'labels' => json_encode($chart_labels),
+            'values' => json_encode($chart_values),
+            'tooltip_labels' => json_encode($chart_tooltip_labels),
+            'data_ids' => json_encode($chart_ids),
         ];
     }
 
@@ -59,10 +87,27 @@ new class extends Component {
         $this->category = OriginalCategory::find($value);
         $this->dispatch('categoryIdChanged', categoryId: $value);
     }
+
+    #[On('clicked')]
+    public function clicked($category)
+    {
+        dd($category);
+    }
 }
 
 ?>
-    <x-page-wrapper heading="Reports" subheading="Category Transactions - {{ $category_id ? $category->name : 'All Categories' }} {{ $category_id ? '(' . $category->plaid_id . ')': '' }})" :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']">
+    <x-page-wrapper heading="Reports" subheading="Category Transactions - {{ $category_id ? $category->name : 'All Categories' }} {{ $category_id ? '(' . $category->plaid_id . ')': '' }}" :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']">
+
+        <x-bar-chart
+            class="w-full h-64"
+            :tooltip_labels="$tooltip_labels"
+            :title="__('Total')"
+            :labels="$labels"
+            :values="$values"
+            :dataIDs="$data_ids"
+            clickEvent="clicked"
+        >
+        </x-bar-chart>
 
         <div class="flex flex-col md:flex-row gap-8 w-full items-start justify-between">
             <div class="flex flex-col gap-4 items-start grow p-0 md:pr-32">
