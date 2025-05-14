@@ -9,7 +9,7 @@ function plaid($force_environment = ''): \App\Services\Plaid\PlaidService
     return app(\App\Services\Plaid\PlaidService::class, ['environment' => $environment]);
 }
 
-function currency($amount = null, $currency = 'USD'): string
+function currency($amount = null, $currency = 'USD', ?bool $flat = false): string
 {
     if ($amount === null) {
         return '';
@@ -18,6 +18,10 @@ function currency($amount = null, $currency = 'USD'): string
     match ($currency) {
         'USD' => $symbol = '$',
     };
+
+    if ($flat) {
+        return $symbol.number_format($amount, 2, '.', ',');
+    }
 
     $color = 'zinc-700';
     $darkColor = 'white';

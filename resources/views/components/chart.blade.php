@@ -1,88 +1,52 @@
 <div class="resizable-box w-full relative rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-    <div {{ $attributes->merge(['class' => 'relative w-full h-full inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20']) }} >
+    <div >
         <div id="{{ Str::slug($title) }}-legend-container"></div>
         <canvas id="{{ Str::slug($title) }}"></canvas>
     </div>
 </div>
 
+@once
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .resizable-box {
+      border: 2px solid #555;
+      resize: both;
+      overflow: auto;
+      position: relative;
+    }
 
+    .grabber {
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 10px;
+      background: #aaa;
+      border-radius: 5px;
+      cursor: ns-resize;
+    }
+</style>
+@endonce
+
+
+@script
 <script>
-@if ($tooltipLabels ?? false)
-
 if (!window.tooltip_labels) window.tooltip_labels = {};
-window.tooltip_labels['{{ Str::slug($title) }}'] = {!! $tooltipLabels !!};
+window.tooltip_labels['{{ Str::slug($title) }}'] = $wire.chart_tooltip_labels;
 
 if (!window.dataIDs) window.dataIDs = {};
-window.dataIDs['{{ Str::slug($title) }}'] = {!! $dataIDs!!};
-@endif
+window.dataIDs['{{ Str::slug($title) }}'] = $wire.chart_ids;
 
-document.addEventListener('livewire:init', function () {
-    const ctx = document.getElementById('{{ Str::slug($title) }}');
-
-    if (!window.charts) {
-        window.charts = {};
-    }
-
-    const chart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: {!! $labels !!},
-        datasets: [{
-            label: '{!! $title !!}',
-            data: {!! $values !!},
-            borderWidth: 1
-          }]
-    },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            events: ['click', 'mousemove'],
-            onClick: (event, elements) => clickHandler('{{ $title }}', event, elements),
-            plugins: {
-                htmlLegend: {
-                    // ID of the container to put the legend in
-                    containerID: '{{ Str::slug($title) }}-legend-container',
-                },
-                legend: {
-                    display: false,
-                },
-                @if ($tooltipLabels ?? false)
-
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ' ' + window.tooltip_labels['{{ Str::slug($title) }}'][context.dataIndex];
-                        },
-                        labelTextColor: function(context) {
-                            if (context.parsed < 0) {
-                                return '#ff0000';
-                            }
-                        },
-                    },
-                },
-                @endif
-            },
-        },
-        plugins: ['htmlLegendPlugin'],
-    });
-
-    window.charts['{{ $title }}'] = chart;
-});
-</script>
-
-@once
-<script>
 function clickHandler(title, evt, elements) {
-    const chart = window.charts[title];
-    if (elements.length > 0) {
-        const index = elements[0].index;
+   // const chart = window.charts[title];
+    //if (elements.length > 0) {
+     //   const index = elements[0].index;
 
-        Livewire.dispatch('{{ $clickEvent ?? ''}}', { category: window.dataIDs[title][index] });
-    }
+        //$wire.dispatch('{{ $clickEvent ?? ''}}', { category: window.dataIDs[title][index] });
+    //}
 }
 const getOrCreateLegendList = (chart, id) => {
-    debugger;
     const legendContainer = document.getElementById(id);
     let listContainer = legendContainer.querySelector('ul');
 
@@ -102,7 +66,6 @@ const getOrCreateLegendList = (chart, id) => {
 const htmlLegendPlugin = {
   id: 'htmlLegend',
   afterUpdate(chart, args, options) {
-        debugger;
     const ul = getOrCreateLegendList(chart, options.containerID);
 
     // Remove old legend items
@@ -159,25 +122,70 @@ const htmlLegendPlugin = {
     });
   }
 };
-</script>
-<style>
-    .resizable-box {
-      border: 2px solid #555;
-      resize: both;
-      overflow: auto;
-      position: relative;
-    }
 
-    .grabber {
-      position: absolute;
-      bottom: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 10px;
-      background: #aaa;
-      border-radius: 5px;
-      cursor: ns-resize;
+
+    $wire.on("refresh-chart", () => {
+        chartObj.data.labels = getLabels();
+        chartObj.data.datasets = [{ data: getValues() }];
+
+        console.log(chartObj.data);
+
+        chartObj.update()
+    });
+
+    const ctx = document.getElementById('{{ Str::slug($title) }}');
+
+    const getLabels = () => $wire.chart_labels
+    const getValues = () => $wire.chart_values;
+
+    let chartObj = new Chart(ctx, {
+
+        type: '{{ $type }}',
+
+        data: {
+            labels: getLabels(),
+            datasets: [{
+                label: '{!! $title !!}',
+                data: getValues(),
+                borderWidth: 1
+            }]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            events: ['click', 'mousemove'],
+            onClick: (event, elements) => clickHandler('{{ $title }}', event, elements),
+            plugins: {
+                htmlLegend: {
+                    // ID of the container to put the legend in
+                    containerID: '{{ Str::slug($title) }}-legend-container',
+                },
+                legend: {
+                    display: false,
+                },
+
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            //return ' ' + window.tooltip_labels['{{ Str::slug($title) }}'][context.dataIndex];
+                        },
+                        labelTextColor: function(context) {
+                            if (context.parsed < 0) {
+                                return '#ff0000';
+                            }
+                        },
+                    },
+                },
+            },
+        },
+        plugins: ['htmlLegendPlugin'],
+    });
+
+    if (!window.charts) {
+        window.charts = {};
     }
-  </style>
-@endonce
+    window.charts['{{ Str::slug($title) }}'] = chartObj;
+
+</script>
+@endscript

@@ -39,10 +39,15 @@ class OriginalCategory extends Model
         18020001 => 'Accounting / Financial Planning',
         20002000 => 'Gov. Tax / Non-Profit Payment',
         16002000 => 'General Services',
+        18063000 => 'Utilities',
+        18045000 => 'Personal Care',
     ];
 
     public function details() : Attribute
     {
+        if (!isset($this->details[$this->plaid_id])) {
+            dd($this);
+        }
         $str = $this->details[$this->plaid_id];
         return Attribute::make(
             get: fn ($value) => $str

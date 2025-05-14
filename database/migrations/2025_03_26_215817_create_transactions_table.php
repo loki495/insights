@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('merchant_name')->nullable();
             $table->string('merchant_entity_id')->nullable();
             $table->string('payment_channel');
-            $table->integer('running_balance')->default(0);
+            $table->integer('running_balance')->nullable();
             $table->datetime('authorized_at')->nullable();
             $table->integer('logo_url')->nullable();
             $table->integer('website')->nullable();

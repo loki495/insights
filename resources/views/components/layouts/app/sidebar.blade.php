@@ -4,7 +4,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:sidebar sticky stashable class="sidebar border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 resize-x pr-4">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="mr-5 flex items-center space-x-2" wire:navigate>
@@ -16,9 +16,18 @@
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                 </flux:navlist.group>
 
-                <flux:navlist.group class="!cursor-pointer" heading="Linked Accounts" expandable :expanded="request()->routeIs('linked-accounts.*')">
-                    <flux:navlist.item icon="list-bullet" :href="route('linked-accounts.index')" :current="request()->routeIs('linked-accounts.*')" wire:navigate>{{ __('View Linked Accounts') }}</flux:navlist.item>
+                <flux:navlist.group heading="Linked Accounts" :href="route('linked-accounts.index')" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
                     {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
+                    @foreach (auth()->user()->linkedAccounts()->with('accounts')->get() as $linkedAccount)
+                    <flux:navlist.group icon:trailing="pencil" :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
+                        @foreach ($linkedAccount->accounts as $account)
+                        <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full">
+                            <div class="font-semibold">{{ $account->name }}</div>
+                            <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, flat: true) !!}</div>
+                        </flux:navlist.item>
+                        @endforeach
+                    </flux:navlist.group>
+                    @endforeach
                 </flux:navlist.group>
 
                 <flux:navlist.item icon="list-bullet" :href="route('categories.index')" :current="request()->routeIs('categories.*')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
@@ -132,5 +141,52 @@
         {{ $slot }}
 
         @fluxScripts
+<script>
+        window.addEventListener('livewire:init', function () {
+            observeSidebarWidth();
+            updateSidebarWidth();
+        })
+
+        window.addEventListener('livewire:navigated', function () {
+            observeSidebarWidth();
+            updateSidebarWidth();
+        })
+
+        function observeSidebarWidth() {
+            const sidebar = document.querySelector('.sidebar');
+
+            // Debounce function
+            function debounce(fn, delay) {
+                let timeoutId;
+                return (...args) => {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+
+            const debouncedResize = debounce(entries => {
+                for (let entry of entries) {
+                    const { width, height } = entry.contentRect;
+                    if (width === 0) return;
+                    localStorage.setItem('sidebar_width', width);
+                    //console.log('Sidebar width SET:', width);
+                }
+            }, 100);
+
+            const observer = new ResizeObserver(debouncedResize);
+
+            observer.observe(sidebar);
+            //console.log('Observing sidebar width');
+        }
+
+        function updateSidebarWidth() {
+            const sidebar = document.querySelector('.sidebar');
+            const sidebar_width = localStorage.getItem('sidebar_width');
+            if (sidebar_width) {
+                // sidebar.style.width = `${sidebar_width}px`;
+                //console.log('Sidebar width GET:', sidebar_width);
+            }
+        }
+</script>
     </body>
 </html>
