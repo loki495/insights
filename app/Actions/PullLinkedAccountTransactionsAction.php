@@ -10,13 +10,21 @@ use App\Models\Transaction;
 
 final class PullLinkedAccountTransactionsAction
 {
-    public static function run(LinkedAccount $linkedAccount): void
+    public static function run(LinkedAccount $linkedAccount, ?string $cursor = null): void
     {
         $plaid = plaid();
 
-        $result = $plaid->getItemTransactions(data: [
+        $request_data = [
             'access_token' => $linkedAccount->access_token,
-        ]);
+            'start_date' => now()->startOfYear()->format('Y-m-d'),
+            'end_date' => now()->format('Y-m-d'),
+        ];
+
+        if ($cursor) {
+            $request_data['cursor'] = $cursor;
+        }
+
+        $result = $plaid->getItemTransactionsGet(data: $request_data);
 
         $types = [
             'added',
@@ -34,6 +42,10 @@ final class PullLinkedAccountTransactionsAction
             }
         }
 
-        ReconcileLinkedAccountTransactions::run($linkedAccount);
+        if ($result['has_more'] ?? false) {
+            self::run($linkedAccount, $result['next_cursor']);
+        } else {
+            ReconcileLinkedAccountTransactions::run($linkedAccount);
+        }
     }
 }

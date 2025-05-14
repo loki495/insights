@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\Account;
+use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
@@ -13,9 +14,43 @@ new class extends Component {
 
     public Account $account;
 
+    #[Session]
+    public string $search = '';
+
     public function mount(Account $account): void
     {
+        //$account->transactions()->delete();
         $this->account = $account;
+    }
+
+    private function parseSearch(string $query): array
+    {
+        preg_match_all('/([+-]?)"([^"]+)"|([+-]?)(\S+)/', $query, $matches, PREG_SET_ORDER);
+
+        $parsed = [
+            'required' => [],
+            'excluded' => [],
+            'optional' => [],
+        ];
+
+        foreach ($matches as $match) {
+            $prefix = $match[1] ?: $match[3];
+            $term = $match[2] ?: $match[4];
+
+            switch ($prefix) {
+                case '+':
+                    $parsed['required'][] = $term;
+                    break;
+                case '-':
+                    $parsed['excluded'][] = $term;
+                    break;
+                default:
+                    $parsed['optional'][] = $term;
+                    break;
+            }
+        }
+
+        return $parsed;
     }
 
     public function pullData(): void
@@ -25,24 +60,76 @@ new class extends Component {
 
     public function with(): array
     {
-        $transactions = $this->account->transactions()->with('originalCategory')->paginate(10);
+        $transactions = $this->account->transactions()->with('originalCategory');
+
+        if ($this->search) {
+            $terms = $this->parseSearch($this->search);
+            $transactions->where(function ($q) use ($terms) {
+                $q->where(function ($q1) use ($terms) {
+                    // Required terms
+                    foreach ($terms['required'] as $term) {
+                        $q1->where(function ($q2) use ($term) {
+                            $q2->where('name', 'like', '%' . $term . '%')
+                                ->orWhere('merchant_name', 'like', '%' . $term . '%')
+                                ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
+                                ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
+                        });
+                    }
+
+                    // Optional terms
+                    foreach ($terms['optional'] as $term) {
+                        $q1->orWhere(function ($q2) use ($term) {
+                            $q2->where('name', 'like', '%' . $term . '%')
+                                ->orWhere('merchant_name', 'like', '%' . $term . '%')
+                                ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
+                                ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
+                        });
+                    }
+                });
+
+                // Excluded terms
+                foreach ($terms['excluded'] as $term) {
+                    $q->where(function ($q1) use ($term) {
+                        $q1->where('name', 'not like', '%' . $term . '%')
+                            ->where(function ($q2) use ($term) {
+                                $q2->where('merchant_name', 'not like', '%' . $term . '%')
+                                    ->orWhereNull('merchant_name');
+                            })
+                            ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
+                                $q2->where('name', 'like', '%' . $term . '%');
+                            })
+                            ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
+                                $q2->where('description', 'like', '%' . $term . '%');
+                            });
+                    });
+                }
+
+            });
+        }
+
         return [
-            'transactions' => $transactions,
+            'transactions' => $transactions->orderBy('created_at', 'desc')->paginate(10),
         ];
     }
 
 }
 
 ?>
-    <x-page-wrapper heading="Linked Institutions" subheading="Account Transactions" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index', 'Accounts' => route('linked-accounts.accounts.index', $this->account->linkedAccount) ]">
+    <x-page-wrapper heading="Account Transactions" :subheading="$this->account->linkedAccount->provider_name . ' - ' . $this->account->name" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index', 'Accounts' => route('linked-accounts.accounts.index', $this->account->linkedAccount) ]">
 
         <x-slot name="actions">
             <x-button wire:click="pullData">Pull Data</x-button>
         </x-slot>
 
-        @if($transactions)
-        {{ $transactions->links() }}
-        @endif
+        <div class="flex gap-4 items-start w-full justify-between">
+            <div class="flex gap-4 items-center w-full md:w-1/2 shrink">
+                <label for="search">Search</label>
+                <x-input type="text" wire:model.live.debounce="search" placeholder="Search" class="w-full" clearable></x-input>
+            </div>
+            @if($transactions)
+            {{ $transactions->links() }}
+            @endif
+        </div>
 
         <x-table>
             <x-slot name="head">

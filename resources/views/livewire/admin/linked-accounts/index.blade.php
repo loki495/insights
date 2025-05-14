@@ -67,6 +67,8 @@ new class extends Component {
             'item_id' => $result['item_id'],
             'access_token' => $result['access_token'],
         ])->updateInfo();
+
+        $this->redirectRoute('linked-accounts.index');
     }
 
     public function updateLinkedAccount(): void {

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('official_name');
             $table->string('plaid_id');
-            $table->integer('available_balance');
-            $table->integer('current_balance');
+            $table->integer('available_balance')->nullable();
+            $table->integer('current_balance')->nullable();
             $table->integer('limit')->nullable();
             $table->string('currency');
             $table->string('type');

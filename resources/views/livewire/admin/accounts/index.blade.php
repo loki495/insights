@@ -14,12 +14,16 @@ new class extends Component {
 
     public function mount(LinkedAccount $linkedAccount): void
     {
+        //\App\Models\Transaction::truncate();
+        //\App\Models\Account::truncate();
         $this->linkedAccount = $linkedAccount;
     }
 
     public function pullData(): void
     {
         PullLinkedAccountTransactionsAction::run($this->linkedAccount);
+
+        $this->redirectRoute('linked-accounts.accounts.index', $this->linkedAccount);
     }
 
     public function with(): array
