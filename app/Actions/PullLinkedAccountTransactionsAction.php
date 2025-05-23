@@ -16,15 +16,13 @@ final class PullLinkedAccountTransactionsAction
 
         $request_data = [
             'access_token' => $linkedAccount->access_token,
-            'start_date' => now()->startOfYear()->format('Y-m-d'),
-            'end_date' => now()->format('Y-m-d'),
         ];
 
         if ($cursor) {
             $request_data['cursor'] = $cursor;
         }
 
-        $result = $plaid->getItemTransactionsGet(data: $request_data);
+        $result = $plaid->getItemTransactions(data: $request_data);
 
         $types = [
             'added',

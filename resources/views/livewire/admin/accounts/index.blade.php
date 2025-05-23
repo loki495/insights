@@ -35,7 +35,7 @@ new class extends Component {
 }
 
 ?>
-    <x-page-wrapper heading="Linked Institutions" subheading="Accounts" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index']">
+    <x-page-wrapper heading="Accounts" subheading="{{ $this->linkedAccount->provider_name }}" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index']">
 
         <x-slot name="actions">
             <x-button wire:click="pullData">Pull Data</x-button>

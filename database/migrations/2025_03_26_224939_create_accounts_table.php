@@ -14,15 +14,17 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('linked_account_id');
+            $table->string('plaid_account_id');
+            $table->string('mask');
             $table->string('name');
             $table->string('official_name');
-            $table->string('plaid_id');
+            $table->string('type');
+            $table->string('subtype');
+            $table->string('currency')->default('USD');
+            $table->string('nickname')->nullable();
             $table->integer('available_balance')->nullable();
             $table->integer('current_balance')->nullable();
             $table->integer('limit')->nullable();
-            $table->string('currency');
-            $table->string('type');
-            $table->string('subtype');
             $table->timestamps();
         });
     }

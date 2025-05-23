@@ -23,7 +23,7 @@ $square ??= $slot->isEmpty();
 $iconClasses = Flux::classes($square ? 'size-5!' : 'size-4!');
 
 $classes = Flux::classes()
-    ->add('h-10 lg:h-8 relative flex items-center gap-3 rounded-lg')
+    ->add('h-10 lg:h-8 relative flex items-center gap-3 rounded-lg mb-4')
     ->add($square ? 'px-2.5!' : '')
     ->add('py-0 text-start w-full pl-3 my-px')
     ->add('text-zinc-500 dark:text-white/80')
@@ -76,17 +76,17 @@ $classes = Flux::classes()
         <?php endif; ?>
 
         <?php if ($slot->isNotEmpty()): ?>
-            <div class="flex-1 text-sm font-medium leading-none whitespace-nowrap [[data-nav-footer]_&]:hidden [[data-nav-sidebar]_[data-nav-footer]_&]:block" data-content>{{ $slot }}</div>
+            <div class="flex-1 py-2 text-sm font-medium leading-none whitespace-nowrap [[data-nav-footer]_&]:hidden [[data-nav-sidebar]_[data-nav-footer]_&]:block" data-content>{{ $slot }}</div>
         <?php endif; ?>
 
         <?php if (is_string($iconTrailing) && $iconTrailing !== ''): ?>
-            <flux:icon :icon="$iconTrailing" :variant="$iconVariant" class="size-4!" />
+            <flux:icon :icon="$iconTrailing" :variant="$iconVariant" class="size-4! py-2" />
         <?php elseif ($iconTrailing): ?>
             {{ $iconTrailing }}
         <?php endif; ?>
 
         <?php if ($badge): ?>
-            <flux:navlist.badge :color="$badgeColor" :class="$badgeClass">{{ $badge }}</flux:navlist.badge>
+            <flux:navlist.badge :color="$badgeColor" :class="$badgeClass" class="my-2">{{ $badge }}</flux:navlist.badge>
         <?php endif; ?>
     </div>
 </flux:button-or-link>

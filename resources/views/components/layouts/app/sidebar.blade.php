@@ -12,16 +12,14 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group heading="Platform" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                </flux:navlist.group>
+                <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
 
                 <flux:navlist.group heading="Linked Accounts" :href="route('linked-accounts.index')" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
                     {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
                     @foreach (auth()->user()->linkedAccounts()->with('accounts')->get() as $linkedAccount)
-                    <flux:navlist.group icon:trailing="pencil" :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
+                    <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)">
                         @foreach ($linkedAccount->accounts as $account)
-                        <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full">
+                        <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full !p-4">
                             <div class="font-semibold">{{ $account->name }}</div>
                             <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, flat: true) !!}</div>
                         </flux:navlist.item>
@@ -29,6 +27,8 @@
                     </flux:navlist.group>
                     @endforeach
                 </flux:navlist.group>
+
+                <flux:navlist.item icon="list-bullet" :href="route('original-categories.index')" :current="request()->routeIs('original-categories.*')" wire:navigate>{{ __('Original Categories') }}</flux:navlist.item>
 
                 <flux:navlist.item icon="list-bullet" :href="route('categories.index')" :current="request()->routeIs('categories.*')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
 

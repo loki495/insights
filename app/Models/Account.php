@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Account extends Model
 {
@@ -17,7 +18,7 @@ class Account extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    public function linkedAccount()
+    public function linked_account() : BelongsTo
     {
         return $this->belongsTo(LinkedAccount::class);
     }

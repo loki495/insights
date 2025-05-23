@@ -41,6 +41,8 @@ class OriginalCategory extends Model
         16002000 => 'General Services',
         18063000 => 'Utilities',
         18045000 => 'Personal Care',
+        18020000 => 'Transfer Out - Investment / Retirement',
+        18008000 => 'General Services',
     ];
 
     public function details() : Attribute

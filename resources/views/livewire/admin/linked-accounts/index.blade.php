@@ -33,7 +33,7 @@ new class extends Component {
         return $this->plaid_instance;
     }
 
-    public function linkAccount(LinkedAccount $linkedAccount = null) : void {
+    public function linkAccount(?LinkedAccount $linkedAccount = null) : void {
         $data = [
             'client_name' => 'Insights',
             'products' => [ 'transactions' ],

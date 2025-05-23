@@ -12,10 +12,10 @@ final class ReconcileLinkedAccountTransactions
     {
         foreach ($linkedAccount->accounts as $account) {
             $balance = $account->current_balance;
-            foreach ($account->transactions()->orderBy('id')->get() as $transaction) {
+            foreach ($account->transactions()->orderByDesc('created_at')->get() as $transaction) {
                 $transaction->running_balance = $balance;
                 $transaction->save();
-                $balance -= $transaction->amount;
+                $balance += $transaction->amount;
             }
         }
     }
