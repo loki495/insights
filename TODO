@@ -1,3 +1,5 @@
+- check for duplicate accounts
+    - use institution id, name and official name
 * pull / reconcile TEST
 * models
     - categories
@@ -7,3 +9,50 @@
     - roles
     - permissions
 - actual insights / graphs
+
+
+================================================================================
+
+
+| Category             | Feature                                                                        |
+|----------------------|--------------------------------------------------------------------------------|
+| **Auth**             | OAuth2 login (Google, GitHub, etc.)                                            |
+|                      | Email/password login with email verification                                   |
+|======================|================================================================================|
+| **Bank Integration** | Plaid Link integration for secure bank connection                              |
+|                      | Support for multiple bank accounts per user                                    |
+|======================|================================================================================|
+| **Transactions**     | Automatic transaction import via Plaid webhooks                                |
+|                      | Manual transaction entry                                                       |
+|                      | Transaction search (by date, category, keyword)                                |
+|                      | Bulk editing / categorization                                                  |
+|                      | Rule-based auto-tagging (e.g., "Starbucks" → "Coffee")                         |
+|                      | Tagging system (e.g., "business", "personal", "recurring")                     |
+|======================|================================================================================|
+| **Categories**       | Editable user-defined categories                                               |
+|                      | Hierarchical category support (e.g., "Food" > "Groceries")                     |
+|======================|================================================================================|
+| **Export & Reports** | Export to CSV and PDF                                                          |
+|                      | Monthly summary view (expenses by category)                                    |
+|                      | Downloadable transaction reports                                               |
+|======================|================================================================================|
+| **APIs**             | REST API for basic access to user data                                         |
+|                      | Optional: GraphQL read-only API for external tools                             |
+|======================|================================================================================|
+| **UI/UX**            | Responsive dashboard with Livewire Volt + Tailwind                             |
+|                      | Dashboard widgets (monthly spend, recent activity, etc.)                       |
+|                      | Notifications (e.g., sync success/fail, new transactions)                      |
+|======================|================================================================================|
+| **Cloud / DevOps**   | Docker support for local development                                           |
+|                      | GitHub Actions for CI (test + deploy)                                          |
+|                      | Deploy to AWS EC2 (or Render, Vercel, etc.)                                    |
+|                      | Optional: Use RDS (MySQL) and S3 for file storage                              |
+|======================|================================================================================|
+| **Testing**          | Pest unit and feature tests                                                    |
+|                      | Seeders/factories for test data                                                |
+|======================|================================================================================|
+| **Bonus Ideas**      | Budget tracking (user-defined limits per category)                             |
+|                      | Email summaries (weekly/monthly digests)                                       |
+|                      | AI-based smart categorization (simple ML or heuristic rules)                   |
+|======================|================================================================================|
+

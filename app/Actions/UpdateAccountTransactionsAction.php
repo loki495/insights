@@ -42,8 +42,13 @@ final class UpdateAccountTransactionsAction
 
     private static function getUsableTransaction(array $transaction_info): array
     {
+        $account_id = Account::query()->where('plaid_account_id', $transaction_info['account_id'])->first()->id;
+        if (! $account_id) {
+            throw new \Exception('Account not found - ' . $transaction_info['account_id']);
+        }
+
         return [
-            'account_id' => Account::where('plaid_id', $transaction_info['account_id'])->first()->id,
+            'account_id' => $account_id,
             'amount' => $transaction_info['amount'],
             'authorized_at' => $transaction_info['authorized_datetime'] ?? $transaction_info['authorized_date'],
             'created_at' => $transaction_info['datetime'] ?? $transaction_info['date'],

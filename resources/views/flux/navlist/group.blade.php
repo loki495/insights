@@ -66,8 +66,8 @@ $iconClasses = Flux::classes($square ? 'size-5!' : 'size-4!');
     </ui-disclosure>
 <?php elseif ($heading): ?>
     <div {{ $attributes->class('block space-y-[2px]') }}>
-        <div class="px-3 py-2">
-            <div class="text-sm text-zinc-400 font-medium leading-none"><?php if ($href) : ?><a href="{{ $href }}" class="block" wire:navigate>{{ $heading }}</a><?php else: ?>{{ $heading }}<?php endif ?></div>
+        <div class="px-3 py-2 bg-zinc-800/90 rounded-lg mb-2">
+            <div class="text-sm text-zinc-100 font-bold leading-none"><?php if ($href) : ?><a href="{{ $href }}" class="block" wire:navigate>{{ $heading }}</a><?php else: ?>{{ $heading }}<?php endif ?></div>
         </div>
 
         <div>

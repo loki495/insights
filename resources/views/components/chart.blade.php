@@ -1,3 +1,7 @@
+@props([
+    'type' => 'doughnut',
+    'title' => ''
+])
 <div class="resizable-box w-full relative rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
     <div >
         <div id="{{ Str::slug($title) }}-legend-container"></div>

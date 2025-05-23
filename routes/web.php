@@ -19,7 +19,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Volt::route('linked-accounts/{linkedAccount}/account/{account}/transactions', 'admin.accounts.show')->name('accounts.show');
     });
 
-    Volt::route('categories', 'admin.categories.index')->name('categories.index');
+    Volt::route('original-categories', 'admin.original-categories.index')->name('original-categories.index');
+
+    Route::name('categories.')->group(function () {
+        Volt::route('/categories', 'admin.categories.index')->name('index');
+        Volt::route('/categories/create', 'admin.categories.edit')->name('create');
+        Volt::route('/categories/{category}', 'admin.categories.edit')->name('show');
+        Volt::route('/categories/{category}/edit', 'admin.categories.edit')->name('edit');
+    });
 
     Route::name('reports.')->group(function () {
         Volt::route('reports', 'admin.reports.index')->name('index');
@@ -37,8 +44,9 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::get('/test', function () {
-    $account = \App\Models\LinkedAccount::first()->updateInfo();
-    dd($account);
+    $path = realpath(__DIR__.'/../..') . '/w';
+    $d = json_decode(file_get_contents($path));
+    dd($d->schema);
 });
 
 require __DIR__.'/auth.php';
