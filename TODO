@@ -1,5 +1,4 @@
-- check for duplicate accounts
-    - use institution id, name and official name
+- parent category for grouping
 * pull / reconcile TEST
 * models
     - categories
