@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\OriginalCategory;
+use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\On;
@@ -13,9 +13,9 @@ new class extends Component {
     use WithPagination;
 
     public ?int $category_id;
-    public ?OriginalCategory $category;
+    public ?Category $category;
 
-    public function mount(?OriginalCategory $category): void
+    public function mount(?Category $category): void
     {
         $this->category = $category;
         $this->category_id = $category->id;
@@ -29,7 +29,10 @@ new class extends Component {
 }
 
 ?>
-    <x-page-wrapper heading="Reports" subheading="Category Transactions - {{ $category->id > 0 ? $category->name : 'All Categories' }} {{ $category_id ? '(' . $category->plaid_id . ')': '' }}" :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']">
+<x-page-wrapper heading="Reports"
+    subheading="{{ $category->id > 0 ? $category->name : 'All Categories' }}"
+    :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']"
+>
 
         <livewire:components.transactions :category="$category" :allow_accounts="true"></livewire:components.transactions>
 
