@@ -24,8 +24,12 @@ new class extends Component {
     public ?Account $account;
 
     #[Session]
+    public ?int $original_category_id;
+    public ?OriginalCategory $original_category;
+
+    #[Session]
     public ?int $category_id;
-    public ?OriginalCategory $category;
+    public ?Category $category;
 
     #[Session]
     public string $search = '';
@@ -42,13 +46,18 @@ new class extends Component {
     public $chart_ids = [];
     public $chart_type = 'doughnut';
 
-    public function mount(?OriginalCategory $category, ?Account $account, ?bool $allow_accounts = false): void
+    public function mount(?Category $category, ?OriginalCategory $original_category, ?Account $account, ?bool $allow_accounts = false): void
     {
         $this->allow_accounts = $allow_accounts;
         $this->account = $account;
         $this->account_id = $account->id;
+
+        $this->original_category = $original_category;
+        $this->original_category_id = $original_category->id;
+
         $this->category = $category;
         $this->category_id = $category->id;
+
         $this->date_from = carbon()->startOfyear();
         $this->date_to = carbon()->now();
     }
@@ -86,8 +95,13 @@ new class extends Component {
     public function getTransactionsQuery(): Builder
     {
         $query = Transaction::query()
+            ->when($this->original_category_id ?? false, function ($query) {
+                return $query->where('original_category_id', $this->original_category_id);
+            })
             ->when($this->category_id ?? false, function ($query) {
-                return $query->where('original_category_id', $this->category_id);
+                return $query->whereHas('categories', function ($q) {
+                    $q->where('categories.id', $this->category_id);
+                });
             })
             ->with('originalCategory')
             ->with('categories')
@@ -174,7 +188,7 @@ new class extends Component {
 
     public function updatedCategoryId($value = null)
     {
-        $this->category = OriginalCategory::find($value);
+        $this->original_category = OriginalCategory::find($value);
         $this->dispatch('categoryIdChanged', categoryId: $value);
     }
 
@@ -254,11 +268,21 @@ new class extends Component {
                     </div>
 
                     <div class="flex gap-4 items-center w-full">
+                        <label for="search">Original Category</label>
+                        <flux:select wire:model.live="original_category_id" clearable>
+                            <flux:select.option value="0">-- All Original Categories --</flux:select.option>
+                            @foreach(OriginalCategory::all()->sortBy('details') as $category_option)
+                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->details }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    </div>
+
+                    <div class="flex gap-4 items-center w-full">
                         <label for="search">Category</label>
                         <flux:select wire:model.live="category_id" clearable>
                             <flux:select.option value="0">-- All Categories --</flux:select.option>
-                            @foreach(OriginalCategory::all()->sortBy('details') as $category_option)
-                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->details }}</flux:select.option>
+                            @foreach(Category::all()->sortBy('name') as $category_option)
+                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->name }}</flux:select.option>
                             @endforeach
                         </flux:select>
                     </div>
