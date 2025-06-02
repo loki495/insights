@@ -16,6 +16,10 @@ final class PullLinkedAccountTransactionsAction
 
         $request_data = [
             'access_token' => $linkedAccount->access_token,
+            'count' => 500,
+            'options' => [
+                'days_requested' => 730,
+            ],
         ];
 
         if ($cursor) {
