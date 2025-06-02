@@ -1,9 +1,11 @@
 <?php
 
+
 declare(strict_types=1);
 
 use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\Category;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
@@ -19,8 +21,15 @@ new class extends Component {
     public function with(): array
     {
         $categories = Category::query()
-            ->where('name', 'like', '%' . $this->search . '%')
-            ->orWhere('description', 'like', '%' . $this->search . '%')
+            ->with('children')
+            ->with('parent')
+            ->with('transactions')
+            ->where('parent_id', '=', 0)
+            ->when($this->search, function (Builder $query) {
+                $query
+                    ->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('description', 'like', '%' . $this->search . '%');
+            })
             ->orderBy('name')
             ->get();
 
@@ -53,6 +62,7 @@ new class extends Component {
         <x-table>
             <x-slot name="head">
                 <x-table.tr>
+                    <x-table.th>Parent</x-table.th>
                     <x-table.th>Name</x-table.th>
                     <x-table.th>Description</x-table.th>
                     <x-table.th>Color</x-table.th>
@@ -62,7 +72,14 @@ new class extends Component {
             <x-slot name="body">
             @foreach($categories ?? [] as $category)
                 <x-table.tr class="hover:bg-zinc-100 dark:hover:bg-zinc-900/20 border-b border-zinc-300 dark:border-zinc-700 cursor-normal">
-                    <x-table.td class="text-left">{{ $category->name }}</x-table.td>
+                    <x-table.td class="text-left">
+                        @if($category->parent)
+                        <div class="text-center cursor-pointer text-xs p-1 h-auto relative rounded-lg shoadow-lg" x-data="{ over: false }" @mouseout="over = false;" @mouseover="over = true;" style="background-color: {{ $category->parent->color }}">
+                            {{ $category->parent->name }}
+                        </div>
+                        @endif
+                    </x-table.td>
+                    <x-table.td class="text-left">{{ $category->name }} {{ $category->parent?->name }}</x-table.td>
                     <x-table.td class="text-left">{{ $category->description }}</x-table.td>
                     <x-table.td class="text-left"><div class="flex gap-4 justify-center items-center">{{ $category->color}} <div class="w-4 h-4" style="background-color: {{ $category->color }}"></div></div></x-table.td>
                     <x-table.td class="text-left">

@@ -99,8 +99,13 @@ new class extends Component {
                 return $query->where('original_category_id', $this->original_category_id);
             })
             ->when($this->category_id ?? false, function ($query) {
-                return $query->whereHas('categories', function ($q) {
-                    $q->where('categories.id', $this->category_id);
+                $category = Category::find($this->category_id);
+                $category_id = $category->id;
+                $descendants = collect($category->descendants)->pluck('id')->toArray();
+                return $query->whereHas('categories', function ($query) use ($category_id, $descendants) {
+                    $query
+                        ->where('categories.id', $category_id)
+                        ->orWhereIn('categories.id', $descendants);
                 });
             })
             ->with('originalCategory')

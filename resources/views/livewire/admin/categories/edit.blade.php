@@ -14,6 +14,7 @@ new class extends Component {
 
     public ?Category $category;
 
+    public $parent_id;
     public $name;
     public $description;
     public $color;
@@ -31,6 +32,7 @@ new class extends Component {
         $this->category->name = $this->name;
         $this->category->description = $this->description;
         $this->category->color = $this->color;
+        $this->category->parent_id = $this->parent_id;
         $this->category->save();
 
         $this->redirectRoute('categories.index');
@@ -43,6 +45,17 @@ new class extends Component {
         <div class="mb-4 max-w-[400px]">
             <x-table>
                 <x-slot name="body">
+                    <x-table.tr>
+                        <x-table.th class="text-left">Parent</x-table.th>
+                        <x-table.td>
+                            <flux:select wire:model="parent_id" clearable>
+                                <option value="">None</option>
+                                @foreach(Category::all()->sortBy('name') as $category)
+                                <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                        </x-table.td>
+                    </x-table.tr>
                     <x-table.tr>
                         <x-table.th class="text-left">Name</x-table.th>
                         <x-table.td><flux:input wire:model="name" /></x-table.td>
