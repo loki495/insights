@@ -39,3 +39,11 @@ function carbon($date = 'now'): \Carbon\Carbon
 {
     return \Carbon\Carbon::parse($date);
 }
+
+function htmlQuotes($string): string
+{
+    $result = trim($string);
+    $result = str_replace('"', '&quot;', $result);
+    $result = str_replace("'", '&apos;', $result);
+    return $result;
+}

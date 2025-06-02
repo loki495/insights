@@ -392,11 +392,11 @@ new class extends Component {
                                 <div class="flex gap-2 items-center mt-2">
                                     @foreach($transaction['categories'] as $category)
                                     <div class="cursor-pointer text-xs p-1 h-auto relative rounded-lg shoadow-lg" x-data="{ over: false }" @mouseout="over = false;" @mouseover="over = true;" style="background-color: {{ $category['color'] }}">
-                                        <div @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ $transaction['name'] }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency']) }}', category_id: {{ $category['id'] }} })" class="p-0 text-nowrap text-shadow-lg">{{ $category['name'] }}</div>
+                                        <div @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency']) }}', category_id: {{ $category['id'] }} })" class="p-0 text-nowrap text-shadow-lg">{{ $category['name'] }}</div>
                                         <flux:icon.x-mark variant="solid" x-cloak x-show="over" wire:confirm="Are you sure you want to delete this category? (#{{ $category['pivot']['id'] }})" wire:click="deleteTransactionCategory({{ $category['pivot']['id'] }})" class="absolute z-20 cursor-pointer -right-3 text-red-500 -top-3 size-6 p-px font-bold text-shadow-lg hover:bg-white rounded-full" />
                                     </div>
                                     @endforeach
-                                    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ $transaction['name'] }}', transaction_amount: {{ $transaction['amount'] }} })" class="size-2" icon="plus"></flux:button>
+                                    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }} })" class="size-2" icon="plus"></flux:button>
                                 </div>
 
                             </div>
