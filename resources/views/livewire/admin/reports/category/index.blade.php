@@ -34,7 +34,7 @@ new class extends Component {
     :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']"
 >
 
-        <livewire:components.transactions :category="$category" :allow_accounts="true"></livewire:components.transactions>
+        <livewire:components.transactions :category="$category" :allow_accounts="true" :allow_running_balance="false" />
 
     </x-page-wrapper>
       <script type="text/javascript">
