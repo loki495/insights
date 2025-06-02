@@ -17,7 +17,13 @@ new class extends Component {
     use WithPagination;
 
     #[Locked]
-    public $allow_accounts = true;
+    public bool $allow_accounts;
+
+    #[Locked]
+    public bool $allow_running_balance;
+
+    #[Session]
+    public $only_uncategorized;
 
     #[Session]
     public ?int $account_id;
@@ -46,9 +52,11 @@ new class extends Component {
     public $chart_ids = [];
     public $chart_type = 'doughnut';
 
-    public function mount(?Category $category, ?OriginalCategory $original_category, ?Account $account, ?bool $allow_accounts = false): void
+    public function mount(?Category $category, ?OriginalCategory $original_category, ?Account $account, ?bool $allow_accounts = false, bool $allow_running_balance = true): void
     {
         $this->allow_accounts = $allow_accounts;
+        $this->allow_running_balance = $allow_running_balance;
+
         $this->account = $account;
         $this->account_id = $account->id;
 
@@ -107,6 +115,9 @@ new class extends Component {
                         ->where('categories.id', $category_id)
                         ->orWhereIn('categories.id', $descendants);
                 });
+            })
+            ->when($this->only_uncategorized ?? false, function ($query) {
+                return $query->doesntHave('categories');
             })
             ->with('originalCategory')
             ->with('categories')
@@ -273,6 +284,13 @@ new class extends Component {
                     </div>
 
                     <div class="flex gap-4 items-center w-full">
+                        <flux:field variant="inline">
+                            <flux:checkbox wire:model.live.debounce="only_uncategorized" />
+                            <flux:label>Only show transactions without categories</flux:label>
+                        </flux:field>
+                    </div>
+
+                    <div class="flex gap-4 items-center w-full">
                         <label for="search">Original Category</label>
                         <flux:select wire:model.live="original_category_id" clearable>
                             <flux:select.option value="0">-- All Original Categories --</flux:select.option>
@@ -342,7 +360,7 @@ new class extends Component {
                         </x-table.tr>
                         <x-table.tr>
                             <x-table.td class="!px-0">Total:</x-table.td>
-                            <x-table.td class="text-right">{!! currency($total) !!}</x-table.td>
+                            <x-table.td class="text-right">{!! currency(abs($total)) !!}</x-table.td>
                         </x-table.tr>
                     </x-slot>
                 </x-table>
@@ -358,20 +376,20 @@ new class extends Component {
 
         <div class="flex flex-col gap-4 bg-white/10 p-4 rounded-xl w-full relative overflow-x-scroll">
 
-            <x-table class="transactions-table min-h-screen min-w-full w-max" wire:scroll>
+            <x-table class="transactions-table min-w-full w-max" wire:scroll>
                 <x-slot name="head">
                     <x-table.tr wire:loading.remove>
                         <x-table.th class="text-center w-28">Date</x-table.th>
                         <x-table.th class="2-56">Source</x-table.th>
                         <x-table.th>Description</x-table.th>
                         <x-table.th>Amount</x-table.th>
-                        @if ($transactions->first()['running_balance'])
+                        @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance)
                         <x-table.th>Running Balance</x-table.th>
                         @endif
                     </x-table.tr>
                 </x-slot>
                 <x-slot name="body">
-                    <x-table.tr wire:loading>
+                    <x-table.tr wire:loading class="min-h-screen">
                         <x-table.td colspan="9">
                            <div class="absolute w-full h-full flex items-start justify-center z-10">
                                 <div class="mt-16 sticky left-1/2 top-32 -translate-x-1/2">
@@ -407,7 +425,7 @@ new class extends Component {
                             </div>
                         </x-table.td>
                         <x-table.td class="text-right">{!! currency($transaction['amount'], $transaction['currency']) !!}</x-table.td>
-                        @if ($transactions->first()['running_balance'])
+                        @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance)
                         <x-table.td class="text-right">{!! currency($transaction['running_balance'], $transaction['currency']) !!}</x-table.td>
                         @endif
                     </x-table.tr>
@@ -430,7 +448,7 @@ new class extends Component {
                 <div class="bg-zinc-900 text-white p-4 rounded-xl w-96 z-10">
                     <div class="flex flex-col gap-4">
                         <div class="flex justify-between">
-                            <div><span x-text="transaction_name"></span> (#<span x-text="transaction_id"></span>)</div>
+                            <div><span x-html="transaction_name"></span> (#<span x-text="transaction_id"></span>)</div>
                             <span x-html="transaction_amount"></span>
                         </div>
                         <div x-show="add">Add Category</div>
