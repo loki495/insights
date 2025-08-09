@@ -8,9 +8,11 @@ export default defineConfig({
     server: {
         host: '0.0.0.0', // allows access from other devices
         hmr: {
-            host: '192.168.1.145', // your laptop's IP
+            host: 'vite.insights.dev.local.test', // your laptop's IP145
+            clientPort: 80
         },
         cors: true,
+        allowedHosts: ['vite.insights.dev.local.test']
     },
     plugins: [
         laravel({

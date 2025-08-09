@@ -1,0 +1,52 @@
+volumes:
+  mysql-data: {}
+
+services:
+  app:
+    image: php:8.4-apache
+    container_name: insights-app
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.insights.rule=Host(`insights.dev.local.test`)"
+      - "traefik.http.routers.insights.entrypoints=web"
+      - "traefik.http.services.insights.loadbalancer.server.port=80"
+    command: >
+      sh -c "a2enmod rewrite &&
+             echo '<Directory /var/www/html>' > /etc/apache2/conf-enabled/allow-override.conf &&
+             echo 'AllowOverride All' >> /etc/apache2/conf-enabled/allow-override.conf &&
+             echo '</Directory>' >> /etc/apache2/conf-enabled/allow-override.conf &&
+             sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf &&
+             chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database 2>/dev/null || true &&
+             find /var/www/html/storage -type d -exec chmod 775 {} \\; 2>/dev/null || true &&
+             find /var/www/html/bootstrap/cache -type d -exec chmod 775 {} \\; 2>/dev/null || true &&
+             find /var/www/html/database -type d -exec chmod 775 {} \\; 2>/dev/null || true &&
+             find /var/www/html/storage -type f -exec chmod 644 {} \\; 2>/dev/null || true &&
+             find /var/www/html/storage/logs -type f -exec chmod 777 {} \\; 2>/dev/null || true &&
+             find /var/www/html/database/database.sqlite -type f -exec chmod 777 {} \\; 2>/dev/null || true &&
+             find /var/www/html/bootstrap/cache -type f -exec chmod 644 {} \\; 2>/dev/null || true &&
+             find /var/www/html/database -type f -exec chmod 644 {} \\; 2>/dev/null || true &&
+             exec apache2-foreground"
+    networks:
+      - web
+
+  vite:
+    image: node:18
+    container_name: insights-vite
+    working_dir: /var/www/html
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    volumes:
+      - ./:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.insights-vite.rule=Host(`vite.insights.dev.local.test`)"
+      - "traefik.http.routers.insights-vite.entrypoints=web"
+      - "traefik.http.services.insights-vite.loadbalancer.server.port=5173"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
