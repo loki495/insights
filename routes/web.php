@@ -44,9 +44,9 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::get('/test', function () {
-    $path = realpath(__DIR__.'/../..') . '/w';
+    $path = storage_path('app/private/w');
     $d = json_decode(file_get_contents($path));
-    dd($d->schema);
+    dd((array)$d->schema);
 });
 
 require __DIR__.'/auth.php';
