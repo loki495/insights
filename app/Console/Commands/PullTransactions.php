@@ -15,7 +15,7 @@ class PullTransactions extends Command
      *
      * @var string
      */
-    protected $signature = 'transactions:pull {linked_account_id?}';
+    protected $signature = 'transactions:pull {linked_account_id?} {force?}';
 
     /**
      * The console command description.
@@ -30,6 +30,7 @@ class PullTransactions extends Command
     public function handle(): void
     {
         $linked_account_id = $this->argument('linked_account_id');
+        $force = $this->argument('force') ? true : false;
 
         $linked_accounts = LinkedAccount::with('accounts');
         if ($linked_account_id) {
@@ -38,8 +39,8 @@ class PullTransactions extends Command
 
         $linked_accounts
             ->get()
-            ->each(function (LinkedAccount $linkedAccount) {
-            PullLinkedAccountTransactionsAction::run($linkedAccount);
+            ->each(function (LinkedAccount $linkedAccount) use ($force) {
+            PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
         });
     }
 }

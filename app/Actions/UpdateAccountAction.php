@@ -27,10 +27,6 @@ final class UpdateAccountAction
 
         if ($account->exists()) {
 
-            DB::listen(function (QueryExecuted $query) {
-                //dd($query->toRawSql());
-            });
-
             $account->update([
                 'plaid_account_id' => $account_info['account_id'],
                 'mask' => $account_info['mask'],

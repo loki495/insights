@@ -37,6 +37,7 @@ final class UpdateAccountTransactionsAction
         );
 
         $transaction->original_category_id = $category->id;
+        $transaction->save();
 
     }
 
@@ -47,9 +48,16 @@ final class UpdateAccountTransactionsAction
             throw new \Exception('Account not found - ' . $transaction_info['account_id']);
         }
 
+        // adjust amount sign so that Debit (money OUT) is negative and Credit (money IN) is positive
+        $amount = -1 * $transaction_info['amount'];
+        $type = 'Credit';
+        if ($amount < 0) {
+            $type = 'Debit';
+        }
+
         return [
             'account_id' => $account_id,
-            'amount' => $transaction_info['amount'],
+            'amount' => $amount,
             'authorized_at' => $transaction_info['authorized_datetime'] ?? $transaction_info['authorized_date'],
             'created_at' => $transaction_info['datetime'] ?? $transaction_info['date'],
             'currency' => $transaction_info['iso_currency_code'],
@@ -59,7 +67,7 @@ final class UpdateAccountTransactionsAction
             'name' => $transaction_info['name'],
             'payment_channel' => $transaction_info['payment_channel'],
             'transaction_id' => $transaction_info['transaction_id'],
-            'transaction_type' => $transaction_info['transaction_type'],
+            'transaction_type' => $type,
             'website' => $transaction_info['website'],
             'original' => $transaction_info,
         ];
