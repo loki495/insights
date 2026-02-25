@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+if (! function_exists('plaid')) {
 function plaid($force_environment = ''): \App\Services\Plaid\PlaidService
 {
     $environment = $force_environment ?: config('plaid.environment');
@@ -19,10 +20,6 @@ function currency($amount = null, $currency = 'USD', ?bool $flat = false): strin
         'USD' => $symbol = '$',
     };
 
-    if ($flat) {
-        return $symbol.number_format($amount, 2, '.', ',');
-    }
-
     $color = 'zinc-700';
     $darkColor = 'white';
     if ($amount < 0) {
@@ -30,6 +27,10 @@ function currency($amount = null, $currency = 'USD', ?bool $flat = false): strin
         $symbol = '-'.$symbol;
         $color = 'red-700';
         $darkColor = 'red-400';
+    }
+
+    if ($flat) {
+        return $symbol.number_format($amount, 2, '.', ',');
     }
 
     return '<span class="text-'.$color.' dark:text-'.$darkColor.'">'.$symbol.number_format($amount, 2, '.', ',').'</span>';
@@ -46,4 +47,5 @@ function htmlQuotes($string): string
     $result = str_replace('"', '&quot;', $result);
     $result = str_replace("'", '&apos;', $result);
     return $result;
+}
 }

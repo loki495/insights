@@ -14,6 +14,11 @@ final class UpdateAccountTransactionsAction
     {
         $transaction_usable = self::getUsableTransaction($transaction_info);
 
+        static $skip = 0;
+        if ($skip-- > 0) {
+            return;
+        }
+
         if ($action === 'deleted') {
             Transaction::where('transaction_id', $transaction_info['transaction_id'])->delete();
 
