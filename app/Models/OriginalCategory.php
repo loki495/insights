@@ -44,6 +44,20 @@ class OriginalCategory extends Model
         18020000 => 'Transfer Out - Investment / Retirement',
         18008000 => 'General Services',
         13001000 => 'Entertainment - Music &amp; Audio',
+        22009000 => 'Gas',
+        15002000 => 'Interest Charged',
+        21010003 => 'Transfer OUT - Other',
+        21008000 => 'Transfer In - Savings',
+        19013000 => 'Loan Payment',
+        22013000 => 'Parking',
+        19005007 => 'Auto',
+        18006000 => 'Auto',
+        17001000 => 'TV & Movies',
+        18020007 => 'Loan Payment',
+        21007001 => 'Deposit / Transfer In',
+        19015000 => 'General Store',
+        18006003 => 'Car Service',
+        17015000 => 'Sporting Goods',
     ];
 
     public function details() : Attribute
