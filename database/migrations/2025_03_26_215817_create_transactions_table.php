@@ -14,20 +14,21 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id');
-            $table->string('transaction_id');
-            $table->string('transaction_type');
+            $table->string('transaction_id')->nullable();
+            $table->string('parent_id')->nullable();
+            $table->string('transaction_type')->nullable();
             $table->integer('amount');
             $table->string('name');
             $table->string('currency');
             $table->string('status')->nullable();
             $table->string('merchant_name')->nullable();
             $table->string('merchant_entity_id')->nullable();
-            $table->string('payment_channel');
+            $table->string('payment_channel')->nullable();
             $table->integer('running_balance')->nullable();
             $table->datetime('authorized_at')->nullable();
             $table->integer('logo_url')->nullable();
             $table->integer('website')->nullable();
-            $table->string('original');
+            $table->string('original')->nullable();
             $table->foreignId('original_category_id');
             $table->timestamps();
         });

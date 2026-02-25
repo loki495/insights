@@ -7,10 +7,11 @@ namespace App\Actions;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Storage;
 
 final class PullLinkedAccountTransactionsAction
 {
-    public static function run(LinkedAccount $linkedAccount, ?string $cursor = null): void
+    public static function run(LinkedAccount $linkedAccount, ?string $cursor = null, bool $force = false): void
     {
         $plaid = plaid();
 
@@ -26,7 +27,15 @@ final class PullLinkedAccountTransactionsAction
             $request_data['cursor'] = $cursor;
         }
 
-        $result = $plaid->getItemTransactions(data: $request_data);
+        $use_cache = true;
+        $fn = Storage::disk('local')->path('plaid/transactions/'.$linkedAccount->id.'.json');
+        @mkdir(dirname($fn), 0777, true);
+        if ($use_cache && file_exists($fn)) {
+            $result = json_decode((string) file_get_contents($fn), true);
+        } else {
+            $result = $plaid->getItemTransactions(data: $request_data);
+            file_put_contents($fn, json_encode($result));
+        }
 
         $types = [
             'added',
@@ -47,7 +56,7 @@ final class PullLinkedAccountTransactionsAction
         if ($result['has_more'] ?? false) {
             self::run($linkedAccount, $result['next_cursor']);
         } else {
-            ReconcileLinkedAccountTransactions::run($linkedAccount);
+            ReconcileLinkedAccountTransactions::run($linkedAccount, $force);
         }
     }
 }
