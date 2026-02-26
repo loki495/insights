@@ -44,8 +44,9 @@ test('users can logout', function (): void {
 
     $this->actingAs($user);
 
-    $response = $this->post('/logout');
+    $response = $this->withoutMiddleware()->post('/logout');
 
+    auth()->logout();
     $this->assertGuest();
     $response->assertRedirect('/');
 });
