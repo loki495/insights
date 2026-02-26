@@ -264,70 +264,130 @@ new class extends Component {
     public function updateChartData() {
         $query = $this->getTransactionsQuery();
 
-        $chart_data = [];
-
-        $query = $query
+        $transactions = $query
             ->clone()
             ->reportable()
-            ->get()
-            ->each(function ($item) use (&$chart_data) {
-                $cats = $item->categories()->with('parent')->get();
-                foreach ($cats as $cat) {
-                    $root = $cat->root(0);
-                    //$chart_data[$root->id . '|' . $root->color . '|' . $root->name][] = $item->amount;
+            ->with(['categories' => function($q) {
+                $q->select('categories.id', 'categories.name', 'categories.color', 'categories.parent_id');
+            }])
+            ->get();
+
+        $chart_data = [];
+        $total_sum = 0;
+        
+        // Pre-fetch categories into a map for fast parent lookup
+        $all_categories = Category::all()->keyBy('id');
+
+        foreach ($transactions as $transaction) {
+            $categories = $transaction->categories;
+
+            if ($categories->isEmpty()) {
+                $id = 0;
+                $name = 'Uncategorized';
+                $color = '#9ca3af';
+                
+                if (!isset($chart_data[$id])) {
+                    $chart_data[$id] = ['id' => $id, 'label' => $name, 'color' => $color, 'total' => 0];
                 }
-            });
+                $chart_data[$id]['total'] += $transaction->amount;
+                $total_sum += abs($transaction->amount);
+                continue;
+            }
 
-        $parent_category_id = $this->category_id ?? 0;
+            foreach ($categories as $category) {
+                $current_filtered_id = $this->category_id ?: 0;
+                $target = null;
 
-        $chart_data = collect($chart_data)
-            ->map(function ($item, $key) use ($parent_category_id) {
-                $parts = explode('|', $key);
-
-                $id = $parts[0];
-                $color = $parts[1];
-                $label = $parts[2];
-                $total = array_sum($item);
-
-    try{
-
-                    //dump('root: ' . $parent_category_id);
-                do {
-                    //dump($id . ' - ' . $label);
-                    $parent = Category::find($id)->parent;
-
-                    if (!$parent || $parent->id == $parent_category_id || !$parent->id) {
-                            //dump('---');
-                        break;
+                if ($current_filtered_id == 0) {
+                    // Find top level ancestor
+                    $target = $category;
+                    while ($target && $target->parent_id != 0) {
+                        $target = $all_categories->get($target->parent_id);
                     }
-                        //dump(' - ' . $parent->id . ' - ' . $parent->name);
-                        //dump('new id: ' . $parent->id . ' - ' . $parent->name);
+                } else {
+                    // Is this category a descendant of the current filter?
+                    $temp = $category;
+                    $path = [];
+                    while ($temp) {
+                        $path[] = $temp->id;
+                        if ($temp->id == $current_filtered_id) break;
+                        $temp = $temp->parent_id ? $all_categories->get($temp->parent_id) : null;
+                    }
 
-                    $id = $parent->id;
-                    $color = $parent->color;
-                    $label = $parent->name;
+                    if (!$temp || $temp->id != $current_filtered_id) {
+                        continue; // Not under current filter
+                    }
 
-                } while (1);
+                    // Find the child of current_filtered_id in this path
+                    if ($category->id == $current_filtered_id) {
+                        $target = $category;
+                    } else {
+                        // The path is [leaf, ..., child_of_filter, filter]
+                        // We want child_of_filter
+                        $filter_index = array_search($current_filtered_id, $path);
+                        if ($filter_index !== false && $filter_index > 0) {
+                            $target = $all_categories->get($path[$filter_index - 1]);
+                        } else {
+                            $target = $category;
+                        }
+                    }
+                }
 
-    } catch (\Throwable $th) {
-        dd($th);
-    }
-                return [
-                    'id' => $id,
-                    'color' => $color,
-                    'label' => $label,
-                    'total' => $total,
-                ];
-            });
+                if ($target) {
+                    if (!isset($chart_data[$target->id])) {
+                        $chart_data[$target->id] = [
+                            'id' => $target->id,
+                            'label' => $target->name,
+                            'color' => $target->color ?: '#3b82f6',
+                            'total' => 0
+                        ];
+                    }
+                    $chart_data[$target->id]['total'] += $transaction->amount;
+                    $total_sum += abs($transaction->amount);
+                }
+                
+                break; // Categorize by first category
+            }
+        }
+
+        $chart_data = collect($chart_data)->values();
 
         $this->chart_ids = $chart_data->pluck('id')->toArray();
         $this->chart_labels = $chart_data->pluck('label')->toArray();
-        $this->chart_values = $chart_data->pluck('total')->toArray();
+        $this->chart_values = $chart_data->pluck('total')->map(fn($v) => round(abs($v), 2))->toArray();
         $this->chart_colors = $chart_data->pluck('color')->toArray();
-        $this->chart_tooltip_labels = $chart_data->pluck('total')->map(fn($value) => currency($value, flat: 1))->toArray();
-        $this->chart_type = 'doughnut';
+        
+        $abs_total = $total_sum;
+        $this->chart_tooltip_labels = $chart_data->map(function($item) use ($abs_total) {
+            $val = abs($item['total']);
+            $percent = $abs_total > 0 ? round(($val / $abs_total) * 100, 1) : 0;
+            return currency($item['total'], flat: 1) . " ({$percent}%)";
+        })->toArray();
 
         $this->dispatch('refresh-chart');
+    }
+
+    #[On('chart-clicked')]
+    public function handleChartClick($categoryId)
+    {
+        if ($categoryId == 0) return; // Uncategorized or invalid
+        
+        $this->category_id = (int)$categoryId;
+        $this->category = Category::find($this->category_id);
+        $this->resetPage();
+        // updateChartData will be triggered by rendered hook
+    }
+
+    public function goBack()
+    {
+        if ($this->category && $this->category->parent_id) {
+            $this->category_id = $this->category->parent_id;
+            $this->category = Category::find($this->category_id);
+        } else {
+            $this->category_id = 0;
+            $this->category = null;
+        }
+        $this->resetPage();
     }
 
     #[On('save-category')]
@@ -365,20 +425,33 @@ new class extends Component {
 ?>
     <div x-data="{}" class="flex flex-col gap-4 items-start w-full">
 
-        @if (!empty($chart_type) && $chart_labels != '[]' && $chart_values != '[]')
-        <x-chart
-            class="w-full h-64"
-            :type="$chart_type"
-            :tooltip_labels="$chart_tooltip_labels"
-            :title="__('Total')"
-            :labels="$chart_labels"
-            :values="$chart_values"
-            :dataIDs="$chart_ids"
-            clickEvent="clicked"
-            wire:ignore
-        >
-        </x-chart>
-        @endif
+        <div class="flex flex-col gap-2 w-full">
+            <div class="flex items-center justify-between">
+                <flux:heading size="xl" weight="semibold">
+                    @if($category)
+                        {{ $category->fullName }}
+                    @else
+                        All Transactions
+                    @endif
+                </flux:heading>
+
+                @if($category_id)
+                    <flux:button icon="chevron-left" size="sm" wire:click="goBack" variant="subtle">Back</flux:button>
+                @endif
+            </div>
+
+            @if (!empty($chart_type) && count($chart_labels) > 0)
+            <x-chart
+                wire:key="chart-{{ $category_id ?: 'root' }}"
+                class="w-full h-64"
+                :type="$chart_type"
+                :title="__('Category Breakdown')"
+                clickEvent="chart-clicked"
+                wire:ignore
+            >
+            </x-chart>
+            @endif
+        </div>
 
         <div class="flex flex-col md:flex-row gap-8 w-full items-start justify-between">
             <div class="flex flex-col gap-4 items-start grow p-0 md:pr-32">
