@@ -3,12 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    Volt::route('dashboard', 'admin.dashboard')->name('dashboard');
+    Volt::route('/', 'admin.dashboard')->name('dashboard');
     Volt::route('edit', 'admin.edit')->name('edit');
 
     Route::name('linked-accounts.')->group(function () {
