@@ -92,7 +92,7 @@
 
     initChart();
 
-    $wire.on("refresh-chart", () => {
+    $wire.$watch("chart_values", () => {
         const data = getData();
         
         if (!chartObj) {
