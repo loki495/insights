@@ -14,7 +14,7 @@ class LinkedAccountPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,7 @@ class LinkedAccountPolicy
      */
     public function view(User $user, LinkedAccount $linkedAccount): bool
     {
-        return false;
+        return $user->id === $linkedAccount->user_id;
     }
 
     /**
@@ -30,7 +30,7 @@ class LinkedAccountPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -38,7 +38,7 @@ class LinkedAccountPolicy
      */
     public function update(User $user, LinkedAccount $linkedAccount): bool
     {
-        return false;
+        return $user->id === $linkedAccount->user_id;
     }
 
     /**
@@ -46,22 +46,6 @@ class LinkedAccountPolicy
      */
     public function delete(User $user, LinkedAccount $linkedAccount): bool
     {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, LinkedAccount $linkedAccount): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, LinkedAccount $linkedAccount): bool
-    {
-        return false;
+        return $user->id === $linkedAccount->user_id;
     }
 }

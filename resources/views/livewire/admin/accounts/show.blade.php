@@ -19,7 +19,8 @@ new class extends Component {
 
     public function mount(Account $account): void
     {
-        //$account->transactions()->delete();
+        $this->authorize('view', $account->linked_account);
+        $this->authorize('view', $account);
         $this->account = $account;
     }
 

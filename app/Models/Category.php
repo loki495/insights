@@ -31,31 +31,46 @@ class Category extends Model
         return $this->belongsToMany(Transaction::class)->withPivot('id');
     }
 
-    public function fullName() : Attribute
+    protected static array $nameCache = [];
+
+    public function fullName(): Attribute
     {
-        // CACHE
         return new Attribute(
-            get: fn ($value) => $this->parent_id ? Category::find($this->parent_id)->fullName . ' > ' . $this->name : $this->name,
+            get: function () {
+                if (isset(static::$nameCache[$this->id])) {
+                    return static::$nameCache[$this->id];
+                }
+
+                $name = $this->parent_id && $this->parent_id !== 0
+                    ? ($this->parent ? $this->parent->fullName : 'Unknown') . ' > ' . $this->name
+                    : $this->name;
+
+                return static::$nameCache[$this->id] = $name;
+            },
         );
     }
 
-    public function descendants() : Attribute
+    protected static array $descendantsCache = [];
+
+    public function descendants(): Attribute
     {
-        $descendants = [ $this->id ];
-
-        // cache children
-        $children = Category::where('parent_id', $this->id)->get();
-
-        foreach ($children as $child) {
-            //$descendants[] = $child;
-            $child_descendants = $child->descendants;
-
-            $descendants = array_merge($descendants, $child_descendants);
-        }
-
-        // CACHE
         return new Attribute(
-            get: fn ($value) => $descendants,
+            get: function () {
+                if (isset(static::$descendantsCache[$this->id])) {
+                    return static::$descendantsCache[$this->id];
+                }
+
+                $descendants = [$this->id];
+
+                // Get children without triggering extra recursion via attribute if possible
+                $children = Category::where('parent_id', $this->id)->get();
+
+                foreach ($children as $child) {
+                    $descendants = array_merge($descendants, $child->descendants);
+                }
+
+                return static::$descendantsCache[$this->id] = $descendants;
+            },
         );
     }
 
@@ -78,9 +93,13 @@ class Category extends Model
 
     public static function nonReportableIds(): array
     {
-        return Category::where('name', 'Transfers')
-            ->first()
-            ->descendants;
+        $transfers = Category::where('name', 'Transfers')->first();
+
+        if (! $transfers) {
+            return [];
+        }
+
+        return $transfers->descendants;
     }
 
     public function root($last_id = 0): Attribute

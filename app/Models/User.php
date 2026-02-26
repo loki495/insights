@@ -73,6 +73,11 @@ class User extends Authenticatable
         return $this->hasMany(LinkedAccount::class);
     }
 
+    public function linked_accounts(): HasMany
+    {
+        return $this->linkedAccounts();
+    }
+
     public function accounts(): HasManyThrough
     {
         return $this->hasManyThrough(Account::class, LinkedAccount::class);

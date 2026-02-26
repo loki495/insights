@@ -14,6 +14,7 @@ new class extends Component {
 
     public ?Category $category;
 
+    public $category_id;
     public $parent_id;
     public $name;
     public $description;
@@ -21,6 +22,12 @@ new class extends Component {
 
     public function mount(?Category $category): void
     {
+        if ($category && $category->exists) {
+            $this->authorize('update', $category);
+        } else {
+            $this->authorize('create', Category::class);
+        }
+
         $this->category = $category;
         $this->category_id = $category->id;
         $this->parent_id = $category->parent_id;
@@ -30,11 +37,20 @@ new class extends Component {
     }
 
     public function save() {
-        $this->category->name = $this->name;
-        $this->category->description = $this->description;
-        $this->category->color = $this->color;
-        $this->category->parent_id = $this->parent_id;
-        $this->category->save();
+        if ($this->category && $this->category->exists) {
+            $this->authorize('update', $this->category);
+        } else {
+            $this->authorize('create', Category::class);
+        }
+
+        $this->category = Category::updateOrCreate([
+            'id' => $this->category_id,
+        ], [
+            'name' => $this->name,
+            'description' => $this->description,
+            'color' => $this->color,
+            'parent_id' => $this->parent_id ?: 0,
+        ]);
 
         $this->redirectRoute('categories.index');
     }

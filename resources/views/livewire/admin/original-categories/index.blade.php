@@ -13,15 +13,27 @@ new class extends Component {
 
     public function mount(): void
     {
+        $this->authorize('viewAny', OriginalCategory::class);
         $this->search = '';
     }
 
     public function with(): array
     {
-        $categories = OriginalCategory::with('transactions')
-            ->where('name', 'like', '%' . $this->search . '%')
-            ->orWhere('description', 'like', '%' . $this->search . '%')
-            ->orWhere('details', 'like', '%' . $this->search . '%')
+        $userId = auth()->id();
+        $categories = OriginalCategory::query()
+            ->withSum(['transactions' => function ($query) use ($userId) {
+                $query->whereIn('account_id', function ($q) use ($userId) {
+                    $q->select('accounts.id')
+                        ->from('accounts')
+                        ->join('linked_accounts', 'accounts.linked_account_id', '=', 'linked_accounts.id')
+                        ->where('linked_accounts.user_id', $userId);
+                });
+            }], 'amount')
+            ->where(function ($query) {
+                $query->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('description', 'like', '%' . $this->search . '%')
+                    ->orWhere('details', 'like', '%' . $this->search . '%');
+            })
             ->orderBy('name')
             ->get();
 
@@ -67,7 +79,7 @@ new class extends Component {
                         </div>
                     </x-table.td>
                     <x-table.td class="text-left">{{ $category->details }}</x-table.td>
-                    <x-table.td class="text-left">{!! currency($category->total) !!}</x-table.td>
+                    <x-table.td class="text-left">{!! currency($category->transactions_sum_amount ?? 0) !!}</x-table.td>
                     <x-table.td class="text-left">
                         <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('reports.category.index', $category) }}" wire:navigate></x-button>
                     </x-table.td>
