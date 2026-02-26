@@ -23,6 +23,7 @@ new class extends Component {
     {
         $this->category = $category;
         $this->category_id = $category->id;
+        $this->parent_id = $category->parent_id;
         $this->name = $category->name;
         $this->description = $category->description;
         $this->color = $category->color;
@@ -40,9 +41,10 @@ new class extends Component {
 }
 
 ?>
-    <x-page-wrapper :heading="$category->id > 0 ? 'Edit ' . $category->name : 'Create Category'" :breadcrumbs="['Categories' => 'categories.index']">
+    <x-page-wrapper :heading="$category->id > 0 ? 'Edit Category' : 'Create Category'" :subheading="$category->id > 0 ? $category->fullName : ''" :breadcrumbs="['Categories' => 'categories.index']">
 
         <div class="mb-4 max-w-[400px]">
+
             <x-table>
                 <x-slot name="body">
                     <x-table.tr>
@@ -51,7 +53,7 @@ new class extends Component {
                             <flux:select wire:model="parent_id" clearable>
                                 <option value="">None</option>
                                 @foreach(Category::all()->sortBy('name') as $category)
-                                <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
+                                <flux:select.option value="{{ $category->id }}">{{ $category->fullName }}</flux:select.option>
                                 @endforeach
                             </flux:select>
                         </x-table.td>

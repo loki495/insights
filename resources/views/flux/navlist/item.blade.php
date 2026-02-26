@@ -23,7 +23,7 @@ $square ??= $slot->isEmpty();
 $iconClasses = Flux::classes($square ? 'size-5!' : 'size-4!');
 
 $classes = Flux::classes()
-    ->add('h-10 lg:h-8 relative flex items-center gap-3 rounded-lg mb-4')
+    ->add('h-10 lg:h-8 relative flex items-center gap-3 rounded-lg mb-2')
     ->add($square ? 'px-2.5!' : '')
     ->add('py-0 text-start w-full pl-3 my-px')
     ->add('text-zinc-500 dark:text-white/80')
@@ -58,7 +58,7 @@ $classes = Flux::classes()
 @endphp
 
 <flux:button-or-link :attributes="$attributes->class($classes)" data-flux-navlist-item>
-    <div class="flex w-full items-center justify-between">
+    <div class="flex w-full items-center justify-between gap-2">
         <?php if ($icon): ?>
             <div class="relative">
                 <?php if (is_string($icon) && $icon !== ''): ?>

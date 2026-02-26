@@ -16,16 +16,16 @@
             @endif
         @endforeach
 
-        <flux:breadcrumbs.item>{{ __($subheading) }}</flux:breadcrumbs.item>
+        <flux:breadcrumbs.item>{!! __($subheading) !!}</flux:breadcrumbs.item>
 
     </flux:breadcrumbs>
     @endif
 
-    <flux:heading class="!text-3xl" accent="true" level="1">{{ $heading }}</flux:heading>
+    <flux:heading class="!text-3xl" accent="true" level="1">{!! $heading !!}</flux:heading>
 
     <flux:subheading size="lg" class="mb-6">
         <div class="flex items-center justify-between">
-            {{ __($subheading) }}
+            {!! __($subheading) !!}
 
             {{ $actions ?? '' }}
         </div>

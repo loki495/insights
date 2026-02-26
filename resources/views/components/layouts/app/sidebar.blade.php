@@ -21,7 +21,7 @@
                         @foreach ($linkedAccount->accounts as $account)
                         <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full !p-4">
                             <div class="font-semibold">{{ $account->name }}</div>
-                            <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, flat: true) !!}</div>
+                            <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, 'USD', true) !!}</div>
                         </flux:navlist.item>
                         @endforeach
                     </flux:navlist.group>
