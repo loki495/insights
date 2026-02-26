@@ -20,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Volt::route('original-categories', 'admin.original-categories.index')->name('original-categories.index');
+    Volt::route('transactions/create/{account?}', 'admin.transactions.edit')->name('transactions.create');
+    Volt::route('transactions/{transaction?}/edit', 'admin.transactions.edit')->name('transactions.edit');
 
     Route::name('categories.')->group(function () {
         Volt::route('/categories', 'admin.categories.index')->name('index');

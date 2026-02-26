@@ -115,7 +115,7 @@ new class extends Component {
 }
 
 ?>
-    <x-page-wrapper heading="Account Transactions" :subheading="$this->account->linked_account->provider_name . ' - ' . $this->account->name" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index', 'Accounts' => route('linked-accounts.accounts.index', $this->account->linked_account) ]">
+    <x-page-wrapper heading="Account Transactions" :subheading="$this->account->linked_account->provider_name . ' - ' . $this->account->name . ' - ' . $this->account->mask" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index', 'Accounts' => route('linked-accounts.accounts.index', $this->account->linked_account) ]">
 
         <x-slot name="actions">
             <x-button wire:click="pullData">Pull Data</x-button>

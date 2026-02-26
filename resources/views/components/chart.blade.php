@@ -2,6 +2,7 @@
     'type' => 'doughnut',
     'title' => ''
 ])
+
 <div class="resizable-box w-full relative rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
     <div >
         <div id="{{ Str::slug($title) }}-legend-container"></div>
@@ -129,10 +130,11 @@ const htmlLegendPlugin = {
 
 
     $wire.on("refresh-chart", () => {
+        if (!chartObj) return;
+
         chartObj.data.labels = getLabels();
         chartObj.data.datasets = [{ data: getValues() }];
-
-        console.log(chartObj.data);
+        chartObj.data.backgroundColor = [{ data: getColors() }];
 
         chartObj.update()
     });
@@ -141,6 +143,7 @@ const htmlLegendPlugin = {
 
     const getLabels = () => $wire.chart_labels
     const getValues = () => $wire.chart_values;
+    const getColors = () => $wire.chart_colors;
 
     let chartObj = new Chart(ctx, {
 
@@ -151,6 +154,7 @@ const htmlLegendPlugin = {
             datasets: [{
                 label: '{!! $title !!}',
                 data: getValues(),
+                //backgroundColor: getColors(),
                 borderWidth: 1
             }]
         },

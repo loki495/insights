@@ -46,8 +46,12 @@ new class extends Component {
     #[Session]
     public string $date_to = '';
 
+    public $selected_transactions = [];
+    public $bulk_category_id;
+
     public $chart_labels = [];
     public $chart_values = [];
+    public $chart_colors = [];
     public $chart_tooltip_labels = [];
     public $chart_ids = [];
     public $chart_type = 'doughnut';
@@ -119,9 +123,9 @@ new class extends Component {
             ->when($this->only_uncategorized ?? false, function ($query) {
                 return $query->doesntHave('categories');
             })
-            ->with('originalCategory')
             ->with('categories')
-            ->whereBetween('created_at', [$this->date_from, $this->date_to]);
+            ->with('originalCategory')
+            ->whereBetween('transactions.created_at', [$this->date_from, $this->date_to]);
 
         if ($this->account->id) {
             $query->where('account_id', $this->account->id);
@@ -129,13 +133,35 @@ new class extends Component {
 
         if ($this->search) {
             $terms = $this->parseSearch($this->search);
+
+            // Dynamically build the relevance selectRaw
+            $bindings = [];
+            $scoreParts = [];
+
+            foreach ($terms['optional'] as $term) {
+                foreach (['transactions.name', 'transactions.merchant_name', 'original_categories.name', 'original_categories.description'] as $field) {
+                    $scoreParts[] = "CASE WHEN LOWER($field) LIKE ? THEN 1 ELSE 0 END";
+                    $bindings[] = '%' . strtolower($term) . '%';
+                }
+            }
+
+            if ($scoreParts) {
+                $scoreExpr = implode(' + ', $scoreParts);
+                $query
+                    ->leftJoin('original_categories', 'transactions.original_category_id', '=', 'original_categories.id')
+                    ->selectRaw("transactions.*, ($scoreExpr) as relevance", $bindings);
+            } else {
+                $query
+                    ->selectRaw("transactions.*, 0 as relevance");
+            }
+
             $query->where(function ($q) use ($terms) {
                 $q->where(function ($q1) use ($terms) {
                     // Required terms
                     foreach ($terms['required'] as $term) {
                         $q1->where(function ($q2) use ($term) {
-                            $q2->where('name', 'like', '%' . $term . '%')
-                                ->orWhere('merchant_name', 'like', '%' . $term . '%')
+                            $q2->where('transactions.name', 'like', '%' . $term . '%')
+                                ->orWhere('transactions.merchant_name', 'like', '%' . $term . '%')
                                 ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
                                 ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
                         });
@@ -144,8 +170,8 @@ new class extends Component {
                     // Optional terms
                     foreach ($terms['optional'] as $term) {
                         $q1->orWhere(function ($q2) use ($term) {
-                            $q2->where('name', 'like', '%' . $term . '%')
-                                ->orWhere('merchant_name', 'like', '%' . $term . '%')
+                            $q2->where('transactions.name', 'like', '%' . $term . '%')
+                                ->orWhere('transactions.merchant_name', 'like', '%' . $term . '%')
                                 ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
                                 ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
                         });
@@ -155,10 +181,10 @@ new class extends Component {
                 // Excluded terms
                 foreach ($terms['excluded'] as $term) {
                     $q->where(function ($q1) use ($term) {
-                        $q1->where('name', 'not like', '%' . $term . '%')
+                        $q1->where('transactions.name', 'not like', '%' . $term . '%')
                             ->where(function ($q2) use ($term) {
-                                $q2->where('merchant_name', 'not like', '%' . $term . '%')
-                                    ->orWhereNull('merchant_name');
+                                $q2->where('transactions.merchant_name', 'not like', '%' . $term . '%')
+                                    ->orWhereNull('transactions.merchant_name');
                             })
                             ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
                                 $q2->where('name', 'like', '%' . $term . '%');
@@ -169,7 +195,11 @@ new class extends Component {
                     });
                 }
 
-            });
+            })
+            ;
+        } else {
+            $query
+                ->selectRaw("transactions.*, 0 as relevance");
         }
 
         return $query;
@@ -180,16 +210,21 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function rendered($view, $html)
+    {
+        $this->updateChartData();
+    }
+
     public function with(): array
     {
-        //$query = $this->updateChartData();
         $query = $this->getTransactionsQuery();
 
         return [
             'transactions' => $query
                 ->clone()
                 ->with('account.linked_account')
-                ->orderBy('created_at', 'desc')
+                ->orderByRaw('relevance desc, transactions.created_at desc, transactions.transaction_type desc, transactions.id asc')
+                //->ddRawSql()
                 ->paginate(25),
             'count' => $query->count(),
             'total' => $query->sum('amount'),
@@ -216,44 +251,97 @@ new class extends Component {
         return $accounts;
     }
 
-    public function updateChartData(): Builder {
+    public function updateChartData() {
         $query = $this->getTransactionsQuery();
 
-        $chart_data = $query
+        $chart_data = [];
+
+        $query = $query
             ->clone()
-            //->select('original_category_id', DB::raw('SUM(amount) as total'))
-            //->groupBy('original_category_id')
+            ->reportable()
             ->get()
-            ->map(function ($item) {
-                //dd($item);
-                //$cat = OriginalCategory::find($item->original_category_id);
-                //return [
-                    //'id' => $item->original_category_id,
-                    //'label' => $cat->details,
-                    //'value' => $item->total
-                //];
+            ->each(function ($item) use (&$chart_data) {
+                $cats = $item->categories()->with('parent')->get();
+                foreach ($cats as $cat) {
+                    $root = $cat->root(0);
+                    //$chart_data[$root->id . '|' . $root->color . '|' . $root->name][] = $item->amount;
+                }
+            });
+
+        $parent_category_id = $this->category_id ?? 0;
+
+        $chart_data = collect($chart_data)
+            ->map(function ($item, $key) use ($parent_category_id) {
+                $parts = explode('|', $key);
+
+                $id = $parts[0];
+                $color = $parts[1];
+                $label = $parts[2];
+                $total = array_sum($item);
+
+    try{
+
+                    //dump('root: ' . $parent_category_id);
+                do {
+                    //dump($id . ' - ' . $label);
+                    $parent = Category::find($id)->parent;
+
+                    if (!$parent || $parent->id == $parent_category_id || !$parent->id) {
+                            //dump('---');
+                        break;
+                    }
+                        //dump(' - ' . $parent->id . ' - ' . $parent->name);
+                        //dump('new id: ' . $parent->id . ' - ' . $parent->name);
+
+                    $id = $parent->id;
+                    $color = $parent->color;
+                    $label = $parent->name;
+
+                } while (1);
+
+    } catch (\Throwable $th) {
+        dd($th);
+    }
+                return [
+                    'id' => $id,
+                    'color' => $color,
+                    'label' => $label,
+                    'total' => $total,
+                ];
             });
 
         $this->chart_ids = $chart_data->pluck('id')->toArray();
         $this->chart_labels = $chart_data->pluck('label')->toArray();
-        $this->chart_values = $chart_data->pluck('value')->toArray();
-        $this->chart_tooltip_labels = $chart_data->pluck('value')->map(fn($value) => currency($value, flat: 1))->toArray();
+        $this->chart_values = $chart_data->pluck('total')->toArray();
+        $this->chart_colors = $chart_data->pluck('color')->toArray();
+        $this->chart_tooltip_labels = $chart_data->pluck('total')->map(fn($value) => currency($value, flat: 1))->toArray();
         $this->chart_type = 'doughnut';
 
         $this->dispatch('refresh-chart');
-
-        return $query;
     }
 
     #[On('save-category')]
     public function saveCategory($transaction_id, $category_id) {
         $transaction = Transaction::find($transaction_id);
-        $transaction->categories()->syncWithoutDetaching([$category_id]);
+        $transaction->categories()->sync([$category_id]);
         $transaction->save();
     }
 
     public function deleteTransactionCategory($category_transaction_id) {
         DB::table('category_transaction')->where('id', $category_transaction_id)->delete();
+    }
+
+    public function deleteTransaction($transaction_id) {
+        $transaction = Transaction::find($transaction_id);
+        $transaction->categories()->detach();
+        $transaction->delete();
+    }
+
+    public function bulkCategorize() {
+        dd($this->selected_transactions, $this->bulk_category_id);
+        foreach ($this->transactions as $transaction) {
+            $transaction->categories()->sync([$this->category_id]);
+        }
     }
 }
 ?>
@@ -304,8 +392,8 @@ new class extends Component {
                         <label for="search">Category</label>
                         <flux:select wire:model.live="category_id" clearable>
                             <flux:select.option value="0">-- All Categories --</flux:select.option>
-                            @foreach(Category::all()->sortBy('name') as $category_option)
-                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->name }}</flux:select.option>
+                            @foreach(Category::all()->sortBy('fullName') as $category_option)
+                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
                             @endforeach
                         </flux:select>
                     </div>
@@ -370,22 +458,44 @@ new class extends Component {
 
         <flux:separator variant="subtle"></flux:separator>
 
-        @if($transactions->hasPages())
-        {{ $transactions->links(data: ['scrollTo' => '#transactions-table']) }}
-        @endif
+        <div class="flex w-full justify-between items-center">
+            @if($transactions->hasPages())
+                {{ $transactions->links(data: ['scrollTo' => '#transactions-table']) }}
+            @else
+                <div></div>
+            @endif
+
+            <div>
+                <x-button wire:navigate href="{{ route('transactions.create', ['account' => $account_id]) }}">Add Transaction</x-button>
+            </div>
+        </div>
 
         <div class="flex flex-col gap-4 bg-white/10 p-4 rounded-xl w-full relative overflow-x-scroll">
 
-            <x-table class="transactions-table min-w-full w-max" wire:scroll>
+            <x-table class="transactions-table min-w-full w-max" wire:scroll x-data="{selected_transactions: [] }">
                 <x-slot name="head">
+                    <x-table.tr x-show="selected_transactions.length > 0">
+                        <x-table.td colspan="3">
+                            <div class="flex gap-4">
+                                <flux:select wire:model="bulk_category_id" >
+                                    <flux:select.option value="0">-- No Category --</flux:select.option>
+                                    @foreach(Category::all()->sortBy('fullName') as $category_option)
+                                        <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                                <flux:button wire:click="bulkCategorize">Bulk Categorize</flux:button>
+                            </div>
+                        </x-table.td>
+                    </x-table.tr>
                     <x-table.tr wire:loading.remove>
+                        <x-table.th class="text-center w-28"></x-table.th>
                         <x-table.th class="text-center w-28">Date</x-table.th>
+                        @if ($allow_accounts)
                         <x-table.th class="2-56">Source</x-table.th>
+                        @endif
                         <x-table.th>Description</x-table.th>
                         <x-table.th>Amount</x-table.th>
-                        @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance)
-                        <x-table.th>Running Balance</x-table.th>
-                        @endif
+                        <x-table.th class="w-28"></x-table.th>
                     </x-table.tr>
                 </x-slot>
                 <x-slot name="body">
@@ -400,22 +510,41 @@ new class extends Component {
                     </x-table.tr>
                 @forelse($transactions ?? [] as $transaction)
                     <x-table.tr wire:loading.remove class="hover:bg-zinc-100 dark:hover:bg-zinc-900/20 border-b border-zinc-300 dark:border-zinc-700 cursor-normal">
-                        <x-table.td class="text-center">{{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }}</x-table.td>
+                        <x-table.td class="text-center">
+                            <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $transaction['id'] }}" class="selected_transaction" />
+                        </x-table.td>
+                        <x-table.td class="text-center">
+                            {{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }}
+                            #{{ $transaction['id'] }}
+                        </x-table.td>
+                        @if ($allow_accounts)
                         <x-table.td class="max-w-lg">
                             <div>{{ $transaction['account']['name'] }}</div>
                             <div class="text-sm text-zinc-400">{{ $transaction['account']['linked_account']['provider_name'] }}</div>
                         </x-table.td>
+                        @endif
                         <x-table.td class="max-w-lg">
                             <div>
                                 {{ $transaction['name'] }}
                                 <br>
+                                @if($transaction['originalCategory'])
                                 <small>{{ $transaction['originalCategory']['name'] }} - {{ $transaction['originalCategory']['details'] }}</small>
+                                @endif
+                                @if($transaction['payment_channel'])
                                 <small>({{ $transaction['payment_channel'] }}) </small>
+                                @endif
 
                                 <div class="flex gap-2 items-center mt-2">
+
+                                    @if($transaction['original']['manual'] ?? false)
+                                    <div class="pointer-events-none text-xs p-1 h-auto relative rounded-lg shoadow-lg bg-green-800">
+                                        <div class="p-0 text-nowrap text-shadow-lg">Manual</div>
+                                    </div>
+                                    @endif
+
                                     @foreach($transaction['categories'] as $category)
                                     <div class="cursor-pointer text-xs p-1 h-auto relative rounded-lg shoadow-lg" x-data="{ over: false }" @mouseout="over = false;" @mouseover="over = true;" style="background-color: {{ $category['color'] }}">
-                                        <div @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency']) }}', category_id: {{ $category['id'] }} })" class="p-0 text-nowrap text-shadow-lg">{{ $category['name'] }}</div>
+                                        <div @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency'], 1) }}', category_id: {{ $category['id'] }} })" class="p-0 text-nowrap text-shadow-lg">{{ $category['fullName'] }}</div>
                                         <flux:icon.x-mark variant="solid" x-cloak x-show="over" wire:confirm="Are you sure you want to delete this category? (#{{ $category['pivot']['id'] }})" wire:click="deleteTransactionCategory({{ $category['pivot']['id'] }})" class="absolute z-20 cursor-pointer -right-3 text-red-500 -top-3 size-6 p-px font-bold text-shadow-lg hover:bg-white rounded-full" />
                                     </div>
                                     @endforeach
@@ -424,10 +553,21 @@ new class extends Component {
 
                             </div>
                         </x-table.td>
-                        <x-table.td class="text-right">{!! currency($transaction['amount'], $transaction['currency']) !!}</x-table.td>
-                        @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance)
-                        <x-table.td class="text-right">{!! currency($transaction['running_balance'], $transaction['currency']) !!}</x-table.td>
+                        <x-table.td class="text-right">
+                            <div>{!! currency($transaction['amount'], $transaction['currency']) !!}</div>
+                        @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance && !$search)
+                            <div class='{{ when($transaction['running_balance'] < 0, 'text-red-400', 'text-zinc-300') }} text-sm'>{!! currency($transaction['running_balance'], $transaction['currency'], 1) !!}</div>
                         @endif
+                        </x-table.td>
+
+                        <x-table.td class="text-right">
+                            <div class="flex gap-2 items-center">
+                                    <x-button icon="pencil" href="{{ route('transactions.edit', ['transaction' => $transaction['id'] ]) }}" />
+                                @if($transaction['original']['manual'] ?? false)
+                                    <flux:icon.trash wire:confirm="Are you sure you want to delete this transaction?\n(#{{ $transaction['id'] }} - {{ htmlQuotes($transaction['name']) }})" variant="solid" wire:click="deleteTransaction({{ $transaction['id'] }})" class="cursor-pointer text-red-500 size-6 p-px font-bold hover:bg-white rounded-full" />
+                                @endif
+                            </div>
+                        </x-table.td>
                     </x-table.tr>
                     @empty
                     <x-table.tr wire:loading.remove>
@@ -447,16 +587,16 @@ new class extends Component {
                 <div class="fixed inset-0 bg-zinc-900/50" @click="open = false"></div>
                 <div class="bg-zinc-900 text-white p-4 rounded-xl w-96 z-10">
                     <div class="flex flex-col gap-4">
+                        <div x-show="add">Add Category</div>
+                        <div x-show="!add">Edit Category</div>
                         <div class="flex justify-between">
                             <div><span x-html="transaction_name"></span> (#<span x-text="transaction_id"></span>)</div>
                             <span x-html="transaction_amount"></span>
                         </div>
-                        <div x-show="add">Add Category</div>
-                        <div x-show="!add">Edit Category</div>
                         <flux:select x-model="category_id" clearable>
                             <flux:select.option value="0">-- All Categories --</flux:select.option>
-                            @foreach(Category::all()->sortBy('name') as $category_option)
-                                <flux:select.option value="{{ $category_option->id }}">{{ $category_option->name }}</flux:select.option>
+                            @foreach(Category::all()->sortBy('fullName') as $category_option)
+                                <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
                             @endforeach
                         </flux:select>
                         <flux:button x-bind:disabled="!category_id" x-on:click="open = false;$dispatch('save-category', { transaction_id: transaction_id, category_id: category_id })" class="cursor-pointer">Save</flux:button>
