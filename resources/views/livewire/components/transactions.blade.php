@@ -227,7 +227,7 @@ new class extends Component {
         $this->updateChartData();
     }
 
-    public function rendered($view, $html)
+    public function rendered()
     {
         $this->updateChartData();
     }
