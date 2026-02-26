@@ -24,8 +24,13 @@ new class extends Component {
 
     public function mount(?Account $account, ?Transaction $transaction): void
     {
-        $this->account_id = $account->id;
-        if ($transaction) {
+        if ($account && $account->id) {
+            $this->authorize('view', $account);
+            $this->account_id = $account->id;
+        }
+
+        if ($transaction && $transaction->id) {
+            $this->authorize('view', $transaction);
             $this->transaction_id = $transaction->id;
             $this->account_id = $transaction->account_id;
             $this->amount = $transaction->amount;
@@ -59,6 +64,16 @@ new class extends Component {
     }
 
     public function save() {
+        if ($this->transaction_id) {
+            $transaction = Transaction::findOrFail($this->transaction_id);
+            $this->authorize('update', $transaction);
+        }
+
+        if ($this->account_id) {
+            $account = Account::findOrFail($this->account_id);
+            $this->authorize('update', $account);
+        }
+
         $original = [
             'manual' => true
         ];

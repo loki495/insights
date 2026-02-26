@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-it('returns a successful response', function (): void {
+it('returns a redirect to login for guests', function (): void {
     $this->get('/')
-        ->assertSuccessful()
-        ->assertSee('Laravel');
+        ->assertRedirect('/login');
 });

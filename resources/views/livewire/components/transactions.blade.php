@@ -61,6 +61,10 @@ new class extends Component {
         $this->allow_accounts = $allow_accounts;
         $this->allow_running_balance = $allow_running_balance;
 
+        if ($account && $account->id) {
+            $this->authorize('view', $account);
+        }
+
         $this->account = $account;
         $this->account_id = $account->id;
 
@@ -106,7 +110,17 @@ new class extends Component {
 
     public function getTransactionsQuery(): Builder
     {
-        $query = Transaction::query()
+        $query = Transaction::query();
+
+        if ($this->account->id) {
+            $this->authorize('view', $this->account);
+            $query->where('account_id', $this->account->id);
+        } else {
+            // If no account is selected, only show transactions from accounts the user owns
+            $query->whereIn('account_id', auth()->user()->accounts()->pluck('accounts.id'));
+        }
+
+        $query
             ->when($this->original_category_id ?? false, function ($query) {
                 return $query->where('original_category_id', $this->original_category_id);
             })
@@ -126,10 +140,6 @@ new class extends Component {
             ->with('categories')
             ->with('originalCategory')
             ->whereBetween('transactions.created_at', [$this->date_from, $this->date_to]);
-
-        if ($this->account->id) {
-            $query->where('account_id', $this->account->id);
-        }
 
         if ($this->search) {
             $terms = $this->parseSearch($this->search);
@@ -322,17 +332,25 @@ new class extends Component {
 
     #[On('save-category')]
     public function saveCategory($transaction_id, $category_id) {
-        $transaction = Transaction::find($transaction_id);
+        $transaction = Transaction::findOrFail($transaction_id);
+        $this->authorize('update', $transaction);
         $transaction->categories()->sync([$category_id]);
         $transaction->save();
     }
 
     public function deleteTransactionCategory($category_transaction_id) {
-        DB::table('category_transaction')->where('id', $category_transaction_id)->delete();
+        // We should check if the transaction belongs to the user
+        $pivot = DB::table('category_transaction')->where('id', $category_transaction_id)->first();
+        if ($pivot) {
+            $transaction = Transaction::findOrFail($pivot->transaction_id);
+            $this->authorize('update', $transaction);
+            DB::table('category_transaction')->where('id', $category_transaction_id)->delete();
+        }
     }
 
     public function deleteTransaction($transaction_id) {
-        $transaction = Transaction::find($transaction_id);
+        $transaction = Transaction::findOrFail($transaction_id);
+        $this->authorize('delete', $transaction);
         $transaction->categories()->detach();
         $transaction->delete();
     }

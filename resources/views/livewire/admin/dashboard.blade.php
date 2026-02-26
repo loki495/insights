@@ -9,7 +9,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'linkedAccounts' => auth()->user()->linkedAccounts()->with('accounts')->get(),
+            'linkedAccounts' => auth()->user()->linked_accounts()->with('accounts')->get(),
         ];
     }
 };

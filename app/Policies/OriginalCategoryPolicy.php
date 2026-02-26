@@ -14,7 +14,7 @@ class OriginalCategoryPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,7 @@ class OriginalCategoryPolicy
      */
     public function view(User $user, OriginalCategory $originalCategory): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -45,22 +45,6 @@ class OriginalCategoryPolicy
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, OriginalCategory $originalCategory): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, OriginalCategory $originalCategory): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, OriginalCategory $originalCategory): bool
     {
         return false;
     }

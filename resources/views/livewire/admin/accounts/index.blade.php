@@ -14,8 +14,7 @@ new class extends Component {
 
     public function mount(LinkedAccount $linkedAccount): void
     {
-        //\App\Models\Transaction::truncate();
-        //\App\Models\Account::truncate();
+        $this->authorize('view', $linkedAccount);
         $this->linkedAccount = $linkedAccount;
     }
 

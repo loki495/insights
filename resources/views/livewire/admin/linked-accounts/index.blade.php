@@ -20,6 +20,7 @@ new class extends Component {
     ];
 
     public function mount(): void {
+        $this->authorize('viewAny', LinkedAccount::class);
         $this->updateLinkedAccount();
     }
 
@@ -34,6 +35,10 @@ new class extends Component {
     }
 
     public function linkAccount(?LinkedAccount $linkedAccount = null) : void {
+        if ($linkedAccount && $linkedAccount->id) {
+            $this->authorize('update', $linkedAccount);
+        }
+
         $data = [
             'client_name' => 'Insights',
             'products' => [ 'transactions' ],
@@ -76,6 +81,7 @@ new class extends Component {
     }
 
     public function delete(LinkedAccount $linkedAccount): void {
+        $this->authorize('delete', $linkedAccount);
         $linkedAccount->delete();
         $this->updateLinkedAccount();
     }

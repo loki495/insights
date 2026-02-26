@@ -16,6 +16,11 @@ new class extends Component {
     #[Session]
     public string $search = '';
 
+    public function mount(): void
+    {
+        $this->authorize('viewAny', Category::class);
+    }
+
     private function flatTree(int $parent_id, $depth = 0): array
     {
         $result = [];
@@ -36,6 +41,12 @@ new class extends Component {
         }
 
         return $result;
+    }
+
+    public function delete(Category $category): void
+    {
+        $this->authorize('delete', $category);
+        $category->delete();
     }
 
     public function with(): array
