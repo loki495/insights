@@ -4,10 +4,6 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('transactions:pull 1')
+Schedule::command('transactions:pull')
     ->withoutOverlapping()
-    ->everySixHours();
-
-Schedule::command('transactions:pull 3')
-    ->withoutOverlapping()
-    ->everySixHours();
+    ->daysOfMonth([1, 10, 20]);

@@ -42,5 +42,7 @@ class PullTransactions extends Command
             ->each(function (LinkedAccount $linkedAccount) use ($force) {
             PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
         });
+
+        $this->info('Transactions pulled');
     }
 }
