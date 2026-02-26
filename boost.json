@@ -1,0 +1,11 @@
+{
+    "agents": [
+        "gemini"
+    ],
+    "editors": [
+        "gemini"
+    ],
+    "guidelines": [
+        "livewire/volt"
+    ]
+}
