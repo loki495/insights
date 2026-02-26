@@ -16,25 +16,34 @@
     const ctx = document.getElementById('{{ Str::slug($title) }}');
     let chartObj = null;
 
-    const getLabels = () => $wire.chart_labels;
-    const getValues = () => $wire.chart_values;
-    const getColors = () => $wire.chart_colors;
-    const getTooltips = () => $wire.chart_tooltip_labels;
-    const getIDs = () => $wire.chart_ids;
+    // Use functions to get fresh data from Livewire without making the chart object itself reactive
+    const getData = () => ({
+        labels: $wire.chart_labels,
+        values: $wire.chart_values,
+        colors: $wire.chart_colors,
+        tooltips: $wire.chart_tooltip_labels,
+        ids: $wire.chart_ids
+    });
 
     function initChart() {
+        const data = getData();
+        
         if (chartObj) {
             chartObj.destroy();
+        }
+
+        if (!data.labels || data.labels.length === 0) {
+            return;
         }
 
         chartObj = new Chart(ctx, {
             type: '{{ $type }}',
             data: {
-                labels: getLabels(),
+                labels: data.labels,
                 datasets: [{
                     label: '{!! $title !!}',
-                    data: getValues(),
-                    backgroundColor: getColors(),
+                    data: data.values,
+                    backgroundColor: data.colors,
                     borderWidth: 1,
                     borderColor: 'transparent'
                 }]
@@ -45,8 +54,14 @@
                 onClick: (event, elements) => {
                     if (elements.length > 0 && '{{ $clickEvent }}') {
                         const index = elements[0].index;
-                        const id = getIDs()[index];
-                        $wire.dispatch('{{ $clickEvent }}', { categoryId: id });
+                        const data = getData();
+                        const id = data.ids[index];
+                        
+                        if ('{{ $clickEvent }}' === 'chart-clicked') {
+                             $wire.handleChartClick(id);
+                        } else {
+                             $wire.dispatch('{{ $clickEvent }}', { categoryId: id });
+                        }
                     }
                 },
                 plugins: {
@@ -64,13 +79,13 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const tooltips = getTooltips();
-                                return ' ' + context.label + ': ' + tooltips[context.dataIndex];
+                                const data = getData();
+                                return ' ' + context.label + ': ' + data.tooltips[context.dataIndex];
                             }
                         }
                     }
                 },
-                cutout: '60%' // For doughnut feel
+                cutout: '60%'
             }
         });
     }
@@ -78,14 +93,22 @@
     initChart();
 
     $wire.on("refresh-chart", () => {
+        const data = getData();
+        
         if (!chartObj) {
             initChart();
             return;
         }
 
-        chartObj.data.labels = getLabels();
-        chartObj.data.datasets[0].data = getValues();
-        chartObj.data.datasets[0].backgroundColor = getColors();
+        if (!data.labels || data.labels.length === 0) {
+            chartObj.destroy();
+            chartObj = null;
+            return;
+        }
+
+        chartObj.data.labels = data.labels;
+        chartObj.data.datasets[0].data = data.values;
+        chartObj.data.datasets[0].backgroundColor = data.colors;
         
         chartObj.update();
     });
@@ -94,6 +117,7 @@
     return () => {
         if (chartObj) {
             chartObj.destroy();
+            chartObj = null;
         }
     };
 </script>
