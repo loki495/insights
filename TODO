@@ -1,25 +1,25 @@
+- dashboard summaries
+- graphs
+    - dashboard
+    - categories by Monthly
+    - drilldown
 - bulk categorize
-* pull / reconcile TEST
-* models
-    - categories
-        - custom
-            - create and edit
-            - associate with transaction
+- rule-based categorization
+- export to PDF / CSV
+- models
     - roles
     - permissions
-- actual insights / graphs
+- REST api
 
 
 ================================================================================
 
+***IGNORE BELOW***!!!!
 
 | Category             | Feature                                                                        |
 |----------------------|--------------------------------------------------------------------------------|
 | **Auth**             | OAuth2 login (Google, GitHub, etc.)                                            |
 |                      | Email/password login with email verification                                   |
-|======================|================================================================================|
-| **Bank Integration** | Plaid Link integration for secure bank connection                              |
-|                      | Support for multiple bank accounts per user                                    |
 |======================|================================================================================|
 | **Transactions**     | Automatic transaction import via Plaid webhooks                                |
 |                      | Manual transaction entry                                                       |
