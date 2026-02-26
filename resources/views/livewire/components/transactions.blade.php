@@ -222,19 +222,11 @@ new class extends Component {
         $this->resetPage();
     }
 
-    public function updated()
-    {
-        $this->updateChartData();
-    }
-
-    public function rendered()
-    {
-        $this->updateChartData();
-    }
-
     public function with(): array
     {
         $query = $this->getTransactionsQuery();
+
+        $this->updateChartData();
 
         return [
             'transactions' => $query
