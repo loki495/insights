@@ -11,10 +11,6 @@
     </div>
 </div>
 
-@once
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-@endonce
-
 @script
 <script>
     const ctx = document.getElementById('{{ Str::slug($title) }}');

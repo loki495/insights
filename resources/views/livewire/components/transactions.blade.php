@@ -76,6 +76,8 @@ new class extends Component {
 
         $this->date_from = carbon()->startOfyear();
         $this->date_to = carbon()->now();
+
+        $this->updateChartData();
     }
 
     private function parseSearch(string $query): array
@@ -218,6 +220,11 @@ new class extends Component {
     public function updating()
     {
         $this->resetPage();
+    }
+
+    public function updated()
+    {
+        $this->updateChartData();
     }
 
     public function rendered($view, $html)
