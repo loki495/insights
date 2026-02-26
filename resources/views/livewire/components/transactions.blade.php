@@ -23,19 +23,19 @@ new class extends Component {
     public bool $allow_running_balance;
 
     #[Session]
-    public $only_uncategorized;
+    public $only_uncategorized = false;
 
     #[Session]
-    public ?int $account_id;
-    public ?Account $account;
+    public ?int $account_id = null;
+    public ?Account $account = null;
 
     #[Session]
-    public ?int $original_category_id;
-    public ?OriginalCategory $original_category;
+    public ?int $original_category_id = null;
+    public ?OriginalCategory $original_category = null;
 
     #[Session]
-    public ?int $category_id;
-    public ?Category $category;
+    public ?int $category_id = null;
+    public ?Category $category = null;
 
     #[Session]
     public string $search = '';
@@ -56,7 +56,7 @@ new class extends Component {
     public $chart_ids = [];
     public $chart_type = 'doughnut';
 
-    public function mount(?Category $category, ?OriginalCategory $original_category, ?Account $account, ?bool $allow_accounts = false, bool $allow_running_balance = true): void
+    public function mount(?Category $category = null, ?OriginalCategory $original_category = null, ?Account $account = null, ?bool $allow_accounts = false, bool $allow_running_balance = true): void
     {
         $this->allow_accounts = $allow_accounts;
         $this->allow_running_balance = $allow_running_balance;
@@ -66,13 +66,13 @@ new class extends Component {
         }
 
         $this->account = $account;
-        $this->account_id = $account->id;
+        $this->account_id = $account?->id;
 
         $this->original_category = $original_category;
-        $this->original_category_id = $original_category->id;
+        $this->original_category_id = $original_category?->id;
 
         $this->category = $category;
-        $this->category_id = $category->id;
+        $this->category_id = $category?->id;
 
         $this->date_from = carbon()->startOfyear();
         $this->date_to = carbon()->now();
