@@ -27,7 +27,7 @@ final class PullLinkedAccountTransactionsAction
             $request_data['cursor'] = $cursor;
         }
 
-        $use_cache = true;
+        $use_cache = false;
         $fn = Storage::disk('local')->path('plaid/transactions/'.$linkedAccount->id.'.json');
         @mkdir(dirname($fn), 0777, true);
         if ($use_cache && file_exists($fn)) {
