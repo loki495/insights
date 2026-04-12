@@ -58,6 +58,7 @@ class OriginalCategory extends Model
         19015000 => 'General Store',
         18006003 => 'Car Service',
         17015000 => 'Sporting Goods',
+        18000000 => 'GENERAL SERVICES_ACCOUNTING_AND_FINANCIAL_PLANNING',
     ];
 
     public function details() : Attribute
