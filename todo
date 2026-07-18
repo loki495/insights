@@ -56,12 +56,6 @@
       2026_07_18_114905_make_transactions_original_category_id_nullable.php.
 
 ## Still open, not yet fixed
-- [ ] Minor: transactions.blade.php's getTransactionsQuery() does
-      $this->account->id without a null-safe operator; when the
-      component is used with no specific account (allow_accounts=true,
-      no account passed) this emits a harmless-but-noisy "Attempt to
-      read property on null" PHP warning. Found while smoke-testing the
-      Laravel 13 upgrade, not caused by it — low priority.
 - [ ] Found while writing pipeline tests: updatedCategoryId() in
       transactions.blade.php sets $this->original_category instead of
       $this->category — looks like a copy/paste bug from
@@ -92,10 +86,34 @@
       mouseover/mouseout (x-show="over") — doesn't work on touch/mobile since
       there's no hover state. Needs a tap-friendly alternative on small screens.
 
+## Mobile layout audit (2026-07-18)
+- [x] Audited every main page at a 390px viewport (dashboard, linked
+      accounts, accounts, transactions + filters + assign-category
+      modal, categories, original categories, transaction create/edit,
+      reports, settings). Fixed horizontal overflow on the transactions
+      filter rows (label+input flex-col on mobile), wrapped the
+      categories/original-categories tables in overflow-x-auto (they
+      never had it, unlike transactions), fixed a fixed-width w-96
+      select on the transaction edit form.
+- [x] Found + fixed two real, viewport-independent 500s while auditing
+      (not mobile-specific — just rarely-visited pages): reports/category
+      mount() and components/transactions getTransactionsQuery() both did
+      ->id on a possibly-null model unconditionally. Added
+      tests/Feature/ReportsTest.php as a regression test.
+- [ ] Found, not fixed: the top-level /reports route (admin.reports.index)
+      is fully dead — not linked anywhere in navigation (only "By
+      Categories" is), and its Volt component was never built (500s with
+      "Unable to find component"). Needs a decision: build the missing
+      index page, or remove the dead route.
+- [ ] The transaction create/edit form (admin/transactions/edit.blade.php)
+      uses <x-table> as a label/input layout grid rather than real
+      tabular data. Wrapped in overflow-x-auto for now (contained, no
+      page-break, ~47px of content needs a small scroll to reach), but a
+      proper mobile-first stacked-label redesign would be cleaner.
+- [ ] Beyond what's listed above, no further mobile audit pass has been
+      done on category creation/edit forms, the bulk-categorize toolbar,
+      or the linked-account "Update Access Token"/Plaid Link modal.
+
 ## Later / exploratory (raised by Andres, not scheduled)
 - [ ] Look into Livewire @islands to scope re-renders to just the changed
       row + chart instead of the whole transactions component
-- [ ] Mobile layout improvements — the assign-category modal was fixed
-      (2026-07-18: constrained to max-h-[85vh] with only the list scrolling,
-      instead of a fixed w-96/max-h-64 that overflowed small viewports); rest
-      of the app's mobile layout not yet audited
