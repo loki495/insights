@@ -665,8 +665,8 @@ new class extends Component
             @endif
         </div>
 
-        <div class="flex flex-col xl:flex-row gap-8 w-full items-start justify-between">
-            <div class="flex flex-col gap-4 items-start grow p-0 xl:pr-32">
+        <div class="flex flex-col lg:flex-row gap-8 w-full items-start justify-between">
+            <div class="flex flex-col gap-4 items-start grow min-w-0 w-full p-0 lg:pr-8 xl:pr-32">
                 <!-- filters -->
                 <div class="flex flex-col gap-4 items-start w-full">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
@@ -729,7 +729,7 @@ new class extends Component
                 </div>
             </details>
 
-            <div class="hidden lg:block w-full xl:w-auto shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10 p-2">
+            <div class="hidden lg:block w-full lg:w-auto shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10 p-2">
                 @include('livewire.components.partials.transaction-summary-details')
             </div>
 
@@ -792,7 +792,9 @@ new class extends Component
         </x-responsive-table>
 
         @if($transactions)
-        {{ $transactions->links(data: ['scrollTo' => false]) }}
+        <div class="w-full">
+            {{ $transactions->links(data: ['scrollTo' => false]) }}
+        </div>
         @endif
 
         <template x-teleport="body">
