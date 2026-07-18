@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Models\Account;
-use App\Models\OriginalCategory;
 use App\Models\Transaction;
 
 final class UpdateAccountTransactionsAction
@@ -25,32 +24,23 @@ final class UpdateAccountTransactionsAction
             return;
         }
 
-        $category = OriginalCategory::updateOrCreate(
-            ['plaid_id' => $transaction_info['category_id']],
-            [
-                'name' => $transaction_info['category'][0] ?? 'Other',
-                'description' => $transaction_info['personal_finance_category']['detailed'] ?? 'Other',
-                'logo_url' => $transaction_info['personal_finance_category_icon_url'],
-            ],
-        );
+        $category = plaid()->resolveCategory($transaction_info);
 
-        $transaction_usable['original_category_id'] = $category->id;
+        if ($category !== null) {
+            $transaction_usable['original_category_id'] = $category->id;
+        }
 
-        $transaction = Transaction::updateOrCreate(
+        Transaction::updateOrCreate(
             ['transaction_id' => $transaction_info['transaction_id']],
             $transaction_usable
         );
-
-        $transaction->original_category_id = $category->id;
-        $transaction->save();
-
     }
 
     private static function getUsableTransaction(array $transaction_info): array
     {
         $account_id = Account::query()->where('plaid_account_id', $transaction_info['account_id'])->first()->id;
         if (! $account_id) {
-            throw new \Exception('Account not found - ' . $transaction_info['account_id']);
+            throw new \Exception('Account not found - '.$transaction_info['account_id']);
         }
 
         // adjust amount sign so that Debit (money OUT) is negative and Credit (money IN) is positive
