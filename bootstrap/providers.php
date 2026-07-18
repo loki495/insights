@@ -1,7 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\VoltServiceProvider;
+use Fruitcake\LaravelDebugbar\ServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\VoltServiceProvider::class,
-    Barryvdh\Debugbar\ServiceProvider::class,
+    AppServiceProvider::class,
+    VoltServiceProvider::class,
+    ServiceProvider::class,
 ];
