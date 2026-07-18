@@ -1,0 +1,38 @@
+- autocategorize rules
+- fix graphs
+
+## Bugs fixed (2026-07-18)
+- [x] Chart RangeError (Chart.js walking Livewire proxy) + canvas resize-after-update regression
+- [x] Category drill-down chart/list going empty on click (Category::descendants() pluck('id') bug)
+- [x] "Pull Data" button not refreshing the nested transactions component
+- [x] Plaid "Link Institution" button dead after navigating via a wire:navigate link (needed hard refresh)
+
+## Still open, not yet fixed
+- [ ] Null-pointer risk: app/Actions/UpdateAccountTransactionsAction.php:39 —
+      `$transaction->original_category_id = $category->id` runs even when
+      `$category` can be null
+- [ ] composer audit: 21 advisories across transitive deps (guzzle, symfony/yaml,
+      etc.) — likely fixed by a plain `composer update` (no constraint changes)
+- [ ] composer: safe patch/minor updates available (pint, flux, volt, rector,
+      larastan, ...); Laravel 13 / Pest 4 / Boost 2.x are separate deliberate bumps
+- [ ] npm: vite, tailwindcss, axios, autoprefixer, concurrently, lightningcss
+      behind their semver-compatible "wanted" versions
+- [ ] No test coverage for OriginalCategory, upsertPlaidCategory(),
+      resolveCategory(), or the chart pipeline
+
+## Categorization UX pass (agreed direction, not yet built)
+- [ ] Optimistic category save — show the pill instantly on click (client-side
+      lookup of category id -> {name, color} built from the same list already
+      rendered for the picker), save in background, reconcile/rollback on
+      response. Fixes "the refresh gets in the way."
+- [ ] Replace the flat category <select> (transactions.blade.php ~713-718) with
+      a searchable/filterable list over full_path
+- [ ] Merchant-based category suggestions — suggest a category based on how
+      other transactions from the same merchant_name/original_category were
+      categorized; one-click apply. Doubles as groundwork for auto-categorization.
+- [ ] Explicitly deprioritized for now: favorites / most-used quick-pick chips
+
+## Later / exploratory (raised by Andres, not scheduled)
+- [ ] Look into Livewire @islands to scope re-renders to just the changed
+      row + chart instead of the whole transactions component
+- [ ] Mobile layout improvements
