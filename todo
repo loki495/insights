@@ -219,14 +219,57 @@
       absolutely positioned to the bottom-right corner instead of
       sitting next to the description text.
 
+## Category suggestion heuristics + follow-up fixes (2026-07-18)
+- [x] Added `suggestCategoriesForTransaction()`: up to two best-guess
+      categories shown above the picker's list, fetched on-demand when
+      the modal opens (not baked into page load, so it works for any
+      transaction including ones already categorized). Two heuristics,
+      deduped and capped at 2: (1) category most commonly assigned to
+      other transactions from the same `merchant_name`; (2) falls back
+      to the category most commonly assigned to transactions sharing
+      the same `original_category_id` (Plaid's own categorization),
+      for cases merchant_name is missing/inconsistent. Already-
+      assigned categories are excluded. Neither heuristic is scoped to
+      the current user — matches the existing (pre-session)
+      `merchantSuggestions()` convention, since Category records are
+      global/shared in this app, not per-user. 4 new Pest tests.
+- [x] Suggestion buttons use the same neutral text/border styling as
+      regular category-list rows (just the category-color dot to
+      distinguish "this is a suggestion"), instead of a per-suggestion
+      dynamic border/text color — and show a "Loading suggestions..."
+      placeholder while the fetch is in flight.
+- [x] Fixed: applying a suggested (or any) category showed the full
+      list/card "loading blanket" even though the optimistic pill
+      already gives instant feedback — the blanket's `wire:loading`
+      was untargeted, so it fired for ANY component request including
+      saveCategory/clearCategory/createCategory. Added a
+      `loadingTarget` prop to `<x-responsive-table>` so it can be
+      scoped (via `wire:target`) to just the page-reload-triggering
+      properties (search/filters/pagination), leaving the fast
+      optimistic actions silent.
+- [x] Fixed: saving a suggested category was also auto-scrolling the
+      page — turned out to be the pagination links' `scrollTo`
+      option firing on any component re-render, not just actual page
+      navigation. Disabled it (`scrollTo: false`).
+- [x] Fixed: forcing the "Details" box always-expanded (no collapse)
+      starting at `md:`/`lg:` broke iPad-landscape layouts — the
+      two-column (filters | details) split was happening at the same
+      breakpoint, and Tailwind's viewport-based breakpoints don't
+      account for the app's own persistent sidebar eating into actual
+      available width, so filters got squeezed into a sub-640px
+      column and lost their side-by-side label+input layout. Fixed by
+      splitting the two concerns: always-expanded starts at `lg:`
+      (1024px, roughly iPad landscape) but STACKED full-width; the
+      side-by-side layout with the filters only kicks in at `xl:`
+      (1280px+), where there's actually room. Implemented via two
+      separate containers (a `<details>` for below `lg:`, a plain
+      always-visible div for `lg:` and up) sharing one Blade partial
+      for the inner content, since CSS tricks to force a native
+      `<details>` open via child `!important` overrides don't
+      reliably override the browser's own layout sizing for the
+      `<details>` element itself.
+
 ## Later / exploratory (raised by Andres, not scheduled)
-- [ ] Category-suggestion heuristics for the picker beyond the
-      existing merchant-name match: Andres asked for ideas. Best next
-      candidate discussed — correlate Plaid's `original_category` to
-      whatever category has historically been assigned for
-      transactions sharing that same original category, since Plaid's
-      own categorization is usually present even when merchant_name
-      isn't a clean match. Not designed or built yet.
 - [ ] Look into Livewire @islands to scope re-renders to just the changed
       row + chart instead of the whole transactions component
 - [ ] Found while adding createCategory() tests: Category::fullName() and
