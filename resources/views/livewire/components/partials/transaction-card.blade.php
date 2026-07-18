@@ -1,10 +1,15 @@
 <div wire:key="mobile-txn-{{ $item['id'] }}" class="relative flex flex-col gap-1 p-2 pb-9 rounded-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-transparent shadow-sm dark:shadow-none">
     <div class="flex items-start justify-between gap-2">
-        <div class="text-[11px] text-zinc-500 dark:text-zinc-400 min-w-0">
-            <span>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }} #{{ $item['id'] }}</span>
-            @if ($allow_accounts)
-            <span>&middot; {{ $item['account']['name'] }} ({{ $item['account']['linked_account']['provider_name'] }})</span>
-            @endif
+        <div class="flex items-start gap-2 min-w-0">
+            <div x-show="selectMode" class="pt-0.5 shrink-0">
+                <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $item['id'] }}" />
+            </div>
+            <div class="text-[11px] text-zinc-500 dark:text-zinc-400 min-w-0">
+                <span>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }} #{{ $item['id'] }}</span>
+                @if ($allow_accounts)
+                <span>&middot; {{ $item['account']['name'] }} ({{ $item['account']['linked_account']['provider_name'] }})</span>
+                @endif
+            </div>
         </div>
         <div class="text-right shrink-0">
             <div class="font-semibold">{!! currency($item['amount'], $item['currency']) !!}</div>
