@@ -138,7 +138,13 @@ it('createCategory creates a top-level category with a default color', function 
     $category = Category::where('name', 'Brand New Category')->firstOrFail();
     expect($category->parent_id)->toBe(0);
     expect($category->color)->toBe('#3b82f6');
-    expect($created)->toBe(['id' => $category->id, 'name' => $category->fullName, 'color' => $category->color]);
+    expect($created)->toBe([
+        'id' => $category->id,
+        'name' => $category->name,
+        'full_name' => $category->fullName,
+        'parent_id' => 0,
+        'color' => $category->color,
+    ]);
 });
 
 it('createCategory nests under the given parent with the given color', function (): void {
