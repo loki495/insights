@@ -147,13 +147,8 @@
       overflow-x-auto to avoid page overflow) with a plain stacked
       label-above-input layout, full width at all sizes. Verified both
       create and edit flows still save correctly.
-- [x] Checked: dashboard, settings/profile, linked-accounts, accounts
-      index — already fine on mobile, no changes needed. Categories
-      and original-categories data tables still rely on the
-      overflow-x-auto fallback from the first mobile pass (not
-      converted to cards) — lower priority, not explicitly requested;
-      could get the same card treatment as transactions later if
-      Andres wants it.
+- [x] Checked: dashboard, settings/profile, linked-accounts — already
+      fine on mobile, no changes needed.
 - [ ] Not done: bulk-categorize checkboxes/toolbar were intentionally
       left off the mobile card view. Found bulkCategorize() (both
       desktop and would-be mobile) is currently just a `dd()` debug
@@ -163,7 +158,75 @@
 - [ ] The linked-account "Update Access Token"/Plaid Link modal (Plaid's
       own hosted UI) was not specifically re-checked this pass.
 
+## Mobile UI pass round 3 + responsive-table extraction (2026-07-18)
+- [x] Tightened the transaction card spacing (smaller padding/gaps,
+      amount+running balance moved to share the top line with
+      date/id instead of a separate bottom row+divider).
+- [x] Extracted `resources/views/components/responsive-table.blade.php`:
+      a reusable component that owns the desktop-table/mobile-card
+      switching, the forelse loop + empty state, and a "loading
+      blanket" overlay (dimmed background + spinner) driven by
+      `wire:loading`, applied to BOTH layouts now, not just desktop.
+      Each consumer supplies its own row/card Blade partials via
+      `row-view`/`card-view` props plus an optional `context` array
+      of extra variables the partials need. Migrated onto it:
+      transactions (first, proving the pattern), then categories,
+      original-categories, and accounts/index — all four now have a
+      real mobile card view for the first time. Categories' expand/
+      collapse tree state is shared between its desktop table and
+      mobile cards by moving the Alpine `x-data="{open:{}}"` + the
+      `.categories-table` class marker onto a wrapping div that's a
+      DOM ancestor of both layouts, rather than living only on the
+      (now internal) `<x-table>`.
+- [x] Category picker redesigned into a drill-down browser per
+      feedback: one level at a time (alphabetical), a chevron only on
+      categories that have children (leaf categories get no chevron,
+      making the leaf/parent distinction obvious), a back button
+      (breadcrumb-style, shows the current parent's name) to walk up,
+      and typing in search still flattens across every level (shows
+      full path) as an escape hatch. The chevron is mirrored on BOTH
+      sides of the row — Andres uses his left thumb on mobile and
+      kept hitting the (right-aligned only) select button by reflex;
+      putting a drill-down target on both edges fixed it without
+      removing the ability to select the parent directly (still the
+      full-width button in the middle).
+- [x] Clicking an already-assigned category pill now reopens the same
+      picker with that category preselected (highlighted + checkmark,
+      auto-navigated to its parent level) instead of showing an
+      always-visible delete-x on the pill. Added "Clear category" (top
+      of the modal, only when editing an existing assignment) and a
+      full-width "Cancel" button (bottom, always) — replaces
+      deleteTransactionCategory() with a simpler clearCategory() that
+      syncs the transaction's categories to empty.
+- [x] Fixed light-mode contrast/separation bugs found along the way:
+      transaction cards and the filter "Details" box both used
+      `bg-white/10` with no light-mode alternative, making them
+      nearly invisible against a white page. Added `bg-zinc-100
+      dark:bg-white/10` (+ a border in the card's case) consistently.
+- [x] Moved the dark-mode toggle out of an `!absolute right-0 top-0`
+      button that had no positioned ancestor — it was landing at the
+      literal top-right of the viewport, overlapping the mobile
+      header's own controls and effectively untappable on phone sizes.
+      Replaced with a `flux:switch` inside both profile dropdowns
+      (desktop sidebar + mobile header), matching the "dropdown
+      toggle" pattern from Flux's own dark-mode docs.
+      https://fluxui.dev/docs/dark-mode
+- [x] The transactions "Details" summary box (From/To/Transactions/
+      Total) is now a native `<details>`/`<summary>` — collapsed by
+      default, full width on mobile, and the From/To rows now
+      right-align their values to match Transactions/Total below.
+- [x] Edit/delete icons on the mobile transaction card are now
+      absolutely positioned to the bottom-right corner instead of
+      sitting next to the description text.
+
 ## Later / exploratory (raised by Andres, not scheduled)
+- [ ] Category-suggestion heuristics for the picker beyond the
+      existing merchant-name match: Andres asked for ideas. Best next
+      candidate discussed — correlate Plaid's `original_category` to
+      whatever category has historically been assigned for
+      transactions sharing that same original category, since Plaid's
+      own categorization is usually present even when merchant_name
+      isn't a clean match. Not designed or built yet.
 - [ ] Look into Livewire @islands to scope re-renders to just the changed
       row + chart instead of the whole transactions component
 - [ ] Found while adding createCategory() tests: Category::fullName() and
