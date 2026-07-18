@@ -6,11 +6,12 @@
 - [x] Category drill-down chart/list going empty on click (Category::descendants() pluck('id') bug)
 - [x] "Pull Data" button not refreshing the nested transactions component
 - [x] Plaid "Link Institution" button dead after navigating via a wire:navigate link (needed hard refresh)
+- [x] Null-pointer crash in app/Actions/UpdateAccountTransactionsAction.php when
+      Plaid can't resolve a transaction's category (resolveCategory() returns
+      null) — removed the redundant/unsafe second original_category_id
+      assignment, already handled conditionally a few lines above
 
 ## Still open, not yet fixed
-- [ ] Null-pointer risk: app/Actions/UpdateAccountTransactionsAction.php:39 —
-      `$transaction->original_category_id = $category->id` runs even when
-      `$category` can be null
 - [ ] composer audit: 21 advisories across transitive deps (guzzle, symfony/yaml,
       etc.) — likely fixed by a plain `composer update` (no constraint changes)
 - [ ] composer: safe patch/minor updates available (pint, flux, volt, rector,
