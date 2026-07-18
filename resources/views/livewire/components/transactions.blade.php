@@ -26,7 +26,7 @@ new class extends Component
     public $only_uncategorized = false;
 
     #[Session]
-    public ?int $account_id = null;
+    public array $account_ids = [];
 
     public ?Account $account = null;
 
@@ -51,8 +51,6 @@ new class extends Component
 
     public $selected_transactions = [];
 
-    public $bulk_category_id;
-
     public $chart_labels = [];
 
     public $chart_values = [];
@@ -75,7 +73,6 @@ new class extends Component
         }
 
         $this->account = $account;
-        $this->account_id = $account?->id;
 
         $this->original_category = $original_category;
         $this->original_category_id = $original_category?->id;
@@ -123,12 +120,17 @@ new class extends Component
     {
         $query = Transaction::query();
 
+        $ownedAccountIds = auth()->user()->accounts()->pluck('accounts.id');
+
         if ($this->account?->id) {
             $this->authorize('view', $this->account);
             $query->where('account_id', $this->account->id);
+        } elseif (! empty($this->account_ids)) {
+            // Only show transactions from selected accounts the user owns
+            $query->whereIn('account_id', $ownedAccountIds->intersect($this->account_ids)->values());
         } else {
             // If no account is selected, only show transactions from accounts the user owns
-            $query->whereIn('account_id', auth()->user()->accounts()->pluck('accounts.id'));
+            $query->whereIn('account_id', $ownedAccountIds);
         }
 
         $query
@@ -250,12 +252,6 @@ new class extends Component
             'total' => $query->sum('amount'),
             'merchantSuggestions' => $this->merchantSuggestions($transactions->getCollection()),
         ];
-    }
-
-    public function updatedAccountId($value = null)
-    {
-        $this->account = Account::find($value);
-        $this->dispatch('accountIdChanged', accountId: $value);
     }
 
     public function updatedCategoryId($value = null)
@@ -605,12 +601,33 @@ new class extends Component
         $transaction->delete();
     }
 
-    public function bulkCategorize()
+    public function bulkAssignCategory($category_id): void
     {
-        dd($this->selected_transactions, $this->bulk_category_id);
-        foreach ($this->transactions as $transaction) {
-            $transaction->categories()->sync([$this->category_id]);
+        $transactions = Transaction::whereIn('id', $this->selected_transactions)->get();
+
+        foreach ($transactions as $transaction) {
+            $this->authorize('update', $transaction);
+            $transaction->categories()->sync([$category_id]);
         }
+
+        $this->selected_transactions = [];
+    }
+
+    public function bulkDeleteTransactions(): void
+    {
+        // Only manually-added transactions can be deleted (matches the
+        // single-delete action); Plaid-synced ones are silently skipped.
+        $transactions = Transaction::whereIn('id', $this->selected_transactions)
+            ->get()
+            ->filter(fn (Transaction $transaction) => $transaction->original['manual'] ?? false);
+
+        foreach ($transactions as $transaction) {
+            $this->authorize('delete', $transaction);
+            $transaction->categories()->detach();
+            $transaction->delete();
+        }
+
+        $this->selected_transactions = [];
     }
 }
 ?>
@@ -632,6 +649,24 @@ new class extends Component
             },
             clearCategory(transactionId) {
                 $wire.clearCategory(transactionId);
+            },
+            selectMode: false,
+            selected_transactions: [],
+            toggleSelectMode() {
+                this.selectMode = !this.selectMode;
+                this.selected_transactions = [];
+            },
+            bulkAssignCategory(categoryId) {
+                $wire.bulkAssignCategory(categoryId).then(() => {
+                    this.selected_transactions = [];
+                    this.selectMode = false;
+                });
+            },
+            bulkDeleteTransactions() {
+                $wire.bulkDeleteTransactions().then(() => {
+                    this.selected_transactions = [];
+                    this.selectMode = false;
+                });
             },
         }"
         class="flex flex-col gap-4 items-start w-full"
@@ -709,14 +744,47 @@ new class extends Component
                 </div>
 
                 @if ($allow_accounts)
-                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full" x-data="{ accountsOpen: false }">
                     <label for="account">Account</label>
-                    <flux:select wire:model.live="account_id" class="w-full">
-                        <flux:select.option value="0">-- All Accounts --</flux:select.option>
-                        @foreach($this->accounts as $account_option)
-                        <flux:select.option value="{{ $account_option->id }}">{{ $account_option->linked_account->provider_name }} - {{ $account_option->name }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
+                    <div class="relative w-full" @click.outside="accountsOpen = false">
+                        <button
+                            type="button"
+                            @click="accountsOpen = !accountsOpen"
+                            class="cursor-pointer flex items-center justify-between w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-left"
+                        >
+                            <span>
+                                @if(empty($account_ids))
+                                    -- All Accounts --
+                                @elseif(count($account_ids) === 1)
+                                    @php $selectedAccount = $this->accounts->firstWhere('id', $account_ids[0]); @endphp
+                                    {{ $selectedAccount ? $selectedAccount->linked_account->provider_name.' - '.$selectedAccount->name : '1 account selected' }}
+                                @else
+                                    {{ count($account_ids) }} accounts selected
+                                @endif
+                            </span>
+                            <flux:icon.chevron-down class="size-4 shrink-0 text-zinc-500" />
+                        </button>
+
+                        <div
+                            x-show="accountsOpen"
+                            x-cloak
+                            class="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 shadow-lg p-2 flex flex-col gap-1"
+                        >
+                            <button
+                                type="button"
+                                wire:click="$set('account_ids', [])"
+                                class="cursor-pointer text-left px-2 py-1.5 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-zinc-100 dark:hover:bg-white/10"
+                            >Clear (All Accounts)</button>
+
+                            @foreach($this->accounts as $account_option)
+                            <flux:checkbox
+                                wire:model.live="account_ids"
+                                value="{{ $account_option->id }}"
+                                label="{{ $account_option->linked_account->provider_name }} - {{ $account_option->name }}"
+                            />
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 @endif
 
@@ -744,8 +812,35 @@ new class extends Component
                 <div></div>
             @endif
 
-            <div class="w-full sm:w-auto">
-                <x-button wire:navigate href="{{ route('transactions.create', ['account' => $account_id]) }}" class="w-full sm:w-auto">Add Transaction</x-button>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <flux:button x-show="!selectMode" variant="subtle" icon="check-circle" class="w-full sm:w-auto cursor-pointer" @click="toggleSelectMode()">Select</flux:button>
+                <flux:button x-show="selectMode" x-cloak variant="primary" icon="x-mark" class="w-full sm:w-auto cursor-pointer" @click="toggleSelectMode()">Cancel Select</flux:button>
+                <flux:button
+                    x-show="selectMode"
+                    x-cloak
+                    variant="subtle"
+                    class="w-full sm:w-auto cursor-pointer"
+                    @click="selected_transactions.length === {{ $transactions->count() }} ? (selected_transactions = []) : (selected_transactions = @js($transactions->pluck('id')))"
+                >
+                    <span x-text="selected_transactions.length === {{ $transactions->count() }} && selected_transactions.length > 0 ? 'Deselect All' : 'Select All'"></span>
+                </flux:button>
+                <x-button wire:navigate href="{{ route('transactions.create', ['account' => $account?->id ?: (count($account_ids) === 1 ? $account_ids[0] : null)]) }}" class="w-full sm:w-auto">Add Transaction</x-button>
+            </div>
+        </div>
+
+        <div
+            class="w-full flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40"
+            x-show="selectMode && selected_transactions.length > 0"
+            x-cloak
+        >
+            <div class="flex items-center gap-2 text-sm font-medium text-blue-900 dark:text-blue-100">
+                <span class="inline-flex items-center justify-center size-6 shrink-0 rounded-full bg-blue-600 text-white text-xs font-semibold" x-text="selected_transactions.length"></span>
+                selected
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 sm:ml-auto">
+                <flux:button size="sm" variant="primary" class="cursor-pointer" @click="$dispatch('bulk-add-category')">Assign Category</flux:button>
+                <flux:button size="sm" variant="danger" class="cursor-pointer" wire:confirm="Delete the selected transactions? Only manually-added transactions can be deleted — synced ones will be skipped." @click="bulkDeleteTransactions()">Delete Selected</flux:button>
+                <button type="button" class="cursor-pointer text-sm text-blue-900 dark:text-blue-100 underline self-start sm:self-auto" @click="selected_transactions = []">Clear selection</button>
             </div>
         </div>
 
@@ -759,27 +854,13 @@ new class extends Component
             card-view="livewire.components.partials.transaction-card"
             empty-message="No transactions found"
             :context="['allow_accounts' => $allow_accounts, 'showRunningBalance' => $showRunningBalance]"
-            loading-target="search,only_uncategorized,original_category_id,category_id,date_from,date_to,account_id,page,nextPage,previousPage,gotoPage"
+            loading-target="search,only_uncategorized,original_category_id,category_id,date_from,date_to,account_ids,page,nextPage,previousPage,gotoPage"
             class="transactions-table min-w-full w-max"
             wire:scroll
-            x-data="{selected_transactions: [] }"
         >
             <x-slot name="head">
-                <x-table.tr x-show="selected_transactions.length > 0">
-                    <x-table.td colspan="3">
-                        <div class="flex gap-4">
-                            <flux:select wire:model="bulk_category_id" >
-                                <flux:select.option value="0">-- No Category --</flux:select.option>
-                                @foreach($this->categories as $category_option)
-                                    <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
-                                @endforeach
-                            </flux:select>
-                            <flux:button wire:click="bulkCategorize">Bulk Categorize</flux:button>
-                        </div>
-                    </x-table.td>
-                </x-table.tr>
                 <x-table.tr wire:loading.remove>
-                    <x-table.th class="text-center w-28"></x-table.th>
+                    <x-table.th class="text-center w-28" x-show="selectMode"></x-table.th>
                     <x-table.th class="text-center w-28">Date</x-table.th>
                     @if ($allow_accounts)
                     <x-table.th class="2-56">Source</x-table.th>
@@ -804,6 +885,7 @@ new class extends Component
                 x-data="{
                     open: false,
                     add: false,
+                    bulkMode: false,
                     transaction_id: 0,
                     transaction_name: '',
                     transaction_amount: 0,
@@ -817,6 +899,14 @@ new class extends Component
                     newCategoryParentId: '',
                     newCategoryColor: '#3b82f6',
                     creatingCategoryError: '',
+                    selectCategory(categoryId) {
+                        this.open = false;
+                        if (this.bulkMode) {
+                            this.bulkAssignCategory(categoryId);
+                        } else {
+                            this.applyCategory(this.transaction_id, categoryId);
+                        }
+                    },
                     loadSuggestions(transactionId) {
                         this.suggestions = [];
                         this.suggestionsLoading = true;
@@ -869,9 +959,8 @@ new class extends Component
                         $wire.createCategory(this.newCategoryName, this.newCategoryParentId || null, this.newCategoryColor).then((created) => {
                             this.categoryList.push(created);
                             this.categoryLookup[created.id] = created;
-                            this.open = false;
                             this.creatingCategory = false;
-                            this.applyCategory(this.transaction_id, created.id);
+                            this.selectCategory(created.id);
                         }).catch(() => {
                             this.creatingCategoryError = 'Could not create category. Please try again.';
                         });
@@ -879,35 +968,40 @@ new class extends Component
                 }"
                 x-on:keydown.escape.window="open = false"
                 x-show="open"
-                @add-category.window="add=true;open=true;categorySearch='';categoryParentId=0;creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;editing_category_id=0;loadSuggestions(event.detail.transaction_id);"
-                @edit-category.window="add=false;open=true;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;editing_category_id=event.detail.category_id;categoryParentId=(categoryLookup[event.detail.category_id]?.parent_id || 0);loadSuggestions(event.detail.transaction_id);"
+                @add-category.window="add=true;open=true;bulkMode=false;categorySearch='';categoryParentId=0;creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;editing_category_id=0;loadSuggestions(event.detail.transaction_id);"
+                @edit-category.window="add=false;open=true;bulkMode=false;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;editing_category_id=event.detail.category_id;categoryParentId=(categoryLookup[event.detail.category_id]?.parent_id || 0);loadSuggestions(event.detail.transaction_id);"
+                @bulk-add-category.window="add=true;open=true;bulkMode=true;categorySearch='';categoryParentId=0;creatingCategory=false;editing_category_id=0;suggestions=[];suggestionsLoading=false;"
             >
                 <div class="fixed inset-0 bg-zinc-900/50" @click="open = false"></div>
                 <div class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white p-4 rounded-xl w-full max-w-96 max-h-[85vh] z-10 flex flex-col overflow-hidden shadow-xl">
                     <div class="flex flex-col gap-4 min-h-0 flex-1" x-show="!creatingCategory">
                         <div class="flex items-center justify-between">
-                            <span x-show="add">Add Category</span>
-                            <span x-show="!add">Edit Category</span>
+                            <span x-show="bulkMode">Assign Category</span>
+                            <span x-show="!bulkMode && add">Add Category</span>
+                            <span x-show="!bulkMode && !add">Edit Category</span>
                             <button
                                 type="button"
-                                x-show="editing_category_id > 0"
+                                x-show="!bulkMode && editing_category_id > 0"
                                 @click="open = false; clearCategory(transaction_id)"
                                 class="cursor-pointer text-xs text-red-500 hover:text-red-600"
                             >Clear category</button>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" x-show="!bulkMode">
                             <div><span x-html="transaction_name"></span> (#<span x-text="transaction_id"></span>)</div>
                             <span x-html="transaction_amount"></span>
                         </div>
+                        <div class="text-sm text-zinc-500 dark:text-zinc-400" x-show="bulkMode">
+                            <span x-text="selected_transactions.length"></span> transaction(s) selected
+                        </div>
 
-                        <div class="flex flex-col gap-1 shrink-0" x-show="suggestionsLoading" x-cloak>
+                        <div class="flex flex-col gap-1 shrink-0" x-show="!bulkMode && suggestionsLoading" x-cloak>
                             <div class="px-2 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 text-sm flex items-center gap-2">
                                 <flux:icon.loading class="size-4 shrink-0" />
                                 Loading suggestions...
                             </div>
                         </div>
 
-                        <div class="flex flex-col gap-1 shrink-0" x-show="!suggestionsLoading && suggestions.length > 0">
+                        <div class="flex flex-col gap-1 shrink-0" x-show="!bulkMode && !suggestionsLoading && suggestions.length > 0">
                             <template x-for="suggestion in suggestions" :key="suggestion.id">
                                 <button
                                     type="button"
@@ -937,7 +1031,7 @@ new class extends Component
                                 <template x-for="cat in filteredCategories()" :key="cat.id">
                                     <button
                                         type="button"
-                                        @click="open = false; applyCategory(transaction_id, cat.id)"
+                                        @click="selectCategory(cat.id)"
                                         class="cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
                                         :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
                                     >
@@ -962,7 +1056,7 @@ new class extends Component
                                         </button>
                                         <button
                                             type="button"
-                                            @click="open = false; applyCategory(transaction_id, cat.id)"
+                                            @click="selectCategory(cat.id)"
                                             class="grow cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
                                             :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
                                         >
