@@ -110,51 +110,46 @@ new class extends Component
 ?>
     <x-page-wrapper heading="{{ $transaction_id ? 'Edit' : 'Create' }} Transaction{{ $transaction_id ? ' - #' . $transaction_id : '' }}" subheading="" :breadcrumbs="[]">
 
-        <div class="mb-4 max-w-[400px] overflow-x-auto">
-            <x-table>
-                <x-slot name="body">
-                    <x-table.tr>
-                        <x-table.th class="text-left">Account</x-table.th>
-                        <x-table.td>
-                            <flux:select wire:model="account_id" clearable>
-                                @foreach($accounts as $account)
-                                <flux:select.option value="{{ $account->id }}">{{ $account->linked_account->provider_name }} - {{ $account->name }} ({{ ucwords($account->subtype) }})</flux:select.option>
-                                @endforeach
-                            </flux:select>
-                        </x-table.td>
-                    </x-table.tr>
-                    <x-table.tr>
-                        <x-table.th class="text-left">Categories</x-table.th>
-                        <x-table.td>
-                            <div class="flex gap-4 items-end">
-                                <select wire:model="categories" class="border border-zinc-300 rounded-xl p-4 w-full">
-                                    @foreach($all_categories as $category)
-                                    <option value="{{ $category->id }}" class="p-2">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </x-table.td>
-                    </x-table.tr>
-                    <x-table.tr>
-                        <x-table.th class="text-left">Name</x-table.th>
-                        <x-table.td><flux:input wire:model="name" /></x-table.td>
-                    </x-table.tr>
-                    <x-table.tr>
-                        <x-table.th class="text-left">Merchant Name</x-table.th>
-                        <x-table.td><flux:input wire:model="merchant_name" /></x-table.td>
-                    </x-table.tr>
-                    <x-table.tr>
-                        <x-table.th class="text-left">Amount</x-table.th>
-                        <x-table.td><flux:input wire:model="amount" type="number" step="0.01" /></x-table.td>
-                    </x-table.tr>
-                    <x-table.tr>
-                        <x-table.th class="text-left">Date</x-table.th>
-                        <x-table.td><flux:input wire:model="date" type="datetime-local" /></x-table.td>
-                    </x-table.tr>
-                </x-slot>
-            </x-table>
+        <div class="mb-4 w-full max-w-xl flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Account</label>
+                <flux:select wire:model="account_id" clearable>
+                    @foreach($accounts as $account)
+                    <flux:select.option value="{{ $account->id }}">{{ $account->linked_account->provider_name }} - {{ $account->name }} ({{ ucwords($account->subtype) }})</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
 
-            <x-button wire:click="save" class="mt-4">Save</x-button>
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Categories</label>
+                <select wire:model="categories" class="border border-zinc-300 dark:border-zinc-600 dark:bg-zinc-800 rounded-xl p-4 w-full">
+                    @foreach($all_categories as $category)
+                    <option value="{{ $category->id }}" class="p-2">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Name</label>
+                <flux:input wire:model="name" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Merchant Name</label>
+                <flux:input wire:model="merchant_name" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Amount</label>
+                <flux:input wire:model="amount" type="number" step="0.01" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Date</label>
+                <flux:input wire:model="date" type="datetime-local" />
+            </div>
+
+            <x-button wire:click="save" class="w-full sm:w-auto">Save</x-button>
         </div>
 
     </x-page-wrapper>

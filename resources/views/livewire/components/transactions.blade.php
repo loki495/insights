@@ -696,19 +696,66 @@ new class extends Component
 
         <flux:separator variant="subtle"></flux:separator>
 
-        <div class="flex w-full justify-between items-center">
+        <div class="flex flex-col-reverse sm:flex-row w-full justify-between items-stretch sm:items-center gap-3">
             @if($transactions->hasPages())
                 {{ $transactions->links(data: ['scrollTo' => '#transactions-table']) }}
             @else
                 <div></div>
             @endif
 
-            <div>
-                <x-button wire:navigate href="{{ route('transactions.create', ['account' => $account_id]) }}">Add Transaction</x-button>
+            <div class="w-full sm:w-auto">
+                <x-button wire:navigate href="{{ route('transactions.create', ['account' => $account_id]) }}" class="w-full sm:w-auto">Add Transaction</x-button>
             </div>
         </div>
 
-        <div class="flex flex-col gap-4 bg-white/10 p-4 rounded-xl w-full relative overflow-x-scroll">
+        <div class="flex flex-col gap-3 sm:hidden w-full">
+            @forelse($transactions ?? [] as $transaction)
+            <div wire:key="mobile-txn-{{ $transaction['id'] }}" class="flex flex-col gap-2 p-3 rounded-xl bg-white/10">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }} #{{ $transaction['id'] }}
+                    </div>
+                    <div class="flex gap-2 items-center shrink-0">
+                        <x-button icon="pencil" href="{{ route('transactions.edit', ['transaction' => $transaction['id'] ]) }}" />
+                        @if($transaction['original']['manual'] ?? false)
+                        <flux:icon.trash wire:confirm="Are you sure you want to delete this transaction?\n(#{{ $transaction['id'] }} - {{ htmlQuotes($transaction['name']) }})" variant="solid" wire:click="deleteTransaction({{ $transaction['id'] }})" class="cursor-pointer text-red-500 size-6 p-px font-bold hover:bg-white rounded-full" />
+                        @endif
+                    </div>
+                </div>
+
+                @if ($allow_accounts)
+                <div class="text-xs text-zinc-500 dark:text-zinc-400">
+                    {{ $transaction['account']['name'] }} &middot; {{ $transaction['account']['linked_account']['provider_name'] }}
+                </div>
+                @endif
+
+                <div>
+                    <div class="font-medium break-words">{{ $transaction['name'] }}</div>
+                    @if($transaction['originalCategory'])
+                    <small class="text-zinc-500 dark:text-zinc-400">{{ $transaction['originalCategory']['full_path'] }}</small>
+                    @endif
+                    @if($transaction['payment_channel'])
+                    <small class="text-zinc-500 dark:text-zinc-400">({{ $transaction['payment_channel'] }})</small>
+                    @endif
+                </div>
+
+                @include('livewire.components.partials.transaction-category-chips', ['transaction' => $transaction])
+
+                <div class="flex items-end justify-between gap-2 pt-1 border-t border-zinc-700/30">
+                    <div class="font-semibold">{!! currency($transaction['amount'], $transaction['currency']) !!}</div>
+                    @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance && !$search)
+                    <div class="{{ when($transaction['running_balance'] < 0, 'text-red-400', 'text-zinc-500 dark:text-zinc-400') }} text-sm">
+                        Balance: {!! currency($transaction['running_balance'], $transaction['currency'], 1) !!}
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @empty
+            <div class="text-center text-zinc-500 dark:text-zinc-400 py-4">No transactions found</div>
+            @endforelse
+        </div>
+
+        <div class="hidden sm:flex flex-col gap-4 bg-white/10 p-4 rounded-xl w-full relative overflow-x-scroll">
 
             <x-table class="transactions-table min-w-full w-max" wire:scroll x-data="{selected_transactions: [] }">
                 <x-slot name="head">
@@ -772,46 +819,9 @@ new class extends Component
                                 <small>({{ $transaction['payment_channel'] }}) </small>
                                 @endif
 
-                                @php
-                                    $suggestion = count($transaction['categories']) === 0
-                                        ? ($merchantSuggestions[$transaction['merchant_name']] ?? null)
-                                        : null;
-                                @endphp
-
-                                <div class="flex gap-2 items-center mt-2" x-show="!optimisticCategories[{{ $transaction['id'] }}]">
-
-                                    @if($transaction['original']['manual'] ?? false)
-                                    <div class="pointer-events-none text-xs p-1 h-auto relative rounded-lg shoadow-lg bg-green-800">
-                                        <div class="p-0 text-nowrap text-shadow-lg">Manual</div>
-                                    </div>
-                                    @endif
-
-                                    @foreach($transaction['categories'] as $category)
-                                    <div class="cursor-pointer text-xs p-1 h-auto relative rounded-lg shoadow-lg" style="background-color: {{ $category['color'] }}">
-                                        <div @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency'], 1) }}', category_id: {{ $category['id'] }} })" class="p-0 text-nowrap text-shadow-lg">{{ $category['fullName'] }}</div>
-                                        <flux:icon.x-mark variant="solid" wire:confirm="Are you sure you want to delete this category? (#{{ $category['pivot']['id'] }})" wire:click="deleteTransactionCategory({{ $category['pivot']['id'] }})" class="absolute z-20 cursor-pointer -right-3 text-red-500 -top-3 size-6 p-px font-bold text-shadow-lg bg-white/70 hover:bg-white rounded-full opacity-70 hover:opacity-100 transition-opacity" />
-                                    </div>
-                                    @endforeach
-
-                                    @if($suggestion)
-                                    <button
-                                        type="button"
-                                        title="Apply suggested category"
-                                        @click="applyCategory({{ $transaction['id'] }}, {{ $suggestion['id'] }})"
-                                        class="cursor-pointer text-xs p-1 h-auto rounded-lg border border-dashed text-nowrap"
-                                        style="border-color: {{ $suggestion['color'] }}; color: {{ $suggestion['color'] }}"
-                                    >+ {{ $suggestion['name'] }}?</button>
-                                    @endif
-
-                                    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }}, suggested_category_id: {{ $suggestion['id'] ?? 0 }} })" class="size-2" icon="plus"></flux:button>
+                                <div class="mt-2">
+                                    @include('livewire.components.partials.transaction-category-chips', ['transaction' => $transaction])
                                 </div>
-
-                                <div class="flex gap-2 items-center mt-2" x-show="optimisticCategories[{{ $transaction['id'] }}]" x-cloak>
-                                    <div class="text-xs p-1 h-auto rounded-lg opacity-60 animate-pulse text-nowrap text-shadow-lg" :style="`background-color: ${optimisticCategories[{{ $transaction['id'] }}]?.color}`">
-                                        <span x-text="optimisticCategories[{{ $transaction['id'] }}]?.name"></span>
-                                    </div>
-                                </div>
-
                             </div>
                         </x-table.td>
                         <x-table.td class="text-right">

@@ -118,14 +118,50 @@
       Categories" is), and its Volt component was never built (500s with
       "Unable to find component"). Needs a decision: build the missing
       index page, or remove the dead route.
-- [ ] The transaction create/edit form (admin/transactions/edit.blade.php)
-      uses <x-table> as a label/input layout grid rather than real
-      tabular data. Wrapped in overflow-x-auto for now (contained, no
-      page-break, ~47px of content needs a small scroll to reach), but a
-      proper mobile-first stacked-label redesign would be cleaner.
-- [ ] Beyond what's listed above, no further mobile audit pass has been
-      done on category creation/edit forms, the bulk-categorize toolbar,
-      or the linked-account "Update Access Token"/Plaid Link modal.
+- [x] Fixed (2026-07-18, second mobile pass below): the transaction
+      create/edit form's <x-table>-as-form-grid layout.
+
+## Mobile UI pass round 2 (2026-07-18)
+- [x] Replaced the transactions table's horizontal-scroll layout with a
+      real stacked card view below the `sm` breakpoint (desktop table
+      untouched, just hidden via `hidden sm:flex`). Each card shows
+      date/id, edit+delete icons, description, original category,
+      category chips (delete-x, suggestion chip, "+" add-category —
+      all reused from the desktop row via a new shared partial
+      resources/views/livewire/components/partials/transaction-category-chips.blade.php
+      so the two layouts can't drift), and amount/running balance.
+      Verified live: quick-add category, optimistic save, and the
+      create-category flow all work identically from the mobile card
+      view. Also verified the reports/category page (same component,
+      allow_accounts=true) renders correctly with the account name
+      shown on each card.
+- [x] Fixed several left/right-aligned field+button rows that were
+      squeezed instead of going full-width on mobile: page-heading.blade.php's
+      actions slot (affects "Pull Data" on accounts/index + accounts/show),
+      transactions.blade.php's "Add Transaction" row, categories/index's
+      search+"Create Category" row, original-categories/index's search
+      row, and linked-accounts/index's "Link Institution" button.
+- [x] Redesigned admin/transactions/edit.blade.php and
+      admin/categories/edit.blade.php: replaced the <x-table>-as-form
+      layout (fixed label column squeezing inputs, needed
+      overflow-x-auto to avoid page overflow) with a plain stacked
+      label-above-input layout, full width at all sizes. Verified both
+      create and edit flows still save correctly.
+- [x] Checked: dashboard, settings/profile, linked-accounts, accounts
+      index — already fine on mobile, no changes needed. Categories
+      and original-categories data tables still rely on the
+      overflow-x-auto fallback from the first mobile pass (not
+      converted to cards) — lower priority, not explicitly requested;
+      could get the same card treatment as transactions later if
+      Andres wants it.
+- [ ] Not done: bulk-categorize checkboxes/toolbar were intentionally
+      left off the mobile card view. Found bulkCategorize() (both
+      desktop and would-be mobile) is currently just a `dd()` debug
+      stub in transactions.blade.php's component class — the feature
+      doesn't actually work yet on desktop either. Flagging so it
+      isn't mistaken for a mobile-only gap.
+- [ ] The linked-account "Update Access Token"/Plaid Link modal (Plaid's
+      own hosted UI) was not specifically re-checked this pass.
 
 ## Later / exploratory (raised by Andres, not scheduled)
 - [ ] Look into Livewire @islands to scope re-renders to just the changed

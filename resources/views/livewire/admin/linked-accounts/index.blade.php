@@ -116,7 +116,7 @@ new class extends Component
             </x-slot>
         </x-table>
 
-        <div class="w-48">
+        <div class="w-full sm:w-48">
             <x-button type="primary" wire:click="linkAccount" class="w-full">Link Institution</x-button>
         </div>
     </x-page-wrapper>
