@@ -31,10 +31,24 @@
       ordered_imports, no_unused_imports) that weren't enforced before.
       Not touched — a repo-wide Pint reformat is a separate, deliberate
       commit, not a side effect of a dependency bump.
+- [x] Laravel 13 / Pest 4 / Laravel Boost 2.x — researched breaking changes
+      first (see memory), then upgraded. Had to also bump
+      barryvdh/laravel-debugbar ^3.15.2 -> ^4.0 (3.x doesn't support
+      Laravel 13) and update bootstrap/providers.php since debugbar 4.x
+      renamed its service provider namespace (Barryvdh\Debugbar ->
+      Fruitcake\LaravelDebugbar, no back-compat alias). Full Pest suite
+      (43 tests) passes, PHPStan unchanged (237 pre-existing notices),
+      verified live in browser.
 
 ## Still open, not yet fixed
 - [ ] No test coverage for OriginalCategory, upsertPlaidCategory(),
-      resolveCategory(), or the chart pipeline
+      resolveCategory(), or the chart pipeline (in progress)
+- [ ] Minor: transactions.blade.php's getTransactionsQuery() does
+      $this->account->id without a null-safe operator; when the
+      component is used with no specific account (allow_accounts=true,
+      no account passed) this emits a harmless-but-noisy "Attempt to
+      read property on null" PHP warning. Found while smoke-testing the
+      Laravel 13 upgrade, not caused by it — low priority.
 
 ## Categorization UX pass (2026-07-18)
 - [x] Optimistic category save — pill shows instantly (pulsing) on click via a
