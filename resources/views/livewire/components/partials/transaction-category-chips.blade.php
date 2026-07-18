@@ -31,7 +31,7 @@
     >+ {{ $suggestion['name'] }}?</button>
     @endif
 
-    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }}, suggested_category_id: {{ $suggestion['id'] ?? 0 }} })" class="size-2" icon="plus"></flux:button>
+    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }} })" class="size-2" icon="plus"></flux:button>
 </div>
 
 <div class="flex gap-2 items-center flex-wrap" x-show="optimisticCategories[{{ $transaction['id'] }}]" x-cloak>

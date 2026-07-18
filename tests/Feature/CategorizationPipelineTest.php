@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\LinkedAccount;
+use App\Models\OriginalCategory;
 use App\Models\Transaction;
 use App\Models\User;
 use Livewire\Livewire;
@@ -168,4 +169,103 @@ it('createCategory rejects a blank name', function (): void {
 
     expect(fn () => $test->instance()->createCategory('   ', null, null))
         ->toThrow(InvalidArgumentException::class);
+});
+
+it('suggestCategoriesForTransaction suggests the category most used by other transactions from the same merchant', function (): void {
+    $category = Category::create(['name' => 'Groceries']);
+    $account = makeAccountWithTransaction($category);
+
+    $priorTxn = Transaction::factory()->for($account)->create(['name' => 'Costco Warehouse', 'merchant_name' => 'Costco', 'amount' => -50, 'currency' => 'USD']);
+    $priorTxn->categories()->sync([$category->id]);
+
+    $newTxn = Transaction::factory()->for($account)->create(['name' => 'Costco Gas', 'merchant_name' => 'Costco', 'amount' => -30, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $suggestions = $test->instance()->suggestCategoriesForTransaction($newTxn->id);
+
+    expect($suggestions)->toHaveCount(1);
+    expect($suggestions[0]['id'])->toBe($category->id);
+});
+
+it('suggestCategoriesForTransaction falls back to original-category correlation when the merchant differs', function (): void {
+    $category = Category::create(['name' => 'Anchor']);
+    $account = makeAccountWithTransaction($category);
+
+    $originalCategory = OriginalCategory::create(['name' => 'Fast Food']);
+    $target = Category::create(['name' => 'Eating Out']);
+
+    $priorTxn = Transaction::factory()->for($account)->create([
+        'name' => 'Burger Place Purchase',
+        'merchant_name' => 'Burger Place',
+        'original_category_id' => $originalCategory->id,
+        'amount' => -12,
+        'currency' => 'USD',
+    ]);
+    $priorTxn->categories()->sync([$target->id]);
+
+    $newTxn = Transaction::factory()->for($account)->create([
+        'name' => 'Taco Stand Purchase',
+        'merchant_name' => 'Taco Stand',
+        'original_category_id' => $originalCategory->id,
+        'amount' => -9,
+        'currency' => 'USD',
+    ]);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $suggestions = $test->instance()->suggestCategoriesForTransaction($newTxn->id);
+
+    expect($suggestions)->toHaveCount(1);
+    expect($suggestions[0]['id'])->toBe($target->id);
+});
+
+it('suggestCategoriesForTransaction excludes categories already assigned to the transaction', function (): void {
+    $category = Category::create(['name' => 'Anchor']);
+    $account = makeAccountWithTransaction($category);
+
+    $priorTxn = Transaction::factory()->for($account)->create(['name' => 'Costco Warehouse', 'merchant_name' => 'Costco', 'amount' => -50, 'currency' => 'USD']);
+    $priorTxn->categories()->sync([$category->id]);
+
+    $existingTxn = Transaction::factory()->for($account)->create(['name' => 'Costco Gas', 'merchant_name' => 'Costco', 'amount' => -30, 'currency' => 'USD']);
+    $existingTxn->categories()->sync([$category->id]);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $suggestions = $test->instance()->suggestCategoriesForTransaction($existingTxn->id);
+
+    expect($suggestions)->toBe([]);
+});
+
+it('suggestCategoriesForTransaction returns at most two suggestions with the merchant match first', function (): void {
+    $category = Category::create(['name' => 'Anchor']);
+    $account = makeAccountWithTransaction($category);
+
+    $merchantCategory = Category::create(['name' => 'Merchant Match']);
+    $originalCategory = OriginalCategory::create(['name' => 'Some Original']);
+    $originalCategoryCategory = Category::create(['name' => 'Original Match']);
+
+    $merchantTxn = Transaction::factory()->for($account)->create(['name' => 'Widget Purchase', 'merchant_name' => 'Widget Co', 'amount' => -20, 'currency' => 'USD']);
+    $merchantTxn->categories()->sync([$merchantCategory->id]);
+
+    $originalTxn = Transaction::factory()->for($account)->create([
+        'name' => 'Other Purchase',
+        'merchant_name' => 'Different Merchant',
+        'original_category_id' => $originalCategory->id,
+        'amount' => -15,
+        'currency' => 'USD',
+    ]);
+    $originalTxn->categories()->sync([$originalCategoryCategory->id]);
+
+    $target = Transaction::factory()->for($account)->create([
+        'name' => 'Widget Purchase 2',
+        'merchant_name' => 'Widget Co',
+        'original_category_id' => $originalCategory->id,
+        'amount' => -25,
+        'currency' => 'USD',
+    ]);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $suggestions = $test->instance()->suggestCategoriesForTransaction($target->id);
+
+    expect($suggestions)->toHaveCount(2);
+    expect($suggestions[0]['id'])->toBe($merchantCategory->id);
+    expect($suggestions[1]['id'])->toBe($originalCategoryCategory->id);
 });
