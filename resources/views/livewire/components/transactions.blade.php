@@ -12,8 +12,8 @@ use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     use WithPagination;
 
     #[Locked]
@@ -27,14 +27,17 @@ new class extends Component {
 
     #[Session]
     public ?int $account_id = null;
+
     public ?Account $account = null;
 
     #[Session]
     public ?int $original_category_id = null;
+
     public ?OriginalCategory $original_category = null;
 
     #[Session]
     public ?int $category_id = null;
+
     public ?Category $category = null;
 
     #[Session]
@@ -47,13 +50,19 @@ new class extends Component {
     public string $date_to = '';
 
     public $selected_transactions = [];
+
     public $bulk_category_id;
 
     public $chart_labels = [];
+
     public $chart_values = [];
+
     public $chart_colors = [];
+
     public $chart_tooltip_labels = [];
+
     public $chart_ids = [];
+
     public $chart_type = 'doughnut';
 
     public function mount(?Category $category = null, ?OriginalCategory $original_category = null, ?Account $account = null, ?bool $allow_accounts = false, bool $allow_running_balance = true): void
@@ -129,7 +138,8 @@ new class extends Component {
             ->when($this->category_id ?? false, function ($query) {
                 $category = Category::find($this->category_id);
                 $category_id = $category->id;
-                $descendants = collect($category->descendants)->pluck('id')->toArray();
+                $descendants = $category->descendants;
+
                 return $query->whereHas('categories', function ($query) use ($category_id, $descendants) {
                     $query
                         ->where('categories.id', $category_id)
@@ -151,9 +161,9 @@ new class extends Component {
             $scoreParts = [];
 
             foreach ($terms['optional'] as $term) {
-                foreach (['transactions.name', 'transactions.merchant_name', 'original_categories.name', 'original_categories.description'] as $field) {
+                foreach (['transactions.name', 'transactions.merchant_name', 'original_categories.name', 'original_categories.pf_detailed'] as $field) {
                     $scoreParts[] = "CASE WHEN LOWER($field) LIKE ? THEN 1 ELSE 0 END";
-                    $bindings[] = '%' . strtolower($term) . '%';
+                    $bindings[] = '%'.strtolower($term).'%';
                 }
             }
 
@@ -164,7 +174,7 @@ new class extends Component {
                     ->selectRaw("transactions.*, ($scoreExpr) as relevance", $bindings);
             } else {
                 $query
-                    ->selectRaw("transactions.*, 0 as relevance");
+                    ->selectRaw('transactions.*, 0 as relevance');
             }
 
             $query->where(function ($q) use ($terms) {
@@ -172,20 +182,20 @@ new class extends Component {
                     // Required terms
                     foreach ($terms['required'] as $term) {
                         $q1->where(function ($q2) use ($term) {
-                            $q2->where('transactions.name', 'like', '%' . $term . '%')
-                                ->orWhere('transactions.merchant_name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
+                            $q2->where('transactions.name', 'like', '%'.$term.'%')
+                                ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
                         });
                     }
 
                     // Optional terms
                     foreach ($terms['optional'] as $term) {
                         $q1->orWhere(function ($q2) use ($term) {
-                            $q2->where('transactions.name', 'like', '%' . $term . '%')
-                                ->orWhere('transactions.merchant_name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
+                            $q2->where('transactions.name', 'like', '%'.$term.'%')
+                                ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
                         });
                     }
                 });
@@ -193,25 +203,24 @@ new class extends Component {
                 // Excluded terms
                 foreach ($terms['excluded'] as $term) {
                     $q->where(function ($q1) use ($term) {
-                        $q1->where('transactions.name', 'not like', '%' . $term . '%')
+                        $q1->where('transactions.name', 'not like', '%'.$term.'%')
                             ->where(function ($q2) use ($term) {
-                                $q2->where('transactions.merchant_name', 'not like', '%' . $term . '%')
+                                $q2->where('transactions.merchant_name', 'not like', '%'.$term.'%')
                                     ->orWhereNull('transactions.merchant_name');
                             })
                             ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
-                                $q2->where('name', 'like', '%' . $term . '%');
+                                $q2->where('name', 'like', '%'.$term.'%');
                             })
                             ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
-                                $q2->where('description', 'like', '%' . $term . '%');
+                                $q2->where('pf_detailed', 'like', '%'.$term.'%');
                             });
                     });
                 }
 
-            })
-            ;
+            });
         } else {
             $query
-                ->selectRaw("transactions.*, 0 as relevance");
+                ->selectRaw('transactions.*, 0 as relevance');
         }
 
         return $query;
@@ -233,7 +242,7 @@ new class extends Component {
                 ->clone()
                 ->with('account.linked_account')
                 ->orderByRaw('relevance desc, transactions.created_at desc, transactions.transaction_type desc, transactions.id asc')
-                //->ddRawSql()
+                // ->ddRawSql()
                 ->paginate(25),
             'count' => $query->count(),
             'total' => $query->sum('amount'),
@@ -253,27 +262,30 @@ new class extends Component {
     }
 
     #[Computed]
-    public function accounts() {
+    public function accounts()
+    {
         $accounts = Account::with('linked_account')->get()->sortBy(function ($account) {
-            return $account->linked_account->provider_name . ' - ' . $account->name;
+            return $account->linked_account->provider_name.' - '.$account->name;
         });
+
         return $accounts;
     }
 
-    public function updateChartData() {
+    public function updateChartData()
+    {
         $query = $this->getTransactionsQuery();
 
         $transactions = $query
             ->clone()
             ->reportable()
-            ->with(['categories' => function($q) {
+            ->with(['categories' => function ($q) {
                 $q->select('categories.id', 'categories.name', 'categories.color', 'categories.parent_id');
             }])
             ->get();
 
         $chart_data = [];
         $total_sum = 0;
-        
+
         // Pre-fetch categories into a map for fast parent lookup
         $all_categories = Category::all()->keyBy('id');
 
@@ -284,12 +296,13 @@ new class extends Component {
                 $id = 0;
                 $name = 'Uncategorized';
                 $color = '#9ca3af';
-                
-                if (!isset($chart_data[$id])) {
+
+                if (! isset($chart_data[$id])) {
                     $chart_data[$id] = ['id' => $id, 'label' => $name, 'color' => $color, 'total' => 0];
                 }
                 $chart_data[$id]['total'] += $transaction->amount;
                 $total_sum += abs($transaction->amount);
+
                 continue;
             }
 
@@ -309,11 +322,13 @@ new class extends Component {
                     $path = [];
                     while ($temp) {
                         $path[] = $temp->id;
-                        if ($temp->id == $current_filtered_id) break;
+                        if ($temp->id == $current_filtered_id) {
+                            break;
+                        }
                         $temp = $temp->parent_id ? $all_categories->get($temp->parent_id) : null;
                     }
 
-                    if (!$temp || $temp->id != $current_filtered_id) {
+                    if (! $temp || $temp->id != $current_filtered_id) {
                         continue; // Not under current filter
                     }
 
@@ -333,18 +348,18 @@ new class extends Component {
                 }
 
                 if ($target) {
-                    if (!isset($chart_data[$target->id])) {
+                    if (! isset($chart_data[$target->id])) {
                         $chart_data[$target->id] = [
                             'id' => $target->id,
                             'label' => $target->name,
                             'color' => $target->color ?: '#3b82f6',
-                            'total' => 0
+                            'total' => 0,
                         ];
                     }
                     $chart_data[$target->id]['total'] += $transaction->amount;
                     $total_sum += abs($transaction->amount);
                 }
-                
+
                 break; // Categorize by first category
             }
         }
@@ -353,28 +368,36 @@ new class extends Component {
 
         $this->chart_ids = $chart_data->pluck('id')->toArray();
         $this->chart_labels = $chart_data->pluck('label')->toArray();
-        $this->chart_values = $chart_data->pluck('total')->map(fn($v) => round(abs($v), 2))->toArray();
+        $this->chart_values = $chart_data->pluck('total')->map(fn ($v) => round(abs($v), 2))->toArray();
         $this->chart_colors = $chart_data->pluck('color')->toArray();
-        
+
         $abs_total = $total_sum;
-        $this->chart_tooltip_labels = $chart_data->map(function($item) use ($abs_total) {
+        $this->chart_tooltip_labels = $chart_data->map(function ($item) use ($abs_total) {
             $val = abs($item['total']);
             $percent = $abs_total > 0 ? round(($val / $abs_total) * 100, 1) : 0;
-            return currency($item['total'], flat: 1) . " ({$percent}%)";
+
+            return currency($item['total'], flat: 1)." ({$percent}%)";
         })->toArray();
 
         $this->dispatch('refresh-chart');
     }
 
+    #[On('transactions-updated')]
+    public function refreshTransactions(): void
+    {
+        $this->resetPage();
+    }
+
     #[On('chart-clicked')]
     public function handleChartClick($categoryId)
     {
-        if ($categoryId == 0) return; // Uncategorized or invalid
-        
-        $this->category_id = (int)$categoryId;
+        if ($categoryId == 0) {
+            return;
+        } // Uncategorized or invalid
+
+        $this->category_id = (int) $categoryId;
         $this->category = Category::find($this->category_id);
         $this->resetPage();
-        // updateChartData will be triggered by rendered hook
     }
 
     public function goBack()
@@ -390,14 +413,16 @@ new class extends Component {
     }
 
     #[On('save-category')]
-    public function saveCategory($transaction_id, $category_id) {
+    public function saveCategory($transaction_id, $category_id)
+    {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('update', $transaction);
         $transaction->categories()->sync([$category_id]);
         $transaction->save();
     }
 
-    public function deleteTransactionCategory($category_transaction_id) {
+    public function deleteTransactionCategory($category_transaction_id)
+    {
         // We should check if the transaction belongs to the user
         $pivot = DB::table('category_transaction')->where('id', $category_transaction_id)->first();
         if ($pivot) {
@@ -407,14 +432,16 @@ new class extends Component {
         }
     }
 
-    public function deleteTransaction($transaction_id) {
+    public function deleteTransaction($transaction_id)
+    {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('delete', $transaction);
         $transaction->categories()->detach();
         $transaction->delete();
     }
 
-    public function bulkCategorize() {
+    public function bulkCategorize()
+    {
         dd($this->selected_transactions, $this->bulk_category_id);
         foreach ($this->transactions as $transaction) {
             $transaction->categories()->sync([$this->category_id]);
@@ -472,8 +499,8 @@ new class extends Component {
                         <label for="search">Original Category</label>
                         <flux:select wire:model.live="original_category_id" clearable>
                             <flux:select.option value="0">-- All Original Categories --</flux:select.option>
-                            @foreach(OriginalCategory::all()->sortBy('details') as $category_option)
-                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->details }}</flux:select.option>
+                            @foreach(OriginalCategory::all()->sortBy('full_path') as $category_option)
+                            <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->full_path }}</flux:select.option>
                             @endforeach
                         </flux:select>
                     </div>
@@ -618,7 +645,7 @@ new class extends Component {
                                 {{ $transaction['name'] }}
                                 <br>
                                 @if($transaction['originalCategory'])
-                                <small>{{ $transaction['originalCategory']['name'] }} - {{ $transaction['originalCategory']['details'] }}</small>
+                                <small>{{ $transaction['originalCategory']['full_path'] }}</small>
                                 @endif
                                 @if($transaction['payment_channel'])
                                 <small>({{ $transaction['payment_channel'] }}) </small>

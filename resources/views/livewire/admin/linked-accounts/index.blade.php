@@ -1,14 +1,12 @@
 <?php
 
-
 use App\Models\LinkedAccount;
-use App\Services\Plaid\PlaidService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 
-new class extends Component {
-
+new class extends Component
+{
     public array $linkedAccounts;
 
     public string $environment = '';
@@ -16,16 +14,18 @@ new class extends Component {
     private $plaid_instance;
 
     protected $listeners = [
-        'exchangePublicToken' => '$refresh'
+        'exchangePublicToken' => '$refresh',
     ];
 
-    public function mount(): void {
+    public function mount(): void
+    {
         $this->authorize('viewAny', LinkedAccount::class);
         $this->updateLinkedAccount();
     }
 
     #[Computed]
-    private function plaid() {
+    private function plaid()
+    {
 
         if (! $this->plaid_instance) {
             $this->plaid_instance = plaid();
@@ -34,21 +34,22 @@ new class extends Component {
         return $this->plaid_instance;
     }
 
-    public function linkAccount(?LinkedAccount $linkedAccount = null) : void {
+    public function linkAccount(?LinkedAccount $linkedAccount = null): void
+    {
         if ($linkedAccount && $linkedAccount->id) {
             $this->authorize('update', $linkedAccount);
         }
 
         $data = [
             'client_name' => 'Insights',
-            'products' => [ 'transactions' ],
-            'required_if_supported_products' => [ 'auth' ],
+            'products' => ['transactions'],
+            'required_if_supported_products' => ['auth'],
             'country_codes' => ['US'],
             'language' => 'en',
             'user' => [
-                'client_user_id' => (string)auth()->user()->id,
-                //'phone_number' => '415-555-0012',
-            ]
+                'client_user_id' => (string) auth()->user()->id,
+                // 'phone_number' => '415-555-0012',
+            ],
         ];
 
         if ($linkedAccount->id > 0) {
@@ -63,9 +64,10 @@ new class extends Component {
     }
 
     #[On('exchangePublicToken')]
-    public function exchangePublicToken($public_token): void {
+    public function exchangePublicToken($public_token): void
+    {
         $result = $this->plaid->exchangePublicToken(data: [
-            'public_token' => $public_token
+            'public_token' => $public_token,
         ]);
 
         auth()->user()->linkedAccounts()->create([
@@ -76,11 +78,13 @@ new class extends Component {
         $this->redirectRoute('linked-accounts.index');
     }
 
-    public function updateLinkedAccount(): void {
+    public function updateLinkedAccount(): void
+    {
         $this->linkedAccounts = auth()->user()->linkedAccounts->toArray();
     }
 
-    public function delete(LinkedAccount $linkedAccount): void {
+    public function delete(LinkedAccount $linkedAccount): void
+    {
         $this->authorize('delete', $linkedAccount);
         $linkedAccount->delete();
         $this->updateLinkedAccount();
@@ -119,9 +123,8 @@ new class extends Component {
 
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 
+@script
 <script type="text/javascript">
-document.addEventListener('livewire:init', () => {
-
     Livewire.on('triggerPlaid', (event) => {
         var handler = Plaid.create({
             // Create a new link_token to initialize Link
@@ -164,5 +167,5 @@ document.addEventListener('livewire:init', () => {
         });
         handler.open();
     });
-});
 </script>
+@endscript

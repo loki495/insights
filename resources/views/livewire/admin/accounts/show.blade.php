@@ -8,8 +8,8 @@ use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     use WithPagination;
 
     public Account $account;
@@ -57,6 +57,8 @@ new class extends Component {
     public function pullData(): void
     {
         PullLinkedAccountTransactionsAction::run($this->account->linked_account);
+
+        $this->dispatch('transactions-updated');
     }
 
     public function with(): array
@@ -70,20 +72,20 @@ new class extends Component {
                     // Required terms
                     foreach ($terms['required'] as $term) {
                         $q1->where(function ($q2) use ($term) {
-                            $q2->where('name', 'like', '%' . $term . '%')
-                                ->orWhere('merchant_name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
+                            $q2->where('name', 'like', '%'.$term.'%')
+                                ->orWhere('merchant_name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'description', 'like', '%'.$term.'%');
                         });
                     }
 
                     // Optional terms
                     foreach ($terms['optional'] as $term) {
                         $q1->orWhere(function ($q2) use ($term) {
-                            $q2->where('name', 'like', '%' . $term . '%')
-                                ->orWhere('merchant_name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%' . $term . '%')
-                                ->orWhereRelation('originalCategory', 'description', 'like', '%' . $term . '%');
+                            $q2->where('name', 'like', '%'.$term.'%')
+                                ->orWhere('merchant_name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
+                                ->orWhereRelation('originalCategory', 'description', 'like', '%'.$term.'%');
                         });
                     }
                 });
@@ -91,16 +93,16 @@ new class extends Component {
                 // Excluded terms
                 foreach ($terms['excluded'] as $term) {
                     $q->where(function ($q1) use ($term) {
-                        $q1->where('name', 'not like', '%' . $term . '%')
+                        $q1->where('name', 'not like', '%'.$term.'%')
                             ->where(function ($q2) use ($term) {
-                                $q2->where('merchant_name', 'not like', '%' . $term . '%')
+                                $q2->where('merchant_name', 'not like', '%'.$term.'%')
                                     ->orWhereNull('merchant_name');
                             })
                             ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
-                                $q2->where('name', 'like', '%' . $term . '%');
+                                $q2->where('name', 'like', '%'.$term.'%');
                             })
                             ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
-                                $q2->where('description', 'like', '%' . $term . '%');
+                                $q2->where('description', 'like', '%'.$term.'%');
                             });
                     });
                 }
@@ -112,7 +114,6 @@ new class extends Component {
             'transactions' => $transactions->orderBy('created_at', 'desc')->paginate(10),
         ];
     }
-
 }
 
 ?>
