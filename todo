@@ -281,3 +281,41 @@
       can leak into a later test that reuses that same id. Worth deciding
       whether to remove the cache, key it differently, or add an
       invalidation path (e.g. clear on save/rename).
+
+## Follow-up layout fixes + search 500 (2026-07-18)
+- [x] Fixed a real 500: Transaction::scopeReportable() referenced an
+      unqualified `parent_id`, which became ambiguous once search's
+      leftJoin to original_categories (also has a parent_id column) was
+      active — so typing ANY search term crashed the page. Qualified it
+      as `transactions.parent_id`. Regression test added (confirmed it
+      fails without the fix). Found via a live bug report while
+      double-checking pagination — not something I introduced this
+      session, but newly triggered by the search feature added earlier.
+- [x] Found but NOT fixed, flagging clearly: scopeReportable() ALSO
+      references `is_split` and `parent_transaction_id`, neither of
+      which exist as columns on `transactions` (confirmed via `PRAGMA
+      table_info`). This doesn't crash because SQLite has a quirk where
+      double-quoted identifiers that don't resolve to a real column or
+      table fall back to being treated as string literals — so
+      `"is_split" = 0` silently becomes `'is_split' = 0` (always false)
+      and `"parent_transaction_id" is not null` becomes always-true.
+      Net effect: the `OR` branch is always true, so `reportable()` is
+      currently a no-op that matches virtually every transaction rather
+      than actually filtering split/non-split ones. Needs a decision:
+      were `is_split`/`parent_transaction_id` meant to be added via a
+      migration, or should the scope be rewritten against the columns
+      that actually exist (`parent_id`, `transaction_type`, etc.)?
+- [x] Details box now genuinely goes side-by-side with filters at iPad
+      landscape (lg:, ~1024px) as originally intended, not just on wide
+      desktop — two contributing fixes: shortened the From/To date
+      format (dropped weekday/ordinal/month name — "1/1/26 12:00am"
+      instead of "Thursday 1st, Jan 2026 at 12:00am") to free up width,
+      and added `min-w-0` to the filters column, which was overflowing
+      the viewport by ~80px because flex items default to
+      `min-width: auto` and won't shrink below their own content's
+      minimum width unless told to.
+- [x] Bottom pagination's Previous/Next weren't actually justify-between
+      (they were clustering together) because the wrapping flex parent
+      uses `items-start`, so the pagination nav sized to its own content
+      instead of stretching to the row's full width. Wrapped it in a
+      `w-full` div.
