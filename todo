@@ -18,13 +18,13 @@
       persisted via docker/setup-dev-container.sh for future rebuilds.
 - [x] npm update for vite, axios, autoprefixer, concurrently, lightningcss —
       npm audit reports zero vulnerabilities.
-- [x] tailwindcss/@tailwindcss/vite/@tailwindcss/oxide pinned to exact 4.1.17
-      (was floating on ^4.0.7) — npm update had pulled 4.3.3, whose oxide
-      native binding requires Node >= 20; insights-vite runs Node 18, so
-      the dev server and build both failed even after a clean reinstall.
-      Pinning to the last Node-18-compatible version was the safe fix here.
-- [ ] Future, deliberate: bump insights-vite's docker-compose image from
-      node:18 to node:20+ to unpin tailwindcss to the 4.3.x line
+- [x] tailwindcss/@tailwindcss/vite/@tailwindcss/oxide initially pinned to
+      exact 4.1.17 (npm update had pulled 4.3.3, whose oxide native binding
+      requires Node >= 20, but insights-vite ran Node 18). Resolved properly
+      by bumping insights-vite's docker-compose image to node:20 and
+      unpinning back to the original ^4.0.7 caret range — now on 4.3.3
+      cleanly, no EBADENGINE warnings. Verified dev server + build + browser
+      render.
 - [ ] laravel/pint bumped 1.27.1 -> 1.29.3 as part of this update and now
       flags ~19 pre-existing files (tests/, routes/, factories/, seeders/)
       for new default style rules (fully_qualified_strict_types,
