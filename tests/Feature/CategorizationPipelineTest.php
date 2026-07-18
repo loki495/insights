@@ -38,6 +38,20 @@ function makeAccountWithTransaction(Category $category): Account
     return $account;
 }
 
+it('searching transactions does not throw an ambiguous column error', function (): void {
+    // Regression test: Transaction::scopeReportable() referenced an
+    // unqualified `parent_id`, which is genuinely ambiguous once the
+    // search feature's leftJoin to original_categories (which also has
+    // a parent_id column) is active. Any search term used to 500.
+    $category = Category::create(['name' => 'Anchor']);
+    $account = makeAccountWithTransaction($category);
+
+    $test = Livewire::test('components.transactions', ['account' => $account])
+        ->set('search', 'Bar');
+
+    $test->assertOk();
+});
+
 it('descendants() returns a flat array of ids including self and all nested children', function (): void {
     $expenses = Category::create(['name' => 'Expenses']);
     $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);

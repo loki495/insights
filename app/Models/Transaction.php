@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Transaction extends Model
 {
-    /** @use HasFactory<\Database\Factories\TransactionFactory> */
+    /** @use HasFactory<TransactionFactory> */
     use HasFactory;
 
     public $casts = [
@@ -49,7 +50,7 @@ class Transaction extends Model
         return $this->hasMany(Transaction::class, 'parent_id', 'id');
     }
 
-     public function parent()
+    public function parent()
     {
         return $this->belongsTo(Transaction::class, 'parent_id');
     }
@@ -62,13 +63,13 @@ class Transaction extends Model
             ->where(function ($query) {
                 $query
                     ->where(function ($q) {
-                        $q->whereNull('parent_id')
+                        $q->whereNull('transactions.parent_id')
                             ->where('is_split', false); // regular top-level
                     })
                     ->orWhereNotNull('parent_transaction_id'); // split children
-            //})
-            //->doesntHave('categories', function ($query) use ($non_reportable_ids) {
-                //$query->whereIn('id', $non_reportable_ids);
+                // })
+                // ->doesntHave('categories', function ($query) use ($non_reportable_ids) {
+                // $query->whereIn('id', $non_reportable_ids);
             });
     }
 }
