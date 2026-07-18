@@ -127,3 +127,39 @@ it('transactions-updated event triggers a re-render without error', function ():
 
     $test->assertOk();
 });
+
+it('createCategory creates a top-level category with a default color', function (): void {
+    $category = Category::create(['name' => 'Anchor']);
+    $account = makeAccountWithTransaction($category);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $created = $test->instance()->createCategory('Brand New Category', null, null);
+
+    $category = Category::where('name', 'Brand New Category')->firstOrFail();
+    expect($category->parent_id)->toBe(0);
+    expect($category->color)->toBe('#3b82f6');
+    expect($created)->toBe(['id' => $category->id, 'name' => $category->fullName, 'color' => $category->color]);
+});
+
+it('createCategory nests under the given parent with the given color', function (): void {
+    $parent = Category::create(['name' => 'Expenses']);
+    $account = makeAccountWithTransaction($parent);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $test->instance()->createCategory('Subcategory', $parent->id, '#ef4444');
+
+    $category = Category::where('name', 'Subcategory')->firstOrFail();
+    expect($category->parent_id)->toBe($parent->id);
+    expect($category->color)->toBe('#ef4444');
+    expect($category->parent->name)->toBe('Expenses');
+});
+
+it('createCategory rejects a blank name', function (): void {
+    $category = Category::create(['name' => 'Anchor']);
+    $account = makeAccountWithTransaction($category);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+
+    expect(fn () => $test->instance()->createCategory('   ', null, null))
+        ->toThrow(InvalidArgumentException::class);
+});
