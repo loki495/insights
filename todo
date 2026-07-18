@@ -78,13 +78,17 @@
       merchantSuggestions(), surfaced as an inline "+ Category?" quick-apply
       chip next to uncategorized transactions, and pinned at the top of the
       modal when opened via "+". Groundwork for future auto-categorization.
-- [ ] Explicitly deprioritized for now: favorites / most-used quick-pick chips
-- [ ] Add a way to create a new category directly from the "assign category"
-      popup (ideally a nested modal), so a brand-new category can be created
-      and assigned to the transaction in one flow
-- [ ] The delete-category (x) affordance on existing pills relies on
-      mouseover/mouseout (x-show="over") — doesn't work on touch/mobile since
-      there's no hover state. Needs a tap-friendly alternative on small screens.
+- [x] Explicitly deprioritized: favorites / most-used quick-pick chips
+- [x] Create category from the assign-category popup (2026-07-18) — a
+      "+ Create new category" option swaps the modal's content to a
+      name/parent/color form; submitting creates it, merges it into the
+      client-side category list, and applies it via the same optimistic
+      flow as picking an existing category. Regression tests added.
+- [x] Touch-friendly category delete (2026-07-18) — replaced the
+      mouseover/mouseout Alpine toggle with pure CSS (always 70%
+      opacity, full opacity on :hover), no device detection needed.
+      Verified visible + tappable on a fresh page load with zero mouse
+      interaction.
 
 ## Mobile layout audit (2026-07-18)
 - [x] Audited every main page at a 390px viewport (dashboard, linked
@@ -117,3 +121,12 @@
 ## Later / exploratory (raised by Andres, not scheduled)
 - [ ] Look into Livewire @islands to scope re-renders to just the changed
       row + chart instead of the whole transactions component
+- [ ] Found while adding createCategory() tests: Category::fullName() and
+      Category::descendants() cache by id in a *static* class-level array
+      with no invalidation. Harmless per-request in normal (non-Octane)
+      usage, but stale across anything that reuses ids without a fresh
+      PHP process — including this project's own Pest runs under
+      RefreshDatabase, where one test's cached name/descendants for an id
+      can leak into a later test that reuses that same id. Worth deciding
+      whether to remove the cache, key it differently, or add an
+      invalidation path (e.g. clear on save/rename).
