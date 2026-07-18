@@ -286,7 +286,9 @@ new class extends Component
         return $this->categories
             ->map(fn ($category) => [
                 'id' => $category->id,
-                'name' => $category->fullName,
+                'name' => $category->name,
+                'full_name' => $category->fullName,
+                'parent_id' => $category->parent_id ?: 0,
                 'color' => $category->color ?: '#3b82f6',
             ])
             ->values()
@@ -300,7 +302,9 @@ new class extends Component
             ->mapWithKeys(fn ($category) => [
                 $category->id => [
                     'id' => $category->id,
-                    'name' => $category->fullName,
+                    'name' => $category->name,
+                    'full_name' => $category->fullName,
+                    'parent_id' => $category->parent_id ?: 0,
                     'color' => $category->color ?: '#3b82f6',
                 ],
             ])
@@ -519,20 +523,18 @@ new class extends Component
 
         return [
             'id' => $category->id,
-            'name' => $category->fullName,
+            'name' => $category->name,
+            'full_name' => $category->fullName,
+            'parent_id' => $category->parent_id ?: 0,
             'color' => $category->color,
         ];
     }
 
-    public function deleteTransactionCategory($category_transaction_id)
+    public function clearCategory($transaction_id): void
     {
-        // We should check if the transaction belongs to the user
-        $pivot = DB::table('category_transaction')->where('id', $category_transaction_id)->first();
-        if ($pivot) {
-            $transaction = Transaction::findOrFail($pivot->transaction_id);
-            $this->authorize('update', $transaction);
-            DB::table('category_transaction')->where('id', $category_transaction_id)->delete();
-        }
+        $transaction = Transaction::findOrFail($transaction_id);
+        $this->authorize('update', $transaction);
+        $transaction->categories()->sync([]);
     }
 
     public function deleteTransaction($transaction_id)
@@ -567,6 +569,9 @@ new class extends Component
                 $wire.saveCategory(transactionId, categoryId)
                     .then(() => { delete this.optimisticCategories[transactionId]; })
                     .catch(() => { delete this.optimisticCategories[transactionId]; });
+            },
+            clearCategory(transactionId) {
+                $wire.clearCategory(transactionId);
             },
         }"
         class="flex flex-col gap-4 items-start w-full"
@@ -657,40 +662,43 @@ new class extends Component
 
             </div>
 
-            <div class="h-full p-2 rounded-xl bg-white/10">
-                <x-table>
-                    <x-slot name="body">
-                        <x-table.tr>
-                            <x-table.td class="!px-0 align-top">From:</x-table.td>
-                            <x-table.td class="!px-3">
-                                <span class="font-bold">{!! \Carbon\Carbon::parse($date_from)->format('l jS, M Y') !!}</span>
-                                <br>
-                                at {!! \Carbon\Carbon::parse($date_from)->format('h:ia') !!}
-                            </x-table.td>
-                        </x-table.tr>
-                        <x-table.tr>
-                            <x-table.td class="!px-0 align-top">To:</x-table.td>
-                            <x-table.td class="!px-3">
-                                <span class="font-bold">{!! \Carbon\Carbon::parse($date_to)->format('l jS, M Y') !!}</span>
-                                <br>
-                                at {!! \Carbon\Carbon::parse($date_to)->format('h:ia') !!}
-                            </x-table.td>
-                        </x-table.tr>
-                    </x-slot>
-                </x-table>
-                <x-table>
-                    <x-slot name="body">
-                        <x-table.tr>
-                            <x-table.td class="!px-0">Transactions:</x-table.td>
-                            <x-table.td class="text-right">{{ $count }}</x-table.td>
-                        </x-table.tr>
-                        <x-table.tr>
-                            <x-table.td class="!px-0">Total:</x-table.td>
-                            <x-table.td class="text-right">{!! currency(abs($total)) !!}</x-table.td>
-                        </x-table.tr>
-                    </x-slot>
-                </x-table>
-            </div>
+            <details class="w-full md:w-auto shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10">
+                <summary class="cursor-pointer select-none p-2 font-medium">Details</summary>
+                <div class="p-2 pt-0">
+                    <x-table>
+                        <x-slot name="body">
+                            <x-table.tr>
+                                <x-table.td class="!px-0 align-top">From:</x-table.td>
+                                <x-table.td class="!px-3 text-right">
+                                    <span class="font-bold">{!! \Carbon\Carbon::parse($date_from)->format('l jS, M Y') !!}</span>
+                                    <br>
+                                    at {!! \Carbon\Carbon::parse($date_from)->format('h:ia') !!}
+                                </x-table.td>
+                            </x-table.tr>
+                            <x-table.tr>
+                                <x-table.td class="!px-0 align-top">To:</x-table.td>
+                                <x-table.td class="!px-3 text-right">
+                                    <span class="font-bold">{!! \Carbon\Carbon::parse($date_to)->format('l jS, M Y') !!}</span>
+                                    <br>
+                                    at {!! \Carbon\Carbon::parse($date_to)->format('h:ia') !!}
+                                </x-table.td>
+                            </x-table.tr>
+                        </x-slot>
+                    </x-table>
+                    <x-table>
+                        <x-slot name="body">
+                            <x-table.tr>
+                                <x-table.td class="!px-0">Transactions:</x-table.td>
+                                <x-table.td class="text-right">{{ $count }}</x-table.td>
+                            </x-table.tr>
+                            <x-table.tr>
+                                <x-table.td class="!px-0">Total:</x-table.td>
+                                <x-table.td class="text-right">{!! currency(abs($total)) !!}</x-table.td>
+                            </x-table.tr>
+                        </x-slot>
+                    </x-table>
+                </div>
+            </details>
 
         </div>
 
@@ -708,146 +716,46 @@ new class extends Component
             </div>
         </div>
 
-        <div class="flex flex-col gap-3 sm:hidden w-full">
-            @forelse($transactions ?? [] as $transaction)
-            <div wire:key="mobile-txn-{{ $transaction['id'] }}" class="flex flex-col gap-2 p-3 rounded-xl bg-white/10">
-                <div class="flex items-start justify-between gap-2">
-                    <div class="text-xs text-zinc-500 dark:text-zinc-400">
-                        {{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }} #{{ $transaction['id'] }}
-                    </div>
-                    <div class="flex gap-2 items-center shrink-0">
-                        <x-button icon="pencil" href="{{ route('transactions.edit', ['transaction' => $transaction['id'] ]) }}" />
-                        @if($transaction['original']['manual'] ?? false)
-                        <flux:icon.trash wire:confirm="Are you sure you want to delete this transaction?\n(#{{ $transaction['id'] }} - {{ htmlQuotes($transaction['name']) }})" variant="solid" wire:click="deleteTransaction({{ $transaction['id'] }})" class="cursor-pointer text-red-500 size-6 p-px font-bold hover:bg-white rounded-full" />
-                        @endif
-                    </div>
-                </div>
+        @php
+            $showRunningBalance = $transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance && !$search;
+        @endphp
 
-                @if ($allow_accounts)
-                <div class="text-xs text-zinc-500 dark:text-zinc-400">
-                    {{ $transaction['account']['name'] }} &middot; {{ $transaction['account']['linked_account']['provider_name'] }}
-                </div>
-                @endif
-
-                <div>
-                    <div class="font-medium break-words">{{ $transaction['name'] }}</div>
-                    @if($transaction['originalCategory'])
-                    <small class="text-zinc-500 dark:text-zinc-400">{{ $transaction['originalCategory']['full_path'] }}</small>
+        <x-responsive-table
+            :items="$transactions ?? []"
+            row-view="livewire.components.partials.transaction-table-row"
+            card-view="livewire.components.partials.transaction-card"
+            empty-message="No transactions found"
+            :context="['allow_accounts' => $allow_accounts, 'showRunningBalance' => $showRunningBalance]"
+            class="transactions-table min-w-full w-max"
+            wire:scroll
+            x-data="{selected_transactions: [] }"
+        >
+            <x-slot name="head">
+                <x-table.tr x-show="selected_transactions.length > 0">
+                    <x-table.td colspan="3">
+                        <div class="flex gap-4">
+                            <flux:select wire:model="bulk_category_id" >
+                                <flux:select.option value="0">-- No Category --</flux:select.option>
+                                @foreach($this->categories as $category_option)
+                                    <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                            <flux:button wire:click="bulkCategorize">Bulk Categorize</flux:button>
+                        </div>
+                    </x-table.td>
+                </x-table.tr>
+                <x-table.tr wire:loading.remove>
+                    <x-table.th class="text-center w-28"></x-table.th>
+                    <x-table.th class="text-center w-28">Date</x-table.th>
+                    @if ($allow_accounts)
+                    <x-table.th class="2-56">Source</x-table.th>
                     @endif
-                    @if($transaction['payment_channel'])
-                    <small class="text-zinc-500 dark:text-zinc-400">({{ $transaction['payment_channel'] }})</small>
-                    @endif
-                </div>
-
-                @include('livewire.components.partials.transaction-category-chips', ['transaction' => $transaction])
-
-                <div class="flex items-end justify-between gap-2 pt-1 border-t border-zinc-700/30">
-                    <div class="font-semibold">{!! currency($transaction['amount'], $transaction['currency']) !!}</div>
-                    @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance && !$search)
-                    <div class="{{ when($transaction['running_balance'] < 0, 'text-red-400', 'text-zinc-500 dark:text-zinc-400') }} text-sm">
-                        Balance: {!! currency($transaction['running_balance'], $transaction['currency'], 1) !!}
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @empty
-            <div class="text-center text-zinc-500 dark:text-zinc-400 py-4">No transactions found</div>
-            @endforelse
-        </div>
-
-        <div class="hidden sm:flex flex-col gap-4 bg-white/10 p-4 rounded-xl w-full relative overflow-x-scroll">
-
-            <x-table class="transactions-table min-w-full w-max" wire:scroll x-data="{selected_transactions: [] }">
-                <x-slot name="head">
-                    <x-table.tr x-show="selected_transactions.length > 0">
-                        <x-table.td colspan="3">
-                            <div class="flex gap-4">
-                                <flux:select wire:model="bulk_category_id" >
-                                    <flux:select.option value="0">-- No Category --</flux:select.option>
-                                    @foreach($this->categories as $category_option)
-                                        <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
-                                    @endforeach
-                                </flux:select>
-                                <flux:button wire:click="bulkCategorize">Bulk Categorize</flux:button>
-                            </div>
-                        </x-table.td>
-                    </x-table.tr>
-                    <x-table.tr wire:loading.remove>
-                        <x-table.th class="text-center w-28"></x-table.th>
-                        <x-table.th class="text-center w-28">Date</x-table.th>
-                        @if ($allow_accounts)
-                        <x-table.th class="2-56">Source</x-table.th>
-                        @endif
-                        <x-table.th>Description</x-table.th>
-                        <x-table.th>Amount</x-table.th>
-                        <x-table.th class="w-28"></x-table.th>
-                    </x-table.tr>
-                </x-slot>
-                <x-slot name="body">
-                    <x-table.tr wire:loading class="min-h-screen">
-                        <x-table.td colspan="9">
-                           <div class="absolute w-full h-full flex items-start justify-center z-10">
-                                <div class="mt-16 sticky left-1/2 top-32 -translate-x-1/2">
-                                    <flux:icon.loading class="w-16 h-16" />
-                                </div>
-                            </div>
-                        </x-table.td>
-                    </x-table.tr>
-                @forelse($transactions ?? [] as $transaction)
-                    <x-table.tr wire:loading.remove class="hover:bg-zinc-100 dark:hover:bg-zinc-900/20 border-b border-zinc-300 dark:border-zinc-700 cursor-normal">
-                        <x-table.td class="text-center">
-                            <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $transaction['id'] }}" class="selected_transaction" />
-                        </x-table.td>
-                        <x-table.td class="text-center">
-                            {{ \Carbon\Carbon::parse($transaction['created_at'])->format('m/d/Y') }}
-                            #{{ $transaction['id'] }}
-                        </x-table.td>
-                        @if ($allow_accounts)
-                        <x-table.td class="max-w-lg">
-                            <div>{{ $transaction['account']['name'] }}</div>
-                            <div class="text-sm text-zinc-400">{{ $transaction['account']['linked_account']['provider_name'] }}</div>
-                        </x-table.td>
-                        @endif
-                        <x-table.td class="max-w-lg">
-                            <div>
-                                {{ $transaction['name'] }}
-                                <br>
-                                @if($transaction['originalCategory'])
-                                <small>{{ $transaction['originalCategory']['full_path'] }}</small>
-                                @endif
-                                @if($transaction['payment_channel'])
-                                <small>({{ $transaction['payment_channel'] }}) </small>
-                                @endif
-
-                                <div class="mt-2">
-                                    @include('livewire.components.partials.transaction-category-chips', ['transaction' => $transaction])
-                                </div>
-                            </div>
-                        </x-table.td>
-                        <x-table.td class="text-right">
-                            <div>{!! currency($transaction['amount'], $transaction['currency']) !!}</div>
-                        @if ($transactions->first() && $transactions->first()['running_balance'] && $allow_running_balance && !$search)
-                            <div class='{{ when($transaction['running_balance'] < 0, 'text-red-400', 'text-zinc-300') }} text-sm'>{!! currency($transaction['running_balance'], $transaction['currency'], 1) !!}</div>
-                        @endif
-                        </x-table.td>
-
-                        <x-table.td class="text-right">
-                            <div class="flex gap-2 items-center">
-                                    <x-button icon="pencil" href="{{ route('transactions.edit', ['transaction' => $transaction['id'] ]) }}" />
-                                @if($transaction['original']['manual'] ?? false)
-                                    <flux:icon.trash wire:confirm="Are you sure you want to delete this transaction?\n(#{{ $transaction['id'] }} - {{ htmlQuotes($transaction['name']) }})" variant="solid" wire:click="deleteTransaction({{ $transaction['id'] }})" class="cursor-pointer text-red-500 size-6 p-px font-bold hover:bg-white rounded-full" />
-                                @endif
-                            </div>
-                        </x-table.td>
-                    </x-table.tr>
-                    @empty
-                    <x-table.tr wire:loading.remove>
-                        <x-table.td colspan="4" class="text-center"><div class="mt-4">No transactions found</div></x-table.td>
-                    </x-table.tr>
-                    @endforelse
-                </x-slot>
-            </x-table>
-        </div>
+                    <x-table.th>Description</x-table.th>
+                    <x-table.th>Amount</x-table.th>
+                    <x-table.th class="w-28"></x-table.th>
+                </x-table.tr>
+            </x-slot>
+        </x-responsive-table>
 
         @if($transactions)
         {{ $transactions->links(data: ['scrollTo' => '#transactions-table']) }}
@@ -864,7 +772,9 @@ new class extends Component
                     transaction_name: '',
                     transaction_amount: 0,
                     suggested_category_id: 0,
+                    editing_category_id: 0,
                     categorySearch: '',
+                    categoryParentId: 0,
                     creatingCategory: false,
                     newCategoryName: '',
                     newCategoryParentId: '',
@@ -873,13 +783,34 @@ new class extends Component
                     filteredCategories() {
                         const q = this.categorySearch.trim().toLowerCase();
                         if (!q) return this.categoryList;
-                        return this.categoryList.filter(c => c.name.toLowerCase().includes(q));
+                        return this.categoryList
+                            .filter(c => c.full_name.toLowerCase().includes(q))
+                            .sort((a, b) => a.full_name.localeCompare(b.full_name));
+                    },
+                    categoriesAtCurrentLevel() {
+                        return this.categoryList
+                            .filter(c => (c.parent_id || 0) === this.categoryParentId)
+                            .sort((a, b) => a.name.localeCompare(b.name));
+                    },
+                    categoryHasChildren(catId) {
+                        return this.categoryList.some(c => (c.parent_id || 0) === catId);
+                    },
+                    currentParentCategory() {
+                        return this.categoryLookup[this.categoryParentId] || null;
+                    },
+                    drillInto(catId) {
+                        this.categoryParentId = catId;
+                        this.categorySearch = '';
+                    },
+                    drillUp() {
+                        const parent = this.currentParentCategory();
+                        this.categoryParentId = parent ? (parent.parent_id || 0) : 0;
                     },
                     startCreatingCategory() {
                         this.creatingCategory = true;
                         this.creatingCategoryError = '';
                         this.newCategoryName = this.categorySearch.trim();
-                        this.newCategoryParentId = '';
+                        this.newCategoryParentId = this.categorySearch.trim() ? '' : (this.categoryParentId || '');
                         this.newCategoryColor = this.categoryColorPalette[Math.floor(Math.random() * this.categoryColorPalette.length)];
                     },
                     createAndApplyCategory() {
@@ -901,14 +832,22 @@ new class extends Component
                 }"
                 x-on:keydown.escape.window="open = false"
                 x-show="open"
-                @add-category.window="add=true;open=true;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=event.detail.suggested_category_id;"
-                @edit-category.window="add=false;open=true;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=0;"
+                @add-category.window="add=true;open=true;categorySearch='';categoryParentId=0;creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=event.detail.suggested_category_id;editing_category_id=0;"
+                @edit-category.window="add=false;open=true;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=0;editing_category_id=event.detail.category_id;categoryParentId=(categoryLookup[event.detail.category_id]?.parent_id || 0);"
             >
                 <div class="fixed inset-0 bg-zinc-900/50" @click="open = false"></div>
                 <div class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white p-4 rounded-xl w-full max-w-96 max-h-[85vh] z-10 flex flex-col overflow-hidden shadow-xl">
                     <div class="flex flex-col gap-4 min-h-0 flex-1" x-show="!creatingCategory">
-                        <div x-show="add">Add Category</div>
-                        <div x-show="!add">Edit Category</div>
+                        <div class="flex items-center justify-between">
+                            <span x-show="add">Add Category</span>
+                            <span x-show="!add">Edit Category</span>
+                            <button
+                                type="button"
+                                x-show="editing_category_id > 0"
+                                @click="open = false; clearCategory(transaction_id)"
+                                class="cursor-pointer text-xs text-red-500 hover:text-red-600"
+                            >Clear category</button>
+                        </div>
                         <div class="flex justify-between">
                             <div><span x-html="transaction_name"></span> (#<span x-text="transaction_id"></span>)</div>
                             <span x-html="transaction_amount"></span>
@@ -922,23 +861,64 @@ new class extends Component
                             :style="`border-color: ${categoryLookup[suggested_category_id]?.color}; color: ${categoryLookup[suggested_category_id]?.color}`"
                         >
                             <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${categoryLookup[suggested_category_id]?.color}`"></span>
-                            Suggested: <span x-text="categoryLookup[suggested_category_id]?.name"></span>
+                            Suggested: <span x-text="categoryLookup[suggested_category_id]?.full_name"></span>
                         </button>
 
                         <x-input type="text" x-model="categorySearch" placeholder="Search categories..." class="w-full shrink-0"></x-input>
 
+                        <button
+                            type="button"
+                            x-show="!categorySearch.trim() && categoryParentId !== 0"
+                            @click="drillUp()"
+                            class="cursor-pointer flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white shrink-0"
+                        >
+                            <flux:icon.chevron-left class="size-4 shrink-0" />
+                            <span x-text="currentParentCategory()?.name || 'All Categories'"></span>
+                        </button>
+
                         <div class="overflow-y-auto flex flex-col gap-1 min-h-0 flex-1">
-                            <template x-for="cat in filteredCategories()" :key="cat.id">
-                                <button
-                                    type="button"
-                                    @click="open = false; applyCategory(transaction_id, cat.id)"
-                                    class="cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
-                                >
-                                    <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
-                                    <span x-text="cat.name"></span>
-                                </button>
+                            <template x-if="categorySearch.trim()">
+                                <template x-for="cat in filteredCategories()" :key="cat.id">
+                                    <button
+                                        type="button"
+                                        @click="open = false; applyCategory(transaction_id, cat.id)"
+                                        class="cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
+                                        :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
+                                    >
+                                        <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
+                                        <span x-text="cat.full_name" class="grow"></span>
+                                        <flux:icon.check x-show="cat.id === editing_category_id" class="size-4 shrink-0" />
+                                    </button>
+                                </template>
                             </template>
-                            <div x-show="filteredCategories().length === 0" class="text-zinc-500 dark:text-zinc-400 text-sm px-2 py-1.5">No matching categories</div>
+
+                            <template x-if="!categorySearch.trim()">
+                                <template x-for="cat in categoriesAtCurrentLevel()" :key="cat.id">
+                                    <div class="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            @click="open = false; applyCategory(transaction_id, cat.id)"
+                                            class="grow cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
+                                            :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
+                                        >
+                                            <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
+                                            <span x-text="cat.name" class="grow"></span>
+                                            <flux:icon.check x-show="cat.id === editing_category_id" class="size-4 shrink-0" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            x-show="categoryHasChildren(cat.id)"
+                                            @click="drillInto(cat.id)"
+                                            title="Browse subcategories"
+                                            class="cursor-pointer shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400"
+                                        >
+                                            <flux:icon.chevron-right class="size-4" />
+                                        </button>
+                                    </div>
+                                </template>
+                            </template>
+
+                            <div x-show="(categorySearch.trim() ? filteredCategories() : categoriesAtCurrentLevel()).length === 0" class="text-zinc-500 dark:text-zinc-400 text-sm px-2 py-1.5">No matching categories</div>
                         </div>
 
                         <button
@@ -946,6 +926,8 @@ new class extends Component
                             @click="startCreatingCategory()"
                             class="cursor-pointer text-left px-2 py-1.5 rounded-lg border border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10 shrink-0"
                         >+ Create new category</button>
+
+                        <flux:button variant="subtle" class="w-full shrink-0" @click="open = false">Cancel</flux:button>
                     </div>
 
                     <div class="flex flex-col gap-4 min-h-0 flex-1" x-show="creatingCategory" x-cloak>

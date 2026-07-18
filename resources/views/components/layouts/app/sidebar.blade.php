@@ -76,6 +76,13 @@
 
                     <flux:menu.separator />
 
+                    <div class="flex items-center justify-between gap-2 px-2 py-1.5 text-sm" x-data>
+                        <span>{{ __('Dark Mode') }}</span>
+                        <flux:switch x-model="$flux.dark" />
+                    </div>
+
+                    <flux:menu.separator />
+
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
@@ -126,6 +133,13 @@
 
                     <flux:menu.separator />
 
+                    <div class="flex items-center justify-between gap-2 px-2 py-1.5 text-sm" x-data>
+                        <span>{{ __('Dark Mode') }}</span>
+                        <flux:switch x-model="$flux.dark" />
+                    </div>
+
+                    <flux:menu.separator />
+
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
@@ -135,8 +149,6 @@
                 </flux:menu>
             </flux:dropdown>
         </flux:header>
-
-        <flux:button class="!absolute right-0 top-0" x-data x-on:click="$flux.dark = ! $flux.dark" icon="moon" variant="subtle" aria-label="Toggle dark mode" />
 
         {{ $slot }}
 
