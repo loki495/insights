@@ -1,18 +1,13 @@
 <?php
 
-
-
 declare(strict_types=1);
 
-use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\Category;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
-use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     #[Session]
     public string $search = '';
 
@@ -57,9 +52,9 @@ new class extends Component {
                 ->with('parent')
                 ->where(function ($query) {
                     $query
-                        ->where('id', 'like', '%' . $this->search . '%')
-                        ->orWhere('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('description', 'like', '%' . $this->search . '%');
+                        ->where('id', 'like', '%'.$this->search.'%')
+                        ->orWhere('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%');
                 })
                 ->orderBy('name')
                 ->get();
@@ -68,10 +63,9 @@ new class extends Component {
         }
 
         return [
-            'categories' => $categories
+            'categories' => $categories,
         ];
     }
-
 }
 
 ?>
@@ -94,6 +88,7 @@ new class extends Component {
         </div>
 
 
+        <div class="w-full overflow-x-auto">
         <x-table x-data="{ open: {} }" class="categories-table">
             <x-slot name="head">
                 <x-table.tr>
@@ -176,6 +171,7 @@ new class extends Component {
     @endforeach
             </x-slot>
         </x-table>
+        </div>
 
     </x-page-wrapper>
 

@@ -123,7 +123,7 @@ new class extends Component
     {
         $query = Transaction::query();
 
-        if ($this->account->id) {
+        if ($this->account?->id) {
             $this->authorize('view', $this->account);
             $query->where('account_id', $this->account->id);
         } else {
@@ -582,7 +582,7 @@ new class extends Component
             <div class="flex flex-col gap-4 items-start grow p-0 md:pr-32">
                 <!-- filters -->
                 <div class="flex flex-col gap-4 items-start w-full">
-                    <div class="flex gap-4 items-center w-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                         <label for="search">Search</label>
                         <x-input type="text" wire:model.live.debounce="search" placeholder="Search" class="w-full" clearable></x-input>
                     </div>
@@ -594,7 +594,7 @@ new class extends Component
                         </flux:field>
                     </div>
 
-                    <div class="flex gap-4 items-center w-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                         <label for="search">Original Category</label>
                         <flux:select wire:model.live="original_category_id" clearable>
                             <flux:select.option value="0">-- All Original Categories --</flux:select.option>
@@ -604,7 +604,7 @@ new class extends Component
                         </flux:select>
                     </div>
 
-                    <div class="flex gap-4 items-center w-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                         <label for="search">Category</label>
                         <flux:select wire:model.live="category_id" clearable>
                             <flux:select.option value="0">-- All Categories --</flux:select.option>
@@ -614,7 +614,7 @@ new class extends Component
                         </flux:select>
                     </div>
 
-                    <div class="flex gap-4 items-center w-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                         <label for="date">Date</label>
                         <x-input type="datetime-local" wire:model.live="date_from" placeholder="From" class="w-full"></x-input>
                         <x-input type="datetime-local" wire:model.live="date_to" placeholder="To" class="w-full"></x-input>
@@ -622,7 +622,7 @@ new class extends Component
                 </div>
 
                 @if ($allow_accounts)
-                <div class="flex gap-4 items-center w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                     <label for="account">Account</label>
                     <flux:select wire:model.live="account_id" class="w-full">
                         <flux:select.option value="0">-- All Accounts --</flux:select.option>

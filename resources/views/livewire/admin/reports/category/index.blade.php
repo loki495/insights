@@ -1,24 +1,22 @@
 <?php
 
 use App\Models\Category;
-use App\Models\Transaction;
-use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\On;
-use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     use WithPagination;
 
     public ?int $category_id;
+
     public ?Category $category;
 
     public function mount(?Category $category): void
     {
         $this->category = $category;
-        $this->category_id = $category->id;
+        $this->category_id = $category?->id;
     }
 
     #[On('clicked')]
@@ -30,7 +28,7 @@ new class extends Component {
 
 ?>
 <x-page-wrapper heading="Reports"
-    subheading="{{ $category->id > 0 ? $category->name : 'All Categories' }}"
+    subheading="{{ $category?->id > 0 ? $category->name : 'All Categories' }}"
     :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']"
 >
 
