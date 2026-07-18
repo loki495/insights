@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Collection;
 
 class Category extends Model
 {
@@ -42,7 +40,7 @@ class Category extends Model
                 }
 
                 $name = $this->parent_id && $this->parent_id !== 0
-                    ? ($this->parent ? $this->parent->fullName : 'Unknown') . ' > ' . $this->name
+                    ? ($this->parent ? $this->parent->fullName : 'Unknown').' > '.$this->name
                     : $this->name;
 
                 return static::$nameCache[$this->id] = $name;
@@ -78,7 +76,7 @@ class Category extends Model
     {
         // CACHE
         $id = $this->id;
-        $descendants = collect($this->descendants)->pluck('id')->toArray();
+        $descendants = $this->descendants;
         $transactions = Transaction::whereHas('categories', function ($query) use ($id, $descendants) {
             $query
                 ->where('categories.id', $id)
@@ -106,11 +104,11 @@ class Category extends Model
     {
         $cat = $this;
         while ($cat->id && $cat->parent_id != $last_id) {
-            //dump($cat->id . ' - ' . $cat->name . ' -> ' . $cat->parent->id . ' - ' . $cat->parent->name);
+            // dump($cat->id . ' - ' . $cat->name . ' -> ' . $cat->parent->id . ' - ' . $cat->parent->name);
             $cat = $cat->parent;
         }
 
-        //dump($this->name . ' (' . $this->id . ') ==> ' . $cat->id);
+        // dump($this->name . ' (' . $this->id . ') ==> ' . $cat->id);
         return new Attribute(
             get: fn () => $cat,
         );
