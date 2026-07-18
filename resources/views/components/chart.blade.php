@@ -18,16 +18,16 @@
 
     // Use functions to get fresh data from Livewire without making the chart object itself reactive
     const getData = () => ({
-        labels: $wire.chart_labels,
-        values: $wire.chart_values,
-        colors: $wire.chart_colors,
-        tooltips: $wire.chart_tooltip_labels,
-        ids: $wire.chart_ids
+        labels: [...$wire.chart_labels],
+        values: [...$wire.chart_values],
+        colors: [...$wire.chart_colors],
+        tooltips: [...$wire.chart_tooltip_labels],
+        ids: [...$wire.chart_ids]
     });
 
     function initChart() {
         const data = getData();
-        
+
         if (chartObj) {
             chartObj.destroy();
         }
@@ -56,7 +56,7 @@
                         const index = elements[0].index;
                         const data = getData();
                         const id = data.ids[index];
-                        
+
                         if ('{{ $clickEvent }}' === 'chart-clicked') {
                              $wire.handleChartClick(id);
                         } else {
@@ -94,7 +94,7 @@
 
     $wire.$watch("chart_values", () => {
         const data = getData();
-        
+
         if (!chartObj) {
             initChart();
             return;
@@ -109,7 +109,10 @@
         chartObj.data.labels = data.labels;
         chartObj.data.datasets[0].data = data.values;
         chartObj.data.datasets[0].backgroundColor = data.colors;
-        
+
+        // Livewire's DOM morph can leave the canvas at a stale size before the
+        // ResizeObserver fires again, so force it back to the container size.
+        chartObj.resize();
         chartObj.update();
     });
 
