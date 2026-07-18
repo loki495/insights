@@ -71,19 +71,17 @@ new class extends Component
 ?>
     <x-page-wrapper heading="Categories" subheading="All Categories" :breadcrumbs="['Reports' => '', 'Categories' => route('categories.index') ]">
 
-        <div class="flex gap-4 justify-between">
+        <div class="flex flex-col sm:flex-row gap-4 sm:justify-between w-full">
             <!-- filters -->
-            <div class="flex flex-col gap-4 w-max">
-                <div class="flex gap-4 items-center">
+            <div class="flex flex-col gap-4 w-full sm:w-max">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                     <label for="search">Search</label>
                     <x-input type="text" wire:model.live="search" placeholder="Search" class="w-full"></x-input>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-4">
-                <div class="flex gap-4 w-1/2 items-center">
-                    <flux:button wire:navigate href="{{ route('categories.create') }}">Create Category</flux:button>
-                </div>
+            <div class="flex flex-col gap-4 w-full sm:w-auto">
+                <flux:button wire:navigate href="{{ route('categories.create') }}" class="w-full sm:w-auto">Create Category</flux:button>
             </div>
         </div>
 

@@ -1,13 +1,12 @@
 <?php
 
 use App\Actions\PullLinkedAccountTransactionsAction;
-use App\Models\Account;
 use App\Models\LinkedAccount;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     use WithPagination;
 
     public LinkedAccount $linkedAccount;
@@ -37,7 +36,7 @@ new class extends Component {
     <x-page-wrapper heading="Accounts" subheading="{{ $this->linkedAccount->provider_name }}" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index']">
 
         <x-slot name="actions">
-            <x-button wire:click="pullData">Pull Data</x-button>
+            <x-button wire:click="pullData" class="w-full sm:w-auto">Pull Data</x-button>
         </x-slot>
 
         <x-table>

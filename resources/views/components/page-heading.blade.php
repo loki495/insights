@@ -24,10 +24,14 @@
     <flux:heading class="!text-3xl" accent="true" level="1">{!! $heading !!}</flux:heading>
 
     <flux:subheading size="lg" class="mb-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             {!! __($subheading) !!}
 
-            {{ $actions ?? '' }}
+            @if ($actions)
+            <div class="w-full sm:w-auto">
+                {{ $actions }}
+            </div>
+            @endif
         </div>
     </flux:subheading>
 
