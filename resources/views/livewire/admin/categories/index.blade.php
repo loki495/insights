@@ -86,89 +86,25 @@ new class extends Component
         </div>
 
 
-        <div class="w-full overflow-x-auto">
-        <x-table x-data="{ open: {} }" class="categories-table">
-            <x-slot name="head">
-                <x-table.tr>
-                    <x-table.th class="w-8">ID</x-table.th>
-                    <x-table.th class="w-48">Parent</x-table.th>
-                    <x-table.th class="w-48">Name</x-table.th>
-                    <x-table.th class="w-48">Description</x-table.th>
-                    <x-table.th>Color</x-table.th>
-                    <x-table.th></x-table.th>
-                </x-table.tr>
-            </x-slot>
-            <x-slot name="body">
-                {{--
-                <x-table.tr>
-                    <x-table.td colspan="6">
-                        <template x-for="x,i in open" :key="i">
-                            <span x-show="x === true" x-text="i"></span>
-                        </template>
-                    </x-table.td>
-                </x-table.tr>
-                --}}
-                @foreach($categories ?? [] as $category)
-                    @php
-                        $childIds = $category->children->pluck("id")->toArray();
-                        $isRoot = $category->parent_id === null || $category->parent_id === 0;
-                    @endphp
-
-                <x-table.tr
-                    class="row-category-{{ $category->id }} border-b border-zinc-300 dark:border-zinc-700 transition-opacity duration-300 ease-in"
-                    x-bind:class="{ 'hover:bg-zinc-100/10 dark:hover:bg-zinc-900/20 bg-zinc-400 dark:bg-zinc-400/10 cursor-pointer': {{ !$this->search && $category->has_children ? 'true' : 'false' }} }"
-                    x-ref="cat-{{ $category->id }}"
-                    x-data="{
-                        children: {{ json_encode($childIds) }},
-                        cat_id: '{{ $category->id }}',
-                        parent_cat_id: '{{ $category->parent_id }}',
-                        is_root: {{ $isRoot ? 'true' : 'false' }}
-                    }"
-                    x-show="open[parent_cat_id] === true || is_root || {{ $this->search ? 'true' : 'false' }}"
-                    style="padding-left: {{ $this->search ? 0 : $category->depth * 20 }}px;"
-                    @click="toggleCat(cat_id)"
-                    x-cloak
-                >
-                    <x-table.td>{{ $category->id }}</x-table.td>
-                    {{-- Parent Column --}}
-                    <x-table.td>
-                        <div class="flex gap-2">
-                            @if($category->parent)
-                            <div class="text-xs px-2 py-1 rounded" style="background-color: {{ $category->parent->color }}">
-                                {{ $category->parent->fullName }}
-                            </div>
-                            @endif
-                        </div>
-                    </x-table.td>
-
-                    {{-- Name --}}
-                    <x-table.td class="text-left">
-                        {{ $category->name }}
-                    </x-table.td>
-
-                    {{-- Description --}}
-                    <x-table.td class="text-left">
-                        <div class="flex justify-between">
-                            <div>{{ $category->description }}</div>
-                    </x-table.td>
-
-                    {{-- Color --}}
-                    <x-table.td class="text-left">
-                        <div class="flex gap-4 justify-center items-center">
-                            {{ $category->color }}
-                            <div class="w-4 h-4" style="background-color: {{ $category->color }}"></div>
-                        </div>
-                    </x-table.td>
-
-                    {{-- Actions --}}
-                    <x-table.td class="text-left">
-                        <x-button icon="pencil" title="Edit" class="cursor-pointer" wire:navigate href="{{ route('categories.edit', $category) }}"></x-button>
-                        <x-button icon="trash" title="Delete" class="cursor-pointer" variant="danger" wire:click="delete({{ $category->id }})"></x-button>
-                    </x-table.td>
-                </x-table.tr>
-    @endforeach
-            </x-slot>
-        </x-table>
+        <div class="categories-table w-full" x-data="{ open: {} }">
+            <x-responsive-table
+                :items="$categories ?? []"
+                row-view="livewire.admin.categories.partials.category-table-row"
+                card-view="livewire.admin.categories.partials.category-card"
+                empty-message="No categories found"
+                :context="['search' => $search]"
+            >
+                <x-slot name="head">
+                    <x-table.tr>
+                        <x-table.th class="w-8">ID</x-table.th>
+                        <x-table.th class="w-48">Parent</x-table.th>
+                        <x-table.th class="w-48">Name</x-table.th>
+                        <x-table.th class="w-48">Description</x-table.th>
+                        <x-table.th>Color</x-table.th>
+                        <x-table.th></x-table.th>
+                    </x-table.tr>
+                </x-slot>
+            </x-responsive-table>
         </div>
 
     </x-page-wrapper>

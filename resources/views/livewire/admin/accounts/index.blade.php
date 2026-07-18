@@ -39,7 +39,13 @@ new class extends Component
             <x-button wire:click="pullData" class="w-full sm:w-auto">Pull Data</x-button>
         </x-slot>
 
-        <x-table>
+        <x-responsive-table
+            :items="$accounts ?? []"
+            row-view="livewire.admin.accounts.partials.account-table-row"
+            card-view="livewire.admin.accounts.partials.account-card"
+            empty-message="No accounts found"
+            :context="['linkedAccount' => $this->linkedAccount]"
+        >
             <x-slot name="head">
                 <x-table.tr>
                     <x-table.th class="text-center">Name</x-table.th>
@@ -48,19 +54,7 @@ new class extends Component
                     <x-table.th></x-table.th>
                 </x-table.tr>
             </x-slot>
-            <x-slot name="body">
-            @foreach($accounts ?? [] as $account)
-            <x-table.tr>
-                <x-table.td>{{ $account['name'] }}</x-table.td>
-                <x-table.td class="text-right">{!! currency($account['current_balance']) !!}</x-table.td>
-                <x-table.td class="text-right">{!! currency($account['available_balance']) !!}</x-table.td>
-                <x-table.td>
-                    <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('linked-accounts.accounts.show', [ $this->linkedAccount, $account['id'] ]) }}" wire:navigate></x-button>
-                </x-table.td>
-            </x-table.tr>
-            @endforeach
-            </x-slot>
-        </x-table>
+        </x-responsive-table>
 
         @if($accounts)
         {{ $accounts->links() }}
