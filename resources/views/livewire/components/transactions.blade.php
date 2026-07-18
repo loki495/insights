@@ -897,6 +897,15 @@ new class extends Component
                                     <div class="flex items-center gap-1">
                                         <button
                                             type="button"
+                                            x-show="categoryHasChildren(cat.id)"
+                                            @click="drillInto(cat.id)"
+                                            title="Browse subcategories"
+                                            class="cursor-pointer shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400"
+                                        >
+                                            <flux:icon.chevron-right class="size-4" />
+                                        </button>
+                                        <button
+                                            type="button"
                                             @click="open = false; applyCategory(transaction_id, cat.id)"
                                             class="grow cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
                                             :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
