@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\OriginalCategory;
 use Livewire\Volt\Component;
-use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     public string $search = '';
 
     public function mount(): void
@@ -30,18 +28,17 @@ new class extends Component {
                 });
             }], 'amount')
             ->where(function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('description', 'like', '%' . $this->search . '%')
-                    ->orWhere('details', 'like', '%' . $this->search . '%');
+                $query->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('pf_primary', 'like', '%'.$this->search.'%')
+                    ->orWhere('pf_detailed', 'like', '%'.$this->search.'%');
             })
             ->orderBy('name')
             ->get();
 
         return [
-            'categories' => $categories
+            'categories' => $categories,
         ];
     }
-
 }
 
 ?>
@@ -56,6 +53,7 @@ new class extends Component {
             </div>
         </div>
 
+        <div class="w-full overflow-x-auto">
         <x-table>
             <x-slot name="head">
                 <x-table.tr>
@@ -75,10 +73,10 @@ new class extends Component {
                             {{ $category->name }}
                         </div>
                         <div class="text-xs italic">
-                            {{ $category->description }}
+                            {{ $category->pf_detailed }}
                         </div>
                     </x-table.td>
-                    <x-table.td class="text-left">{{ $category->details }}</x-table.td>
+                    <x-table.td class="text-left">{{ $category->full_path }}</x-table.td>
                     <x-table.td class="text-left">{!! currency($category->transactions_sum_amount ?? 0) !!}</x-table.td>
                     <x-table.td class="text-left">
                         <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('reports.category.index', $category) }}" wire:navigate></x-button>
@@ -87,5 +85,6 @@ new class extends Component {
                 @endforeach
             </x-slot>
         </x-table>
+        </div>
 
     </x-page-wrapper>

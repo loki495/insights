@@ -2,24 +2,27 @@
 
 declare(strict_types=1);
 
-use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Livewire\Volt\Component;
-use Livewire\WithPagination;
 
-new class extends Component {
-
+new class extends Component
+{
     public $account_id = null;
+
     public $transaction_id = null;
 
     public $amount = 0;
+
     public $date = '';
+
     public $categories = [];
+
     public $currency = 'USD';
+
     public $merchant_name = '';
+
     public $name = '';
 
     public function mount(?Account $account, ?Transaction $transaction): void
@@ -63,7 +66,8 @@ new class extends Component {
         ];
     }
 
-    public function save() {
+    public function save()
+    {
         if ($this->transaction_id) {
             $transaction = Transaction::findOrFail($this->transaction_id);
             $this->authorize('update', $transaction);
@@ -75,7 +79,7 @@ new class extends Component {
         }
 
         $original = [
-            'manual' => true
+            'manual' => true,
         ];
 
         $transaction = Transaction::updateOrCreate([
@@ -87,7 +91,7 @@ new class extends Component {
             'amount' => $this->amount,
             'merchant_name' => $this->merchant_name,
             'currency' => $this->currency,
-            'original' => $original
+            'original' => $original,
         ]);
 
         $transaction->categories()->sync($this->categories);
@@ -95,19 +99,18 @@ new class extends Component {
         if ($this->account_id) {
             return redirect()->route('linked-accounts.accounts.show', [
                 'linkedAccount' => Account::find($this->account_id)->linked_account,
-                'account' => $this->account_id
+                'account' => $this->account_id,
             ]);
         }
 
         return redirect()->route('reports.category.index.index');
     }
-
 }
 
 ?>
     <x-page-wrapper heading="{{ $transaction_id ? 'Edit' : 'Create' }} Transaction{{ $transaction_id ? ' - #' . $transaction_id : '' }}" subheading="" :breadcrumbs="[]">
 
-        <div class="mb-4 max-w-[400px]">
+        <div class="mb-4 max-w-[400px] overflow-x-auto">
             <x-table>
                 <x-slot name="body">
                     <x-table.tr>
@@ -124,7 +127,7 @@ new class extends Component {
                         <x-table.th class="text-left">Categories</x-table.th>
                         <x-table.td>
                             <div class="flex gap-4 items-end">
-                                <select wire:model="categories" class="border border-zinc-300 rounded-xl p-4 w-96">
+                                <select wire:model="categories" class="border border-zinc-300 rounded-xl p-4 w-full">
                                     @foreach($all_categories as $category)
                                     <option value="{{ $category->id }}" class="p-2">{{ $category->name }}</option>
                                     @endforeach
