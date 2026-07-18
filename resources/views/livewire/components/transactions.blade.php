@@ -507,6 +507,66 @@ new class extends Component
         $transaction->save();
     }
 
+    /**
+     * Up to two best-guess categories for a single transaction, used to seed
+     * the category picker: the category most commonly assigned to other
+     * transactions from the same merchant, and separately the category most
+     * commonly assigned to other transactions sharing the same Plaid
+     * original category (catches cases merchant_name is missing or too
+     * inconsistent to match on, since Plaid's own categorization is usually
+     * present). Already-assigned categories are excluded.
+     */
+    public function suggestCategoriesForTransaction($transaction_id): array
+    {
+        $transaction = Transaction::findOrFail($transaction_id);
+        $this->authorize('view', $transaction);
+
+        $currentCategoryIds = $transaction->categories->pluck('id');
+
+        return collect([
+            $this->topCategoryFor(fn ($query) => $query->where('merchant_name', $transaction->merchant_name), $transaction, (bool) $transaction->merchant_name),
+            $this->topCategoryFor(fn ($query) => $query->where('original_category_id', $transaction->original_category_id), $transaction, (bool) $transaction->original_category_id),
+        ])
+            ->filter()
+            ->unique('id')
+            ->reject(fn ($suggestion) => $currentCategoryIds->contains($suggestion['id']))
+            ->take(2)
+            ->values()
+            ->toArray();
+    }
+
+    private function topCategoryFor(Closure $scope, Transaction $transaction, bool $enabled): ?array
+    {
+        if (! $enabled) {
+            return null;
+        }
+
+        $query = Transaction::query()->where('id', '!=', $transaction->id);
+        $scope($query);
+
+        $topCategoryId = $query
+            ->whereHas('categories')
+            ->with('categories')
+            ->get()
+            ->flatMap->categories
+            ->countBy('id')
+            ->sortDesc()
+            ->keys()
+            ->first();
+
+        if (! $topCategoryId) {
+            return null;
+        }
+
+        $category = $this->categories->firstWhere('id', $topCategoryId);
+
+        return $category ? [
+            'id' => $category->id,
+            'name' => $category->fullName,
+            'color' => $category->color ?: '#3b82f6',
+        ] : null;
+    }
+
     public function createCategory(string $name, ?int $parent_id, ?string $color): array
     {
         $name = trim($name);
@@ -605,8 +665,8 @@ new class extends Component
             @endif
         </div>
 
-        <div class="flex flex-col md:flex-row gap-8 w-full items-start justify-between">
-            <div class="flex flex-col gap-4 items-start grow p-0 md:pr-32">
+        <div class="flex flex-col xl:flex-row gap-8 w-full items-start justify-between">
+            <div class="flex flex-col gap-4 items-start grow p-0 xl:pr-32">
                 <!-- filters -->
                 <div class="flex flex-col gap-4 items-start w-full">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
@@ -662,43 +722,16 @@ new class extends Component
 
             </div>
 
-            <details class="w-full md:w-auto shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10">
+            <details class="w-full lg:hidden shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10">
                 <summary class="cursor-pointer select-none p-2 font-medium">Details</summary>
                 <div class="p-2 pt-0">
-                    <x-table>
-                        <x-slot name="body">
-                            <x-table.tr>
-                                <x-table.td class="!px-0 align-top">From:</x-table.td>
-                                <x-table.td class="!px-3 text-right">
-                                    <span class="font-bold">{!! \Carbon\Carbon::parse($date_from)->format('l jS, M Y') !!}</span>
-                                    <br>
-                                    at {!! \Carbon\Carbon::parse($date_from)->format('h:ia') !!}
-                                </x-table.td>
-                            </x-table.tr>
-                            <x-table.tr>
-                                <x-table.td class="!px-0 align-top">To:</x-table.td>
-                                <x-table.td class="!px-3 text-right">
-                                    <span class="font-bold">{!! \Carbon\Carbon::parse($date_to)->format('l jS, M Y') !!}</span>
-                                    <br>
-                                    at {!! \Carbon\Carbon::parse($date_to)->format('h:ia') !!}
-                                </x-table.td>
-                            </x-table.tr>
-                        </x-slot>
-                    </x-table>
-                    <x-table>
-                        <x-slot name="body">
-                            <x-table.tr>
-                                <x-table.td class="!px-0">Transactions:</x-table.td>
-                                <x-table.td class="text-right">{{ $count }}</x-table.td>
-                            </x-table.tr>
-                            <x-table.tr>
-                                <x-table.td class="!px-0">Total:</x-table.td>
-                                <x-table.td class="text-right">{!! currency(abs($total)) !!}</x-table.td>
-                            </x-table.tr>
-                        </x-slot>
-                    </x-table>
+                    @include('livewire.components.partials.transaction-summary-details')
                 </div>
             </details>
+
+            <div class="hidden lg:block w-full xl:w-auto shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10 p-2">
+                @include('livewire.components.partials.transaction-summary-details')
+            </div>
 
         </div>
 
@@ -706,7 +739,7 @@ new class extends Component
 
         <div class="flex flex-col-reverse sm:flex-row w-full justify-between items-stretch sm:items-center gap-3">
             @if($transactions->hasPages())
-                {{ $transactions->links(data: ['scrollTo' => '#transactions-table']) }}
+                {{ $transactions->links(data: ['scrollTo' => false]) }}
             @else
                 <div></div>
             @endif
@@ -726,6 +759,7 @@ new class extends Component
             card-view="livewire.components.partials.transaction-card"
             empty-message="No transactions found"
             :context="['allow_accounts' => $allow_accounts, 'showRunningBalance' => $showRunningBalance]"
+            loading-target="search,only_uncategorized,original_category_id,category_id,date_from,date_to,account_id,page,nextPage,previousPage,gotoPage"
             class="transactions-table min-w-full w-max"
             wire:scroll
             x-data="{selected_transactions: [] }"
@@ -758,7 +792,7 @@ new class extends Component
         </x-responsive-table>
 
         @if($transactions)
-        {{ $transactions->links(data: ['scrollTo' => '#transactions-table']) }}
+        {{ $transactions->links(data: ['scrollTo' => false]) }}
         @endif
 
         <template x-teleport="body">
@@ -771,8 +805,9 @@ new class extends Component
                     transaction_id: 0,
                     transaction_name: '',
                     transaction_amount: 0,
-                    suggested_category_id: 0,
                     editing_category_id: 0,
+                    suggestions: [],
+                    suggestionsLoading: false,
                     categorySearch: '',
                     categoryParentId: 0,
                     creatingCategory: false,
@@ -780,6 +815,16 @@ new class extends Component
                     newCategoryParentId: '',
                     newCategoryColor: '#3b82f6',
                     creatingCategoryError: '',
+                    loadSuggestions(transactionId) {
+                        this.suggestions = [];
+                        this.suggestionsLoading = true;
+                        $wire.suggestCategoriesForTransaction(transactionId).then((list) => {
+                            if (this.transaction_id === transactionId) {
+                                this.suggestions = list;
+                                this.suggestionsLoading = false;
+                            }
+                        });
+                    },
                     filteredCategories() {
                         const q = this.categorySearch.trim().toLowerCase();
                         if (!q) return this.categoryList;
@@ -832,8 +877,8 @@ new class extends Component
                 }"
                 x-on:keydown.escape.window="open = false"
                 x-show="open"
-                @add-category.window="add=true;open=true;categorySearch='';categoryParentId=0;creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=event.detail.suggested_category_id;editing_category_id=0;"
-                @edit-category.window="add=false;open=true;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=0;editing_category_id=event.detail.category_id;categoryParentId=(categoryLookup[event.detail.category_id]?.parent_id || 0);"
+                @add-category.window="add=true;open=true;categorySearch='';categoryParentId=0;creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;editing_category_id=0;loadSuggestions(event.detail.transaction_id);"
+                @edit-category.window="add=false;open=true;categorySearch='';creatingCategory=false;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;editing_category_id=event.detail.category_id;categoryParentId=(categoryLookup[event.detail.category_id]?.parent_id || 0);loadSuggestions(event.detail.transaction_id);"
             >
                 <div class="fixed inset-0 bg-zinc-900/50" @click="open = false"></div>
                 <div class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white p-4 rounded-xl w-full max-w-96 max-h-[85vh] z-10 flex flex-col overflow-hidden shadow-xl">
@@ -853,16 +898,25 @@ new class extends Component
                             <span x-html="transaction_amount"></span>
                         </div>
 
-                        <button
-                            type="button"
-                            x-show="suggested_category_id && categoryLookup[suggested_category_id]"
-                            @click="open = false; applyCategory(transaction_id, suggested_category_id)"
-                            class="cursor-pointer text-left px-2 py-1.5 rounded-lg border border-dashed flex items-center gap-2 shrink-0"
-                            :style="`border-color: ${categoryLookup[suggested_category_id]?.color}; color: ${categoryLookup[suggested_category_id]?.color}`"
-                        >
-                            <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${categoryLookup[suggested_category_id]?.color}`"></span>
-                            Suggested: <span x-text="categoryLookup[suggested_category_id]?.full_name"></span>
-                        </button>
+                        <div class="flex flex-col gap-1 shrink-0" x-show="suggestionsLoading" x-cloak>
+                            <div class="px-2 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 text-sm flex items-center gap-2">
+                                <flux:icon.loading class="size-4 shrink-0" />
+                                Loading suggestions...
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1 shrink-0" x-show="!suggestionsLoading && suggestions.length > 0">
+                            <template x-for="suggestion in suggestions" :key="suggestion.id">
+                                <button
+                                    type="button"
+                                    @click="open = false; applyCategory(transaction_id, suggestion.id)"
+                                    class="cursor-pointer text-left px-2 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
+                                >
+                                    <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${suggestion.color}`"></span>
+                                    Suggested: <span x-text="suggestion.name"></span>
+                                </button>
+                            </template>
+                        </div>
 
                         <x-input type="text" x-model="categorySearch" placeholder="Search categories..." class="w-full shrink-0"></x-input>
 

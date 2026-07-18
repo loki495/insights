@@ -5,7 +5,12 @@
     'emptyMessage' => 'No results found.',
     'context' => [],
     'loading' => true,
+    'loadingTarget' => null,
 ])
+
+@php
+    $loadingTargetAttr = $loadingTarget ? 'wire:target="'.e($loadingTarget).'"' : '';
+@endphp
 
 <div class="hidden sm:flex flex-col gap-4 bg-zinc-100 dark:bg-white/10 p-4 rounded-xl w-full relative overflow-x-auto">
     <x-table {{ $attributes }}>
@@ -16,7 +21,7 @@
         @endisset
         <x-slot name="body">
             @if ($loading)
-            <x-table.tr wire:loading>
+            <x-table.tr wire:loading {!! $loadingTargetAttr !!}>
                 <x-table.td colspan="100">
                     <div class="absolute inset-0 z-10 flex items-start justify-center bg-white/70 dark:bg-zinc-900/70 rounded-xl">
                         <div class="mt-16 sticky left-1/2 top-32 -translate-x-1/2">
@@ -39,7 +44,7 @@
 
 <div class="flex flex-col gap-2 sm:hidden w-full relative">
     @if ($loading)
-    <div wire:loading class="absolute inset-0 z-10 flex items-start justify-center bg-white/70 dark:bg-zinc-900/70 rounded-xl">
+    <div wire:loading {!! $loadingTargetAttr !!} class="absolute inset-0 z-10 flex items-start justify-center bg-white/70 dark:bg-zinc-900/70 rounded-xl">
         <div class="mt-16">
             <flux:icon.loading class="w-16 h-16" />
         </div>
