@@ -40,15 +40,36 @@
       (43 tests) passes, PHPStan unchanged (237 pre-existing notices),
       verified live in browser.
 
+## Test coverage (2026-07-18)
+- [x] Added tests/Feature/Models/OriginalCategoryTest.php,
+      tests/Feature/Helpers/UpsertPlaidCategoryTest.php,
+      tests/Feature/Plaid/ResolveCategoryTest.php, and
+      tests/Feature/CategorizationPipelineTest.php — 19 new tests, all
+      passing (53 total). The pipeline tests are regression tests for
+      the two chart bugs fixed earlier this session.
+- [x] Found + fixed while writing the pipeline tests: the
+      transactions.original_category_id column was never migrated
+      ->nullable(), even though the null-category code path (fixed
+      earlier this session) needs it to be. Dev db only worked because
+      its schema had drifted nullable outside of migrations — a fresh
+      install would have hit a NOT NULL violation. Added
+      2026_07_18_114905_make_transactions_original_category_id_nullable.php.
+
 ## Still open, not yet fixed
-- [ ] No test coverage for OriginalCategory, upsertPlaidCategory(),
-      resolveCategory(), or the chart pipeline (in progress)
 - [ ] Minor: transactions.blade.php's getTransactionsQuery() does
       $this->account->id without a null-safe operator; when the
       component is used with no specific account (allow_accounts=true,
       no account passed) this emits a harmless-but-noisy "Attempt to
       read property on null" PHP warning. Found while smoke-testing the
       Laravel 13 upgrade, not caused by it — low priority.
+- [ ] Found while writing pipeline tests: updatedCategoryId() in
+      transactions.blade.php sets $this->original_category instead of
+      $this->category — looks like a copy/paste bug from
+      updatedOriginalCategoryId-style code. Doesn't affect the category
+      filter itself (that reads $this->category_id directly), but
+      original_category display state is wrong after changing the
+      Category filter dropdown. Not fixed — found during test-writing,
+      out of scope for that task.
 
 ## Categorization UX pass (2026-07-18)
 - [x] Optimistic category save — pill shows instantly (pulsing) on click via a
