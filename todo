@@ -89,6 +89,15 @@
       opacity, full opacity on :hover), no device detection needed.
       Verified visible + tappable on a fresh page load with zero mouse
       interaction.
+- [x] Mobile spot-check (2026-07-18) of the two features above at a
+      390px viewport: assign-category modal (including the "+ Create
+      new category" button pinned below the scrollable list) and the
+      new Create Category form (name/parent/color) both fit within
+      the viewport with no page-level overflow, only the intended
+      internal list scroll. Full create-and-assign flow (type name ->
+      Create & Assign) verified end-to-end, and the always-visible
+      delete "x" on the category pill confirmed visible/tappable with
+      zero hover. No new issues found.
 
 ## Mobile layout audit (2026-07-18)
 - [x] Audited every main page at a 390px viewport (dashboard, linked
