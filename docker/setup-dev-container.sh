@@ -86,6 +86,11 @@ fi
 docker-php-ext-install gd mysqli pdo_mysql zip
 docker-php-ext-enable gd mysqli pdo_mysql zip
 
+# Install Composer
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+rm composer-setup.php
+
 # Enable Apache modules
 a2enmod rewrite
 a2enmod headers
