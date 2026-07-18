@@ -237,15 +237,18 @@ new class extends Component
 
         $this->updateChartData();
 
+        $transactions = $query
+            ->clone()
+            ->with('account.linked_account')
+            ->orderByRaw('relevance desc, transactions.created_at desc, transactions.transaction_type desc, transactions.id asc')
+            // ->ddRawSql()
+            ->paginate(25);
+
         return [
-            'transactions' => $query
-                ->clone()
-                ->with('account.linked_account')
-                ->orderByRaw('relevance desc, transactions.created_at desc, transactions.transaction_type desc, transactions.id asc')
-                // ->ddRawSql()
-                ->paginate(25),
+            'transactions' => $transactions,
             'count' => $query->count(),
             'total' => $query->sum('amount'),
+            'merchantSuggestions' => $this->merchantSuggestions($transactions->getCollection()),
         ];
     }
 
@@ -269,6 +272,86 @@ new class extends Component
         });
 
         return $accounts;
+    }
+
+    #[Computed]
+    public function categories()
+    {
+        return Category::all()->sortBy('fullName')->values();
+    }
+
+    #[Computed]
+    public function categoryPickerOptions(): array
+    {
+        return $this->categories
+            ->map(fn ($category) => [
+                'id' => $category->id,
+                'name' => $category->fullName,
+                'color' => $category->color ?: '#3b82f6',
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    #[Computed]
+    public function categoryPickerLookup(): array
+    {
+        return $this->categories
+            ->mapWithKeys(fn ($category) => [
+                $category->id => [
+                    'id' => $category->id,
+                    'name' => $category->fullName,
+                    'color' => $category->color ?: '#3b82f6',
+                ],
+            ])
+            ->toArray();
+    }
+
+    /**
+     * For each distinct merchant on the current page, find the category most
+     * commonly used on other transactions from that merchant. Doubles as the
+     * groundwork for a future auto-categorization rule engine.
+     */
+    private function merchantSuggestions($transactions): array
+    {
+        $merchants = collect($transactions)
+            ->pluck('merchant_name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($merchants->isEmpty()) {
+            return [];
+        }
+
+        return Transaction::query()
+            ->whereIn('merchant_name', $merchants)
+            ->whereHas('categories')
+            ->with('categories')
+            ->get()
+            ->groupBy('merchant_name')
+            ->map(function ($merchantTransactions) {
+                $topCategoryId = $merchantTransactions
+                    ->flatMap->categories
+                    ->countBy('id')
+                    ->sortDesc()
+                    ->keys()
+                    ->first();
+
+                if (! $topCategoryId) {
+                    return null;
+                }
+
+                $category = $this->categories->firstWhere('id', $topCategoryId);
+
+                return $category ? [
+                    'id' => $category->id,
+                    'name' => $category->fullName,
+                    'color' => $category->color ?: '#3b82f6',
+                ] : null;
+            })
+            ->filter()
+            ->toArray();
     }
 
     public function updateChartData()
@@ -412,7 +495,6 @@ new class extends Component
         $this->resetPage();
     }
 
-    #[On('save-category')]
     public function saveCategory($transaction_id, $category_id)
     {
         $transaction = Transaction::findOrFail($transaction_id);
@@ -449,7 +531,24 @@ new class extends Component
     }
 }
 ?>
-    <div x-data="{}" class="flex flex-col gap-4 items-start w-full">
+    <div
+        x-data="{
+            optimisticCategories: {},
+            categoryList: @js($this->categoryPickerOptions),
+            categoryLookup: @js($this->categoryPickerLookup),
+            applyCategory(transactionId, categoryId) {
+                const category = this.categoryLookup[categoryId];
+                if (!category) return;
+
+                this.optimisticCategories[transactionId] = category;
+
+                $wire.saveCategory(transactionId, categoryId)
+                    .then(() => { delete this.optimisticCategories[transactionId]; })
+                    .catch(() => { delete this.optimisticCategories[transactionId]; });
+            },
+        }"
+        class="flex flex-col gap-4 items-start w-full"
+    >
 
         <div class="flex flex-col gap-2 w-full">
             <div class="flex items-center justify-between">
@@ -509,7 +608,7 @@ new class extends Component
                         <label for="search">Category</label>
                         <flux:select wire:model.live="category_id" clearable>
                             <flux:select.option value="0">-- All Categories --</flux:select.option>
-                            @foreach(Category::all()->sortBy('fullName') as $category_option)
+                            @foreach($this->categories as $category_option)
                             <flux:select.option value="{{ $category_option->id }}" wire:key="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
                             @endforeach
                         </flux:select>
@@ -596,7 +695,7 @@ new class extends Component
                             <div class="flex gap-4">
                                 <flux:select wire:model="bulk_category_id" >
                                     <flux:select.option value="0">-- No Category --</flux:select.option>
-                                    @foreach(Category::all()->sortBy('fullName') as $category_option)
+                                    @foreach($this->categories as $category_option)
                                         <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
                                     @endforeach
                                 </flux:select>
@@ -651,7 +750,13 @@ new class extends Component
                                 <small>({{ $transaction['payment_channel'] }}) </small>
                                 @endif
 
-                                <div class="flex gap-2 items-center mt-2">
+                                @php
+                                    $suggestion = count($transaction['categories']) === 0
+                                        ? ($merchantSuggestions[$transaction['merchant_name']] ?? null)
+                                        : null;
+                                @endphp
+
+                                <div class="flex gap-2 items-center mt-2" x-show="!optimisticCategories[{{ $transaction['id'] }}]">
 
                                     @if($transaction['original']['manual'] ?? false)
                                     <div class="pointer-events-none text-xs p-1 h-auto relative rounded-lg shoadow-lg bg-green-800">
@@ -665,7 +770,24 @@ new class extends Component
                                         <flux:icon.x-mark variant="solid" x-cloak x-show="over" wire:confirm="Are you sure you want to delete this category? (#{{ $category['pivot']['id'] }})" wire:click="deleteTransactionCategory({{ $category['pivot']['id'] }})" class="absolute z-20 cursor-pointer -right-3 text-red-500 -top-3 size-6 p-px font-bold text-shadow-lg hover:bg-white rounded-full" />
                                     </div>
                                     @endforeach
-                                    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }} })" class="size-2" icon="plus"></flux:button>
+
+                                    @if($suggestion)
+                                    <button
+                                        type="button"
+                                        title="Apply suggested category"
+                                        @click="applyCategory({{ $transaction['id'] }}, {{ $suggestion['id'] }})"
+                                        class="cursor-pointer text-xs p-1 h-auto rounded-lg border border-dashed text-nowrap"
+                                        style="border-color: {{ $suggestion['color'] }}; color: {{ $suggestion['color'] }}"
+                                    >+ {{ $suggestion['name'] }}?</button>
+                                    @endif
+
+                                    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }}, suggested_category_id: {{ $suggestion['id'] ?? 0 }} })" class="size-2" icon="plus"></flux:button>
+                                </div>
+
+                                <div class="flex gap-2 items-center mt-2" x-show="optimisticCategories[{{ $transaction['id'] }}]" x-cloak>
+                                    <div class="text-xs p-1 h-auto rounded-lg opacity-60 animate-pulse text-nowrap text-shadow-lg" :style="`background-color: ${optimisticCategories[{{ $transaction['id'] }}]?.color}`">
+                                        <span x-text="optimisticCategories[{{ $transaction['id'] }}]?.name"></span>
+                                    </div>
                                 </div>
 
                             </div>
@@ -700,23 +822,64 @@ new class extends Component
         @endif
 
         <template x-teleport="body">
-            <div class="fixed inset-0 flex items-center justify-center z-50" x-cloak x-data="{open: false, add: false, transaction_id: 0, category_id: 0, transaction_name: '', transaction_amount: 0 }" x-on:keydown.escape.window="open = false" x-show="open" @add-category.window="add=true;open = true;transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;" @edit-category.window="add=false;open = true;transaction_id = event.detail.transaction_id;category_id=event.detail.category_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;">
+            <div
+                class="fixed inset-0 flex items-center justify-center z-50 p-4"
+                x-cloak
+                x-data="{
+                    open: false,
+                    add: false,
+                    transaction_id: 0,
+                    transaction_name: '',
+                    transaction_amount: 0,
+                    suggested_category_id: 0,
+                    categorySearch: '',
+                    filteredCategories() {
+                        const q = this.categorySearch.trim().toLowerCase();
+                        if (!q) return this.categoryList;
+                        return this.categoryList.filter(c => c.name.toLowerCase().includes(q));
+                    },
+                }"
+                x-on:keydown.escape.window="open = false"
+                x-show="open"
+                @add-category.window="add=true;open=true;categorySearch='';transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=event.detail.suggested_category_id;"
+                @edit-category.window="add=false;open=true;categorySearch='';transaction_id=event.detail.transaction_id;transaction_amount=event.detail.transaction_amount;transaction_name=event.detail.transaction_name;suggested_category_id=0;"
+            >
                 <div class="fixed inset-0 bg-zinc-900/50" @click="open = false"></div>
-                <div class="bg-zinc-900 text-white p-4 rounded-xl w-96 z-10">
-                    <div class="flex flex-col gap-4">
+                <div class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white p-4 rounded-xl w-full max-w-96 max-h-[85vh] z-10 flex flex-col overflow-hidden shadow-xl">
+                    <div class="flex flex-col gap-4 min-h-0 flex-1">
                         <div x-show="add">Add Category</div>
                         <div x-show="!add">Edit Category</div>
                         <div class="flex justify-between">
                             <div><span x-html="transaction_name"></span> (#<span x-text="transaction_id"></span>)</div>
                             <span x-html="transaction_amount"></span>
                         </div>
-                        <flux:select x-model="category_id" clearable>
-                            <flux:select.option value="0">-- All Categories --</flux:select.option>
-                            @foreach(Category::all()->sortBy('fullName') as $category_option)
-                                <flux:select.option value="{{ $category_option->id }}">{{ $category_option->fullName }}</flux:select.option>
-                            @endforeach
-                        </flux:select>
-                        <flux:button x-bind:disabled="!category_id" x-on:click="open = false;$dispatch('save-category', { transaction_id: transaction_id, category_id: category_id })" class="cursor-pointer">Save</flux:button>
+
+                        <button
+                            type="button"
+                            x-show="suggested_category_id && categoryLookup[suggested_category_id]"
+                            @click="open = false; applyCategory(transaction_id, suggested_category_id)"
+                            class="cursor-pointer text-left px-2 py-1.5 rounded-lg border border-dashed flex items-center gap-2 shrink-0"
+                            :style="`border-color: ${categoryLookup[suggested_category_id]?.color}; color: ${categoryLookup[suggested_category_id]?.color}`"
+                        >
+                            <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${categoryLookup[suggested_category_id]?.color}`"></span>
+                            Suggested: <span x-text="categoryLookup[suggested_category_id]?.name"></span>
+                        </button>
+
+                        <x-input type="text" x-model="categorySearch" placeholder="Search categories..." class="w-full shrink-0"></x-input>
+
+                        <div class="overflow-y-auto flex flex-col gap-1 min-h-0 flex-1">
+                            <template x-for="cat in filteredCategories()" :key="cat.id">
+                                <button
+                                    type="button"
+                                    @click="open = false; applyCategory(transaction_id, cat.id)"
+                                    class="cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
+                                >
+                                    <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
+                                    <span x-text="cat.name"></span>
+                                </button>
+                            </template>
+                            <div x-show="filteredCategories().length === 0" class="text-zinc-500 dark:text-zinc-400 text-sm px-2 py-1.5">No matching categories</div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -20,19 +20,31 @@
 - [ ] No test coverage for OriginalCategory, upsertPlaidCategory(),
       resolveCategory(), or the chart pipeline
 
-## Categorization UX pass (agreed direction, not yet built)
-- [ ] Optimistic category save — show the pill instantly on click (client-side
-      lookup of category id -> {name, color} built from the same list already
-      rendered for the picker), save in background, reconcile/rollback on
-      response. Fixes "the refresh gets in the way."
-- [ ] Replace the flat category <select> (transactions.blade.php ~713-718) with
-      a searchable/filterable list over full_path
-- [ ] Merchant-based category suggestions — suggest a category based on how
-      other transactions from the same merchant_name/original_category were
-      categorized; one-click apply. Doubles as groundwork for auto-categorization.
+## Categorization UX pass (2026-07-18)
+- [x] Optimistic category save — pill shows instantly (pulsing) on click via a
+      client-side categoryLookup, $wire.saveCategory() called directly (not
+      through a dispatch/listener round trip) so it returns a promise to
+      reconcile/rollback on. Replaces the old modal Save button entirely —
+      picking a category now saves immediately.
+- [x] Replaced the flat category <select> in the assign-category modal with a
+      searchable/filterable list (client-side filter over categoryList, no
+      server round trip per keystroke)
+- [x] Merchant-based category suggestions — computed per-page in with() via
+      merchantSuggestions(), surfaced as an inline "+ Category?" quick-apply
+      chip next to uncategorized transactions, and pinned at the top of the
+      modal when opened via "+". Groundwork for future auto-categorization.
 - [ ] Explicitly deprioritized for now: favorites / most-used quick-pick chips
+- [ ] Add a way to create a new category directly from the "assign category"
+      popup (ideally a nested modal), so a brand-new category can be created
+      and assigned to the transaction in one flow
+- [ ] The delete-category (x) affordance on existing pills relies on
+      mouseover/mouseout (x-show="over") — doesn't work on touch/mobile since
+      there's no hover state. Needs a tap-friendly alternative on small screens.
 
 ## Later / exploratory (raised by Andres, not scheduled)
 - [ ] Look into Livewire @islands to scope re-renders to just the changed
       row + chart instead of the whole transactions component
-- [ ] Mobile layout improvements
+- [ ] Mobile layout improvements — the assign-category modal was fixed
+      (2026-07-18: constrained to max-h-[85vh] with only the list scrolling,
+      instead of a fixed w-96/max-h-64 that overflowed small viewports); rest
+      of the app's mobile layout not yet audited
