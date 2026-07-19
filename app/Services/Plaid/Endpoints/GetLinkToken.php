@@ -8,7 +8,7 @@ use App\Services\Plaid\Endpoint;
 
 class GetLinkToken extends Endpoint
 {
-    public $path = 'link/token/create';
+    public string $path = 'link/token/create';
 
-    public $method = 'POST';
+    public string $method = 'POST';
 }

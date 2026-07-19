@@ -6,9 +6,11 @@ namespace App\Services\Curl;
 
 class Request
 {
-    public $headers;
+    /** @var array<string, string> */
+    public array $headers = [];
 
-    public $data;
+    /** @var array<string, mixed> */
+    public array $data = [];
 
     public function __construct(
         public readonly string $url,
@@ -29,6 +31,9 @@ class Request
         return $this;
     }
 
+    /**
+     * @return array{url: string, method: string, headers: array<string, string>, data: array<string, mixed>}
+     */
     public function toArray(): array
     {
         return [
@@ -44,6 +49,9 @@ class Request
         return json_encode($this->toArray());
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function makeRequest(): array
     {
         $ch = curl_init();
@@ -52,21 +60,21 @@ class Request
 
         if ($this->method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
-            if ($this->headers['Content-Type'] === 'application/json') {
+            if (($this->headers['Content-Type'] ?? null) === 'application/json') {
                 if (! empty($this->data)) {
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->data ?? []));
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->data));
                 }
             } else {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $this->data ?? []);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $this->data);
             }
         } else {
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($this->data ?? []));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($this->data));
         }
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $headers = array_map(fn ($header): string => "$header: {$this->headers[$header]}", array_keys($this->headers ?? []));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers ?? []);
+        $headers = array_map(fn ($header): string => "$header: {$this->headers[$header]}", array_keys($this->headers));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         $response = curl_exec($ch);
         curl_close($ch);

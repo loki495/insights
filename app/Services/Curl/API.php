@@ -6,8 +6,10 @@ namespace App\Services\Curl;
 
 class API
 {
+    /** @var array<string, mixed> */
     public array $endpoints = [];
 
+    /** @var array<string, string> */
     public array $baseHeaders = [];
 
     public function __construct(
@@ -24,7 +26,8 @@ class API
     }
 
     /**
-     * @param  array<mixed>  $arguments
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
      */
     public function __call(string $class, array $arguments): array
     {

@@ -8,7 +8,7 @@ use App\Services\Plaid\Endpoint;
 
 class ExchangePublicToken extends Endpoint
 {
-    public $path = 'item/public_token/exchange';
+    public string $path = 'item/public_token/exchange';
 
-    public $method = 'POST';
+    public string $method = 'POST';
 }

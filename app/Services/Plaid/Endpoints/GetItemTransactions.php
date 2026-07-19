@@ -8,7 +8,7 @@ use App\Services\Plaid\Endpoint;
 
 class GetItemTransactions extends Endpoint
 {
-    public $path = 'transactions/sync';
+    public string $path = 'transactions/sync';
 
-    public $method = 'POST';
+    public string $method = 'POST';
 }

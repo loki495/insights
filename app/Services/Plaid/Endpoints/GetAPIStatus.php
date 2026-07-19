@@ -8,7 +8,7 @@ use App\Services\Plaid\Endpoint;
 
 class GetAPIStatus extends Endpoint
 {
-    public $path = 'api/v2/status.json';
+    public string $path = 'api/v2/status.json';
 
-    public $method = 'GET';
+    public string $method = 'GET';
 }

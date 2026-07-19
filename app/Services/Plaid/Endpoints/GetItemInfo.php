@@ -8,7 +8,7 @@ use App\Services\Plaid\Endpoint;
 
 class GetItemInfo extends Endpoint
 {
-    public $path = 'item/get';
+    public string $path = 'item/get';
 
-    public $method = 'POST';
+    public string $method = 'POST';
 }
