@@ -5,7 +5,7 @@ use Livewire\Volt\Volt;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('/', 'admin.dashboard')->name('dashboard');
-    Route::get('/home', fn() => redirect()->route('dashboard'))->name('home');
+    Route::get('/home', fn () => redirect()->route('dashboard'))->name('home');
     Volt::route('edit', 'admin.edit')->name('edit');
 
     Route::name('linked-accounts.')->group(function () {
