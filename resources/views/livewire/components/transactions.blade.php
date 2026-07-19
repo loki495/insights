@@ -95,10 +95,11 @@ new class extends Component
         $this->category = $category;
         $this->category_id = $category?->id;
 
-        $this->date_from = now()->startOfYear();
-        $this->date_to = now();
-        $this->date_from_local = $this->toDisplayTimezone($this->date_from);
-        $this->date_to_local = $this->toDisplayTimezone($this->date_to);
+        $range = $this->defaultYearToDateRange();
+        $this->date_from = $range['from'];
+        $this->date_to = $range['to'];
+        $this->date_from_local = $range['from_local'];
+        $this->date_to_local = $range['to_local'];
 
         $this->updateChartData();
     }
@@ -324,9 +325,8 @@ new class extends Component
     #[Computed]
     public function accounts()
     {
-        // Scoped to the authenticated user's own tracked accounts — this previously queried
-        // every account across every user with no scoping at all, and included reference/
-        // excluded accounts that shouldn't appear as a filterable option in aggregate views.
+        // Scoped to the authenticated user's own tracked accounts — reference/excluded accounts
+        // shouldn't appear as a filterable option in aggregate views.
         $accounts = auth()->user()->accounts()->tracked()->with('linked_account')->get()->sortBy(function ($account) {
             return $account->linked_account->provider_name.' - '.$account->display_name;
         });
@@ -878,14 +878,12 @@ new class extends Component
             </div>
 
             {{--
-                Alpine-controlled (not a native <details>) — a native details' `open` attribute
-                lives only in the client DOM, and since the server-rendered markup never includes
-                it, Livewire's morph on every re-render (pagination, search, any filter change)
-                was wiping it back to closed. Alpine's x-data state survives those morphs.
+                Alpine-controlled, not a native <details> — its `open` attribute lives only in the
+                client DOM, so Livewire's morph on every re-render (pagination, search, filter
+                changes) would reset it to closed. Alpine's x-data state survives those morphs.
 
-                Always rendered (like Filters/Details below), even with nothing to chart yet —
-                previously this whole section vanished when count($chart_labels) was 0, which
-                made it look broken/missing rather than just empty for the current filters.
+                Always rendered (like Filters/Details below), even with nothing to chart yet, so an
+                empty result for the current filters reads as empty rather than missing.
             --}}
             <div class="w-full rounded-xl bg-zinc-100 dark:bg-white/10" x-data="{ chartOpen: false }">
                 <button type="button" @click="chartOpen = !chartOpen" class="cursor-pointer select-none p-2 font-medium w-full text-left flex items-center gap-1">

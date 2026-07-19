@@ -37,10 +37,11 @@ new class extends Component
 
     public function mount(): void
     {
-        $this->date_from = (string) now()->startOfYear();
-        $this->date_to = (string) now();
-        $this->date_from_local = $this->toDisplayTimezone($this->date_from);
-        $this->date_to_local = $this->toDisplayTimezone($this->date_to);
+        $range = $this->defaultYearToDateRange();
+        $this->date_from = $range['from'];
+        $this->date_to = $range['to'];
+        $this->date_from_local = $range['from_local'];
+        $this->date_to_local = $range['to_local'];
     }
 
     public function updatedDateFromLocal(string $value): void
