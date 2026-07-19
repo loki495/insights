@@ -190,3 +190,44 @@ it('rejects an invalid granularity', function (): void {
         'weekly',
     ))->toThrow(InvalidArgumentException::class);
 });
+
+it('filters by a simple search term against name or merchant_name', function (): void {
+    $account = makeAccountForIncomeExpenseTrendTest();
+
+    Transaction::factory()->for($account)->create(['name' => 'Whole Foods Market', 'merchant_name' => 'Whole Foods', 'amount' => -50, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
+    Transaction::factory()->for($account)->create(['name' => 'Rent Payment', 'merchant_name' => 'Landlord', 'amount' => -800, 'currency' => 'USD', 'created_at' => '2026-01-11', 'type' => 'expense']);
+
+    $result = BuildIncomeExpenseTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-01'),
+        Carbon::parse('2026-01-31'),
+        'monthly',
+        [],
+        'whole foods',
+    );
+
+    expect($result['expense'])->toBe([50.0]);
+});
+
+it('filters by an amount range regardless of sign', function (): void {
+    $account = makeAccountForIncomeExpenseTrendTest();
+
+    Transaction::factory()->for($account)->create(['name' => 'Small', 'amount' => -10, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
+    Transaction::factory()->for($account)->create(['name' => 'In range expense', 'amount' => -75, 'currency' => 'USD', 'created_at' => '2026-01-11', 'type' => 'expense']);
+    Transaction::factory()->for($account)->create(['name' => 'In range income', 'amount' => 75, 'currency' => 'USD', 'created_at' => '2026-01-12', 'type' => 'income']);
+    Transaction::factory()->for($account)->create(['name' => 'Too big', 'amount' => -500, 'currency' => 'USD', 'created_at' => '2026-01-13', 'type' => 'expense']);
+
+    $result = BuildIncomeExpenseTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-01'),
+        Carbon::parse('2026-01-31'),
+        'monthly',
+        [],
+        '',
+        '50',
+        '100',
+    );
+
+    expect($result['income'])->toBe([75.0]);
+    expect($result['expense'])->toBe([75.0]);
+});

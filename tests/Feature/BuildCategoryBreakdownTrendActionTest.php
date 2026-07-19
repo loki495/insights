@@ -175,6 +175,50 @@ it('groups into daily periods', function (): void {
     expect($result['series'][0]['values'])->toBe([50.0, 30.0]);
 });
 
+it('filters by a simple search term against name or merchant_name', function (): void {
+    $account = makeAccountForCategoryBreakdownTrendTest();
+    $groceries = Category::create(['name' => 'Groceries']);
+
+    $t1 = Transaction::factory()->for($account)->create(['name' => 'Whole Foods Market', 'merchant_name' => 'Whole Foods', 'amount' => -50, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
+    $t1->categories()->sync([$groceries->id]);
+    $t2 = Transaction::factory()->for($account)->create(['name' => 'Trader Joes', 'amount' => -30, 'currency' => 'USD', 'created_at' => '2026-01-11', 'type' => 'expense']);
+    $t2->categories()->sync([$groceries->id]);
+
+    $result = BuildCategoryBreakdownTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-01'),
+        Carbon::parse('2026-01-31'),
+        'monthly',
+        [$groceries->id],
+        'whole foods',
+    );
+
+    expect($result['series'][0]['values'])->toBe([50.0]);
+});
+
+it('filters by an amount range regardless of sign', function (): void {
+    $account = makeAccountForCategoryBreakdownTrendTest();
+    $groceries = Category::create(['name' => 'Groceries']);
+
+    $t1 = Transaction::factory()->for($account)->create(['name' => 'Small', 'amount' => -10, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
+    $t1->categories()->sync([$groceries->id]);
+    $t2 = Transaction::factory()->for($account)->create(['name' => 'In range', 'amount' => -75, 'currency' => 'USD', 'created_at' => '2026-01-11', 'type' => 'expense']);
+    $t2->categories()->sync([$groceries->id]);
+
+    $result = BuildCategoryBreakdownTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-01'),
+        Carbon::parse('2026-01-31'),
+        'monthly',
+        [$groceries->id],
+        '',
+        '50',
+        '100',
+    );
+
+    expect($result['series'][0]['values'])->toBe([75.0]);
+});
+
 it('rejects an invalid granularity', function (): void {
     $account = makeAccountForCategoryBreakdownTrendTest();
     $category = Category::create(['name' => 'Groceries']);

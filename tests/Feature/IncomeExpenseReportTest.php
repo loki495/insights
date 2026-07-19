@@ -209,3 +209,41 @@ test('the transaction list narrows to the selected category, matching the chart'
     $test->assertSee('Store');
     $test->assertDontSee('Paycheck');
 });
+
+test('the search filter narrows the totals and the transaction list together', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    Transaction::factory()->for($account)->create(['name' => 'Whole Foods Market', 'amount' => -50, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+    Transaction::factory()->for($account)->create(['name' => 'Rent Payment', 'amount' => -800, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+    $test->set('search', 'whole foods');
+
+    $test->assertViewHas('expenseTotal', 50.0);
+    $test->assertViewHas('transactionsList', function ($list) {
+        return $list->total() === 1;
+    });
+    $test->assertSee('Whole Foods Market');
+    $test->assertDontSee('Rent Payment');
+});
+
+test('the amount range filter narrows the totals and the transaction list together', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    Transaction::factory()->for($account)->create(['name' => 'Small', 'amount' => -10, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+    Transaction::factory()->for($account)->create(['name' => 'Big', 'amount' => -1000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+    $test->set('amount_min', '500');
+
+    $test->assertViewHas('expenseTotal', 1000.0);
+    $test->assertViewHas('transactionsList', function ($list) {
+        return $list->total() === 1;
+    });
+    $test->assertSee('Big');
+    $test->assertDontSee('Small');
+});
