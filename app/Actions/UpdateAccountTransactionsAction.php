@@ -9,20 +9,18 @@ use App\Models\Transaction;
 
 final class UpdateAccountTransactionsAction
 {
-    public static function run(array $transaction_info, $action): void
+    /**
+     * @param  array<string, mixed>  $transaction_info
+     */
+    public static function run(array $transaction_info, string $action): void
     {
-        $transaction_usable = self::getUsableTransaction($transaction_info);
-
-        static $skip = 0;
-        if ($skip-- > 0) {
-            return;
-        }
-
-        if ($action === 'deleted') {
+        if ($action === 'removed') {
             Transaction::where('transaction_id', $transaction_info['transaction_id'])->delete();
 
             return;
         }
+
+        $transaction_usable = self::getUsableTransaction($transaction_info);
 
         $category = plaid()->resolveCategory($transaction_info);
 
@@ -38,6 +36,10 @@ final class UpdateAccountTransactionsAction
         $transaction->refreshType();
     }
 
+    /**
+     * @param  array<string, mixed>  $transaction_info
+     * @return array<string, mixed>
+     */
     private static function getUsableTransaction(array $transaction_info): array
     {
         $account_id = Account::query()->where('plaid_account_id', $transaction_info['account_id'])->first()->id;
