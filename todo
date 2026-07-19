@@ -1,5 +1,59 @@
 - autocategorize rules
 
+## UI tweaks + account nicknames (2026-07-19)
+- [x] Type pill moved under the date (desktop table + mobile card), transaction
+      id dropped from the list display entirely (still shown on the edit
+      page's own heading, just not in the list).
+- [x] Category chip row: "+" hidden once a category is assigned; shows a
+      dotted "Set category" button instead when nothing's assigned yet.
+- [x] Bulk-actions bar "Assign Type" button was using variant="subtle",
+      nearly invisible against the bar's light-blue background — switched to
+      "primary" to match its siblings.
+- [x] Sidebar made collapsible on desktop (Flux `collapsible` prop). Real bug
+      found + fixed along the way: the app's nav uses flux:navlist.* (not
+      flux:sidebar.item/group), which has zero collapsed-desktop awareness,
+      AND Flux's compiled dist.css doesn't ship the collapse utility classes
+      at all (apparently pruned unless Flux's own examples use them) — since
+      vendor/ is gitignored, the app's own Tailwind build never scanned Flux's
+      stubs to generate them either. Fixed with an `@source` directive in
+      app.css pointing at vendor/livewire/flux/stubs. Navlist groups without
+      an icon (Linked Accounts, Reports) now cleanly hide when collapsed
+      instead of showing broken truncated text; the collapse toggle is forced
+      always-visible instead of Flux's default hidden-until-hover.
+- [x] Account nicknames: the `accounts.nickname` column already existed,
+      unused. Added an editable field on the accounts management page and an
+      `Account::display_name` accessor (nickname if set, else real name),
+      applied everywhere an account name is shown to a user (transaction
+      list, account filter/picker, sidebar nav, transaction edit form).
+- [ ] Discussed, not decided: whether the transaction list page (filters +
+      search + chart, all always visible) feels too crowded now, especially
+      below desktop width. Andres is undecided; floated the idea of a
+      toggle to hide/show the filters+chart block. No action taken —
+      revisit if it keeps coming up.
+- [ ] Discussed: how transfers to/from untracked accounts (e.g. a family
+      member's private account) get handled — currently no automatic
+      distinction between "this external transfer is really a gift/
+      reimbursement" (should probably be income) vs "this is genuinely my
+      own money, just moving to an account I don't track" (correctly stays
+      a non-reportable transfer). Resolution for now: manual — use the
+      Type field on the transaction edit page to reclassify a one-off as
+      income/expense if that's what it really is; the category field is
+      still available on transfer-typed transactions too, for tagging
+      intent (e.g. "gift from mom") without affecting whether it counts in
+      totals. No new mechanism built; revisit if manual reclassification
+      turns out to be too common/tedious in practice.
+
+## Reports (raised by Andres 2026-07-19, not scheduled)
+- [ ] Monthly report: income/expense/net totals per month, filterable by
+      (multiple) category and/or type, charted as a line/area/bar over time
+      rather than the existing doughnut breakdown. Discussed as the one
+      report type plain filtering can't really replace (trend over time).
+- [ ] Total balance across accounts over time (combined optional, i.e. can
+      view a single account or a combined total), also line/area/bar.
+- [ ] Both of these are exploratory — Andres's own use case is served fine
+      by the existing filtered transaction list; only worth building if/when
+      another user actually needs it. Don't build speculatively.
+
 ## Accounting model rework: transaction type + transfer pairing (2026-07-19)
 Full design discussion + plan in this session's conversation (transfer/income/
 expense modeling, ownership, account tracking scope). Phased: Phase 1 done
