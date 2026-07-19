@@ -1,5 +1,48 @@
 - autocategorize rules
-- fix graphs
+
+## Livewire @islands assessment + chart perf/bug fixes (2026-07-19)
+- [x] Researched Livewire Islands feasibility (already available: this app
+      runs Livewire v4.3.3). Verdict: not worth adopting for the current
+      single-user scale — no real load problem to solve, and it adds a new
+      compiled-fragment cache layer (same class of stale-cache/permission
+      issue already hit repeatedly this project with Blaze/view caching).
+      Would be worth reconsidering if this app goes public/multi-tenant,
+      since per-user data variance and concurrent load both make the
+      "skip re-rendering unrelated chrome" benefit scale with user count
+      while the one-time engineering cost doesn't. Tabled for now per
+      Andres's call.
+- [x] Decoupled chart recomputation from pagination-only requests —
+      updateChartData() aggregates the full (unpaginated) date-range query,
+      so it was being redone on every single interaction including plain
+      page-turns and bulk-select checkbox toggles. Added a chartNeedsRefresh
+      flag, set explicitly wherever categorization/filtering actually
+      changes, checked in with() before recomputing. 9 regression tests.
+- [x] Looked into making saveCategory()/clearCategory() #[Renderless] (the
+      other "cheap fix" suggested) — reverted after implementing it: the
+      category chip's optimistic Alpine overlay is removed once the server
+      call resolves, at which point it relies on the real re-rendered HTML
+      being correct. Renderless skips that render entirely, so the chip
+      would flash back to its pre-change state. Not applied.
+- [x] Fixed "fix graphs" (this had been on the wishlist) — found the real
+      root cause while verifying the pagination fix live: x-chart
+      (components/chart.blade.php) never referenced $attributes at all, so
+      wire:ignore/wire:key/class passed by the transactions component were
+      silently dropped from the rendered root element. Two consequences,
+      both fixed: (1) without wire:ignore actually applying, Livewire's
+      morph touched the canvas on every request, silently shrinking it back
+      to Chart.js's 300x150 default on ordinary pagination/filter changes
+      (previously undocumented — much broader than the narrow "0->N
+      transition" bug noted earlier); (2) without wire:key applying, the
+      canvas element genuinely gets replaced when the transactions page's
+      zero-results gate toggles off then on, but chart.blade.php cached its
+      canvas reference once at initial @script execution, so it kept
+      drawing into the old, detached canvas — throwing "can't acquire
+      context from the given item" and leaving the new, visible canvas
+      permanently blank. Fixed by merging $attributes onto the root element
+      and re-querying the canvas by id inside initChart() instead of
+      caching it in a closure. Verified live: pagination, and a 0-result
+      search then cleared, both now render the chart correctly with zero
+      console errors.
 
 ## Bugs fixed (2026-07-18)
 - [x] Chart RangeError (Chart.js walking Livewire proxy) + canvas resize-after-update regression
