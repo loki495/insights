@@ -8,7 +8,7 @@ use App\Services\Plaid\Endpoint;
 
 class GetLiabilities extends Endpoint
 {
-    public $path = 'liabilities/get';
+    public string $path = 'liabilities/get';
 
-    public $method = 'POST';
+    public string $method = 'POST';
 }
