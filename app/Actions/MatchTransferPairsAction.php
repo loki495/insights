@@ -41,7 +41,7 @@ final class MatchTransferPairsAction
                 continue;
             }
 
-            $match = $candidates->first(fn (Transaction $candidate) => self::isCandidateMatch($transaction, $candidate, $paired));
+            $match = $candidates->first(fn (Transaction $candidate): bool => self::isCandidateMatch($transaction, $candidate, $paired));
 
             if ($match === null) {
                 continue;

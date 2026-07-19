@@ -11,7 +11,7 @@ new class extends Component
 
     public string $environment = '';
 
-    private $plaid_instance;
+    private ?\App\Services\Plaid\PlaidService $plaid_instance = null;
 
     protected $listeners = [
         'exchangePublicToken' => '$refresh',

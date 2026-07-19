@@ -30,7 +30,7 @@ class ReconcileAccount extends Command
     public function handle(): void
     {
         $linked_account_id = $this->argument('linked_account_id');
-        $force = $this->argument('force') ? true : false;
+        $force = (bool) $this->argument('force');
 
         $linked_account = LinkedAccount::with('accounts')
             ->where('id', $linked_account_id)->first();

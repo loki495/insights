@@ -38,7 +38,7 @@ final class BuildBalanceTrendAction
         // For each account, the transactions needed to answer "balance as of date X" for every X —
         // ordered ascending so we can walk them alongside the (also ascending) period boundaries.
         $transactionsByAccount = $accounts
-            ->mapWithKeys(fn (Account $account) => [
+            ->mapWithKeys(fn (Account $account): array => [
                 $account->id => $account->transactions()
                     ->orderBy('created_at')
                     ->get(['created_at', 'running_balance']),
@@ -72,10 +72,10 @@ final class BuildBalanceTrendAction
             }
         }
 
-        $net = array_map(fn ($asset, $liability) => $asset - $liability, $assets, $liabilities);
+        $net = array_map(fn ($asset, $liability): float => $asset - $liability, $assets, $liabilities);
 
         return [
-            'periods' => array_map(fn ($boundary) => $boundary['label'], $boundaries),
+            'periods' => array_map(fn (array $boundary): string => $boundary['label'], $boundaries),
             'assets' => $assets,
             'liabilities' => $liabilities,
             'net' => $net,

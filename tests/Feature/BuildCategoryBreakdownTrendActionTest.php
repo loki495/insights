@@ -223,7 +223,7 @@ it('rejects an invalid granularity', function (): void {
     $account = makeAccountForCategoryBreakdownTrendTest();
     $category = Category::create(['name' => 'Groceries']);
 
-    expect(fn () => BuildCategoryBreakdownTrendAction::run(
+    expect(fn (): array => BuildCategoryBreakdownTrendAction::run(
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),

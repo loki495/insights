@@ -16,7 +16,7 @@ new class extends Component
         $this->authorize('viewAny', Category::class);
     }
 
-    private function flatTree(int $parent_id, $depth = 0): array
+    private function flatTree(int $parent_id, int|float $depth = 0): array
     {
         $result = [];
 
@@ -46,11 +46,11 @@ new class extends Component
 
     public function with(): array
     {
-        if ($this->search) {
+        if ($this->search !== '' && $this->search !== '0') {
             $categories = Category::query()
                 ->with('children')
                 ->with('parent')
-                ->where(function ($query) {
+                ->where(function ($query): void {
                     $query
                         ->where('id', 'like', '%'.$this->search.'%')
                         ->orWhere('name', 'like', '%'.$this->search.'%')

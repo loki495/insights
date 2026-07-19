@@ -35,7 +35,7 @@ final class ReconcileLinkedAccountTransactions
                 $balance = round($balance, 2);
 
                 $name = $transaction->name;
-                $name = substr($name, 0, 30);
+                $name = substr((string) $name, 0, 30);
                 // echo("$transaction->created_at\t$name\t$transaction->transaction_type\t$transaction->amount\t$transaction->running_balance\t(next balance: $balance)\n");
             }
         }

@@ -42,9 +42,8 @@ if (! function_exists('plaid')) {
     {
         $result = trim($string);
         $result = str_replace('"', '&quot;', $result);
-        $result = str_replace("'", '&apos;', $result);
 
-        return $result;
+        return str_replace("'", '&apos;', $result);
     }
 
     /**

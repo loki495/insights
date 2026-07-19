@@ -156,7 +156,7 @@ new class extends Component
         if ($this->account?->id) {
             $this->authorize('view', $this->account);
             $query->where('account_id', $this->account->id);
-        } elseif (! empty($this->account_ids)) {
+        } elseif ($this->account_ids !== []) {
             // Only show transactions from selected accounts the user owns
             $query->whereIn('account_id', $ownedAccountIds->intersect($this->account_ids)->values());
         } else {
@@ -165,26 +165,20 @@ new class extends Component
         }
 
         $query
-            ->when($this->original_category_id ?? false, function ($query) {
-                return $query->where('original_category_id', $this->original_category_id);
-            })
+            ->when($this->original_category_id ?? false, fn($query) => $query->where('original_category_id', $this->original_category_id))
             ->when($this->category_id ?? false, function ($query) {
                 $category = Category::find($this->category_id);
                 $category_id = $category->id;
                 $descendants = $category->descendants;
 
-                return $query->whereHas('categories', function ($query) use ($category_id, $descendants) {
+                return $query->whereHas('categories', function ($query) use ($category_id, $descendants): void {
                     $query
                         ->where('categories.id', $category_id)
                         ->orWhereIn('categories.id', $descendants);
                 });
             })
-            ->when($this->only_uncategorized ?? false, function ($query) {
-                return $query->doesntHave('categories');
-            })
-            ->when(! empty($this->type_filters), function ($query) {
-                return $query->whereIn('type', $this->type_filters);
-            })
+            ->when($this->only_uncategorized ?? false, fn($query) => $query->doesntHave('categories'))
+            ->when($this->type_filters !== [], fn($query) => $query->whereIn('type', $this->type_filters))
             // Filtered on the transaction's magnitude, not its signed amount — a user thinking
             // "between $50 and $200" doesn't want to also have to know/guess the sign, and the
             // Type filter above already covers direction (income/expense/transfer/adjustment).
@@ -193,17 +187,13 @@ new class extends Component
             // affinity of its own) makes SQLite fall back to a lexicographic string comparison —
             // "1000" < "500" alphabetically — silently corrupting the filter for any value with a
             // different digit count. Forcing both sides numeric avoids that.
-            ->when($this->amount_min !== '', function ($query) {
-                return $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $this->amount_min]);
-            })
-            ->when($this->amount_max !== '', function ($query) {
-                return $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [(float) $this->amount_max]);
-            })
+            ->when($this->amount_min !== '', fn($query) => $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $this->amount_min]))
+            ->when($this->amount_max !== '', fn($query) => $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [(float) $this->amount_max]))
             ->with('categories')
             ->with('originalCategory')
             ->whereBetween('transactions.created_at', [$this->date_from, $this->date_to]);
 
-        if ($this->search) {
+        if ($this->search !== '' && $this->search !== '0') {
             $terms = $this->parseSearch($this->search);
 
             // Dynamically build the relevance selectRaw
@@ -213,11 +203,11 @@ new class extends Component
             foreach ($terms['optional'] as $term) {
                 foreach (['transactions.name', 'transactions.merchant_name', 'original_categories.name', 'original_categories.pf_detailed'] as $field) {
                     $scoreParts[] = "CASE WHEN LOWER($field) LIKE ? THEN 1 ELSE 0 END";
-                    $bindings[] = '%'.strtolower($term).'%';
+                    $bindings[] = '%'.strtolower((string) $term).'%';
                 }
             }
 
-            if ($scoreParts) {
+            if ($scoreParts !== []) {
                 $scoreExpr = implode(' + ', $scoreParts);
                 $query
                     ->leftJoin('original_categories', 'transactions.original_category_id', '=', 'original_categories.id')
@@ -227,11 +217,11 @@ new class extends Component
                     ->selectRaw('transactions.*, 0 as relevance');
             }
 
-            $query->where(function ($q) use ($terms) {
-                $q->where(function ($q1) use ($terms) {
+            $query->where(function ($q) use ($terms): void {
+                $q->where(function ($q1) use ($terms): void {
                     // Required terms
                     foreach ($terms['required'] as $term) {
-                        $q1->where(function ($q2) use ($term) {
+                        $q1->where(function ($q2) use ($term): void {
                             $q2->where('transactions.name', 'like', '%'.$term.'%')
                                 ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
                                 ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
@@ -241,7 +231,7 @@ new class extends Component
 
                     // Optional terms
                     foreach ($terms['optional'] as $term) {
-                        $q1->orWhere(function ($q2) use ($term) {
+                        $q1->orWhere(function ($q2) use ($term): void {
                             $q2->where('transactions.name', 'like', '%'.$term.'%')
                                 ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
                                 ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
@@ -252,16 +242,16 @@ new class extends Component
 
                 // Excluded terms
                 foreach ($terms['excluded'] as $term) {
-                    $q->where(function ($q1) use ($term) {
+                    $q->where(function ($q1) use ($term): void {
                         $q1->where('transactions.name', 'not like', '%'.$term.'%')
-                            ->where(function ($q2) use ($term) {
+                            ->where(function ($q2) use ($term): void {
                                 $q2->where('transactions.merchant_name', 'not like', '%'.$term.'%')
                                     ->orWhereNull('transactions.merchant_name');
                             })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
+                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
                                 $q2->where('name', 'like', '%'.$term.'%');
                             })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
+                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
                                 $q2->where('pf_detailed', 'like', '%'.$term.'%');
                             });
                     });
@@ -276,7 +266,7 @@ new class extends Component
         return $query;
     }
 
-    public function updating()
+    public function updating(): void
     {
         $this->resetPage();
     }
@@ -316,7 +306,7 @@ new class extends Component
         ];
     }
 
-    public function updatedCategoryId($value = null)
+    public function updatedCategoryId($value = null): void
     {
         $this->original_category = OriginalCategory::find($value);
         $this->dispatch('categoryIdChanged', categoryId: $value);
@@ -327,9 +317,7 @@ new class extends Component
     {
         // Scoped to the authenticated user's own tracked accounts — reference/excluded accounts
         // shouldn't appear as a filterable option in aggregate views.
-        $accounts = auth()->user()->accounts()->tracked()->with('linked_account')->get()->sortBy(function ($account) {
-            return $account->linked_account->provider_name.' - '.$account->display_name;
-        });
+        $accounts = auth()->user()->accounts()->tracked()->with('linked_account')->get()->sortBy(fn($account): string => $account->linked_account->provider_name.' - '.$account->display_name);
 
         return $accounts;
     }
@@ -344,7 +332,7 @@ new class extends Component
     public function categoryPickerOptions(): array
     {
         return $this->categories
-            ->map(fn ($category) => [
+            ->map(fn ($category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'full_name' => $category->fullName,
@@ -359,7 +347,7 @@ new class extends Component
     public function categoryPickerLookup(): array
     {
         return $this->categories
-            ->mapWithKeys(fn ($category) => [
+            ->mapWithKeys(fn ($category): array => [
                 $category->id => [
                     'id' => $category->id,
                     'name' => $category->name,
@@ -394,7 +382,7 @@ new class extends Component
             ->with('categories')
             ->get()
             ->groupBy('merchant_name')
-            ->map(function ($merchantTransactions) {
+            ->map(function ($merchantTransactions): ?array {
                 $topCategoryId = $merchantTransactions
                     ->flatMap->categories
                     ->countBy('id')
@@ -418,7 +406,7 @@ new class extends Component
             ->toArray();
     }
 
-    public function updateChartData()
+    public function updateChartData(): void
     {
         $query = $this->getTransactionsQuery();
 
@@ -428,7 +416,7 @@ new class extends Component
         // is the dedicated Reports pages' job (see BuildIncomeExpenseTrendAction), not this one.
         $transactions = $query
             ->clone()
-            ->with(['categories' => function ($q) {
+            ->with(['categories' => function ($q): void {
                 $q->select('categories.id', 'categories.name', 'categories.color', 'categories.parent_id');
             }])
             ->get();
@@ -460,7 +448,7 @@ new class extends Component
                 $current_filtered_id = $this->category_id ?: 0;
                 $target = null;
 
-                if ($current_filtered_id == 0) {
+                if ($current_filtered_id === 0) {
                     // Find top level ancestor
                     $target = $category;
                     while ($target && $target->parent_id != 0) {
@@ -489,11 +477,7 @@ new class extends Component
                         // The path is [leaf, ..., child_of_filter, filter]
                         // We want child_of_filter
                         $filter_index = array_search($current_filtered_id, $path);
-                        if ($filter_index !== false && $filter_index > 0) {
-                            $target = $all_categories->get($path[$filter_index - 1]);
-                        } else {
-                            $target = $category;
-                        }
+                        $target = $filter_index !== false && $filter_index > 0 ? $all_categories->get($path[$filter_index - 1]) : $category;
                     }
                 }
 
@@ -518,11 +502,11 @@ new class extends Component
 
         $this->chart_ids = $chart_data->pluck('id')->toArray();
         $this->chart_labels = $chart_data->pluck('label')->toArray();
-        $this->chart_values = $chart_data->pluck('total')->map(fn ($v) => round(abs($v), 2))->toArray();
+        $this->chart_values = $chart_data->pluck('total')->map(fn ($v): float => round(abs($v), 2))->toArray();
         $this->chart_colors = $chart_data->pluck('color')->toArray();
 
         $abs_total = $total_sum;
-        $this->chart_tooltip_labels = $chart_data->map(function ($item) use ($abs_total) {
+        $this->chart_tooltip_labels = $chart_data->map(function (array $item) use ($abs_total): string {
             $val = abs($item['total']);
             $percent = $abs_total > 0 ? round(($val / $abs_total) * 100, 1) : 0;
 
@@ -540,7 +524,7 @@ new class extends Component
     }
 
     #[On('chart-clicked')]
-    public function handleChartClick($categoryId)
+    public function handleChartClick($categoryId): void
     {
         if ($categoryId == 0) {
             return;
@@ -552,7 +536,7 @@ new class extends Component
         $this->resetPage();
     }
 
-    public function goBack()
+    public function goBack(): void
     {
         if ($this->category && $this->category->parent_id) {
             $this->category_id = $this->category->parent_id;
@@ -565,7 +549,7 @@ new class extends Component
         $this->resetPage();
     }
 
-    public function saveCategory($transaction_id, $category_id)
+    public function saveCategory($transaction_id, $category_id): void
     {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('update', $transaction);
@@ -665,7 +649,7 @@ new class extends Component
         $this->chartNeedsRefresh = true;
     }
 
-    public function deleteTransaction($transaction_id)
+    public function deleteTransaction($transaction_id): void
     {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('delete', $transaction);
@@ -755,7 +739,7 @@ new class extends Component
         $this->authorize('view', $transaction);
 
         return Transaction::searchUnpairedTransferCandidates($transactionId, $transaction->account_id, $search)
-            ->map(fn (Transaction $candidate) => $this->formatTransferPair($candidate))
+            ->map(fn (Transaction $candidate): ?array => $this->formatTransferPair($candidate))
             ->values()
             ->all();
     }
@@ -785,7 +769,7 @@ new class extends Component
 
     private function formatTransferPair(?Transaction $pair): ?array
     {
-        if (! $pair) {
+        if (!$pair instanceof \App\Models\Transaction) {
             return null;
         }
 

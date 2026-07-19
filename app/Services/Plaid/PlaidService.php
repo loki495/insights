@@ -65,7 +65,7 @@ class PlaidService extends API
         $plaidId = $transactionInfo['category_id'] ?? null;
         $pf = $transactionInfo['personal_finance_category'] ?? [];
 
-        if (! is_array($path) || empty($path) || ! $plaidId) {
+        if (! is_array($path) || $path === [] || ! $plaidId) {
             return null;
         }
 

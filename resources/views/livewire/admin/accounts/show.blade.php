@@ -65,13 +65,13 @@ new class extends Component
     {
         $transactions = $this->account->transactions()->with('originalCategory');
 
-        if ($this->search) {
+        if ($this->search !== '' && $this->search !== '0') {
             $terms = $this->parseSearch($this->search);
-            $transactions->where(function ($q) use ($terms) {
-                $q->where(function ($q1) use ($terms) {
+            $transactions->where(function ($q) use ($terms): void {
+                $q->where(function ($q1) use ($terms): void {
                     // Required terms
                     foreach ($terms['required'] as $term) {
-                        $q1->where(function ($q2) use ($term) {
+                        $q1->where(function ($q2) use ($term): void {
                             $q2->where('name', 'like', '%'.$term.'%')
                                 ->orWhere('merchant_name', 'like', '%'.$term.'%')
                                 ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
@@ -81,7 +81,7 @@ new class extends Component
 
                     // Optional terms
                     foreach ($terms['optional'] as $term) {
-                        $q1->orWhere(function ($q2) use ($term) {
+                        $q1->orWhere(function ($q2) use ($term): void {
                             $q2->where('name', 'like', '%'.$term.'%')
                                 ->orWhere('merchant_name', 'like', '%'.$term.'%')
                                 ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
@@ -92,16 +92,16 @@ new class extends Component
 
                 // Excluded terms
                 foreach ($terms['excluded'] as $term) {
-                    $q->where(function ($q1) use ($term) {
+                    $q->where(function ($q1) use ($term): void {
                         $q1->where('name', 'not like', '%'.$term.'%')
-                            ->where(function ($q2) use ($term) {
+                            ->where(function ($q2) use ($term): void {
                                 $q2->where('merchant_name', 'not like', '%'.$term.'%')
                                     ->orWhereNull('merchant_name');
                             })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
+                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
                                 $q2->where('name', 'like', '%'.$term.'%');
                             })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term) {
+                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
                                 $q2->where('description', 'like', '%'.$term.'%');
                             });
                     });

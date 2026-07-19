@@ -21,7 +21,7 @@ trait FiltersBySearchAndAmount
     {
         if ($search !== '') {
             $term = '%'.$search.'%';
-            $query->where(function ($q) use ($term) {
+            $query->where(function ($q) use ($term): void {
                 $q->where('name', 'like', $term)->orWhere('merchant_name', 'like', $term);
             });
         }

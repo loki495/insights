@@ -31,7 +31,7 @@ class BackfillTransactionTypes extends Command
     {
         $counts = ['income' => 0, 'expense' => 0, 'transfer' => 0, 'adjustment' => 0];
 
-        Transaction::query()->chunkById(200, function ($transactions) use (&$counts) {
+        Transaction::query()->chunkById(200, function ($transactions) use (&$counts): void {
             foreach ($transactions as $transaction) {
                 $transaction->refreshType();
                 $counts[$transaction->type] = ($counts[$transaction->type] ?? 0) + 1;

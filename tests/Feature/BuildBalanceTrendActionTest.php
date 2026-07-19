@@ -156,7 +156,7 @@ it('groups into daily periods with the expected labels', function (): void {
 it('rejects an invalid granularity', function (): void {
     $account = makeAccountForBalanceTrendTest();
 
-    expect(fn () => BuildBalanceTrendAction::run(
+    expect(fn (): array => BuildBalanceTrendAction::run(
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
