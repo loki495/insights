@@ -14,7 +14,7 @@ final class UpdateAccountAction
      */
     public static function run(array $account_info, LinkedAccount $linked_account): void
     {
-        $plaid = plaid();
+        plaid();
 
         $account = Account::query()
             ->where('name', $account_info['name'])
@@ -22,7 +22,7 @@ final class UpdateAccountAction
             ->where('type', $account_info['type'])
             ->where('subtype', $account_info['subtype'])
             ->where('mask', $account_info['mask'])
-            ->whereHas('linked_account', function ($q) use ($linked_account) {
+            ->whereHas('linked_account', function ($q) use ($linked_account): void {
                 $q->where('item_id', $linked_account->item_id);
             });
 

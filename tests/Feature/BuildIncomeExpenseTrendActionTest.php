@@ -183,7 +183,7 @@ it('counts a transaction once even if it matches more than one selected category
 it('rejects an invalid granularity', function (): void {
     $account = makeAccountForIncomeExpenseTrendTest();
 
-    expect(fn () => BuildIncomeExpenseTrendAction::run(
+    expect(fn (): array => BuildIncomeExpenseTrendAction::run(
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),

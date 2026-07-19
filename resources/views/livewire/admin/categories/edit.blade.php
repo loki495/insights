@@ -36,7 +36,7 @@ new class extends Component
         $this->color = $category->color;
     }
 
-    public function save()
+    public function save(): void
     {
         if ($this->category && $this->category->exists) {
             $this->authorize('update', $this->category);

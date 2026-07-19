@@ -108,9 +108,7 @@ test('selecting categories switches the chart to a category breakdown', function
     $test = Livewire::test('admin.reports.income-expense.index');
     $test->set('category_ids', [$groceries->id]);
 
-    $test->assertSet('chart_series', function ($series) use ($groceries) {
-        return count($series) === 1 && $series[0]['category_id'] === $groceries->id && array_sum($series[0]['values']) === 300.0;
-    });
+    $test->assertSet('chart_series', fn ($series): bool => count($series) === 1 && $series[0]['category_id'] === $groceries->id && array_sum($series[0]['values']) === 300.0);
 });
 
 test('selecting categories narrows the summary totals to just those categories', function (): void {
@@ -151,9 +149,7 @@ test('clearing the category selection returns to the Income/Expense chart', func
     $test->set('category_ids', [$groceries->id]);
     $test->set('category_ids', []);
 
-    $test->assertSet('chart_series', function ($series) {
-        return count($series) === 2 && $series[0]['label'] === 'Income' && $series[1]['label'] === 'Expense';
-    });
+    $test->assertSet('chart_series', fn ($series): bool => count($series) === 2 && $series[0]['label'] === 'Income' && $series[1]['label'] === 'Expense');
 });
 
 test('lists the transactions that make up the totals', function (): void {
@@ -166,9 +162,7 @@ test('lists the transactions that make up the totals', function (): void {
 
     $test = Livewire::test('admin.reports.income-expense.index');
 
-    $test->assertViewHas('transactionsList', function ($list) {
-        return $list->total() === 2;
-    });
+    $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 2);
     $test->assertSee('Paycheck');
     $test->assertSee('Groceries');
 });
@@ -183,9 +177,7 @@ test('the transaction list excludes transfers, matching the totals above it', fu
 
     $test = Livewire::test('admin.reports.income-expense.index');
 
-    $test->assertViewHas('transactionsList', function ($list) {
-        return $list->total() === 1;
-    });
+    $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 1);
     $test->assertDontSee('Card Payment');
 });
 
@@ -203,9 +195,7 @@ test('the transaction list narrows to the selected category, matching the chart'
     $test = Livewire::test('admin.reports.income-expense.index');
     $test->set('category_ids', [$groceries->id]);
 
-    $test->assertViewHas('transactionsList', function ($list) {
-        return $list->total() === 1;
-    });
+    $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 1);
     $test->assertSee('Store');
     $test->assertDontSee('Paycheck');
 });
@@ -222,9 +212,7 @@ test('the search filter narrows the totals and the transaction list together', f
     $test->set('search', 'whole foods');
 
     $test->assertViewHas('expenseTotal', 50.0);
-    $test->assertViewHas('transactionsList', function ($list) {
-        return $list->total() === 1;
-    });
+    $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 1);
     $test->assertSee('Whole Foods Market');
     $test->assertDontSee('Rent Payment');
 });
@@ -241,9 +229,7 @@ test('the amount range filter narrows the totals and the transaction list togeth
     $test->set('amount_min', '500');
 
     $test->assertViewHas('expenseTotal', 1000.0);
-    $test->assertViewHas('transactionsList', function ($list) {
-        return $list->total() === 1;
-    });
+    $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 1);
     $test->assertSee('Big');
     $test->assertDontSee('Small');
 });

@@ -19,15 +19,15 @@ new class extends Component
     {
         $userId = auth()->id();
         $categories = OriginalCategory::query()
-            ->withSum(['transactions' => function ($query) use ($userId) {
-                $query->whereIn('account_id', function ($q) use ($userId) {
+            ->withSum(['transactions' => function ($query) use ($userId): void {
+                $query->whereIn('account_id', function ($q) use ($userId): void {
                     $q->select('accounts.id')
                         ->from('accounts')
                         ->join('linked_accounts', 'accounts.linked_account_id', '=', 'linked_accounts.id')
                         ->where('linked_accounts.user_id', $userId);
                 });
             }], 'amount')
-            ->where(function ($query) {
+            ->where(function ($query): void {
                 $query->where('name', 'like', '%'.$this->search.'%')
                     ->orWhere('pf_primary', 'like', '%'.$this->search.'%')
                     ->orWhere('pf_detailed', 'like', '%'.$this->search.'%');

@@ -73,7 +73,7 @@ final class BuildCategoryBreakdownTrendAction
         }
 
         return [
-            'periods' => array_map(fn ($period) => $period['label'], $periods),
+            'periods' => array_map(fn (array $period): string => $period['label'], $periods),
             'series' => $series,
         ];
     }

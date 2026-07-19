@@ -88,7 +88,7 @@ class Transaction extends Model
      */
     public function scopeReportable(Builder $query): Builder
     {
-        return $query->where(function (Builder $query) {
+        return $query->where(function (Builder $query): void {
             $query->whereNotIn('type', ['transfer', 'adjustment'])
                 ->orWhereNull('type');
         });
@@ -182,7 +182,7 @@ class Transaction extends Model
             ->where('account_id', '!=', $excludeAccountId)
             ->where('type', 'transfer')
             ->whereNull('transfer_pair_id')
-            ->where(function ($query) use ($search) {
+            ->where(function ($query) use ($search): void {
                 $term = '%'.$search.'%';
                 $query->where('name', 'like', $term)
                     ->orWhere('merchant_name', 'like', $term);

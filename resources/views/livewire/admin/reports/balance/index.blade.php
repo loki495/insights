@@ -70,8 +70,8 @@ new class extends Component
     {
         $accounts = $this->trackedAccounts();
 
-        $assetAccounts = $accounts->reject(fn (Account $account) => in_array($account->type, self::LIABILITY_TYPES, true))->values();
-        $liabilityAccounts = $accounts->filter(fn (Account $account) => in_array($account->type, self::LIABILITY_TYPES, true))->values();
+        $assetAccounts = $accounts->reject(fn (Account $account): bool => in_array($account->type, self::LIABILITY_TYPES, true))->values();
+        $liabilityAccounts = $accounts->filter(fn (Account $account): bool => in_array($account->type, self::LIABILITY_TYPES, true))->values();
 
         $assetsTotal = (float) $assetAccounts->sum('current_balance');
         $liabilitiesTotal = (float) $liabilityAccounts->sum('current_balance');

@@ -71,10 +71,10 @@ final class BuildIncomeExpenseTrendAction
             }
         }
 
-        $net = array_map(fn ($i, $e) => $i - $e, $income, $expense);
+        $net = array_map(fn ($i, $e): float => $i - $e, $income, $expense);
 
         return [
-            'periods' => array_map(fn ($period) => $period['label'], $periods),
+            'periods' => array_map(fn (array $period): string => $period['label'], $periods),
             'income' => $income,
             'expense' => $expense,
             'net' => $net,

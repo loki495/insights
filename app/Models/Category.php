@@ -54,11 +54,9 @@ class Category extends Model
     public function fullName(): Attribute
     {
         return new Attribute(
-            get: function () {
-                return $this->parent_id
-                    ? ($this->parent ? $this->parent->fullName : 'Unknown').' > '.$this->name
-                    : $this->name;
-            },
+            get: fn () => $this->parent_id
+                ? ($this->parent ? $this->parent->fullName : 'Unknown').' > '.$this->name
+                : $this->name,
         );
     }
 
@@ -68,7 +66,7 @@ class Category extends Model
     public function descendants(): Attribute
     {
         return new Attribute(
-            get: function () {
+            get: function (): array {
                 $descendants = [$this->id];
 
                 $children = Category::where('parent_id', $this->id)->get();
@@ -90,7 +88,7 @@ class Category extends Model
         // CACHE
         $id = $this->id;
         $descendants = $this->descendants;
-        $transactions = Transaction::whereHas('categories', function ($query) use ($id, $descendants) {
+        $transactions = Transaction::whereHas('categories', function ($query) use ($id, $descendants): void {
             $query
                 ->where('categories.id', $id)
                 ->orWhereIn('categories.id', $descendants);

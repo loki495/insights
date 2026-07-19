@@ -22,7 +22,7 @@ new class extends Component {
     }
 
     #[On('clicked')]
-    public function clicked($category)
+    public function clicked($category): never
     {
         dd($category);
     }

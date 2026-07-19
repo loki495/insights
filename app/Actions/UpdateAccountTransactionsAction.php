@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Models\Account;
+use App\Models\OriginalCategory;
 use App\Models\Transaction;
 
 final class UpdateAccountTransactionsAction
@@ -24,7 +25,7 @@ final class UpdateAccountTransactionsAction
 
         $category = plaid()->resolveCategory($transaction_info);
 
-        if ($category !== null) {
+        if ($category instanceof OriginalCategory) {
             $transaction_usable['original_category_id'] = $category->id;
         }
 

@@ -105,7 +105,7 @@ new class extends Component
             ->whereBetween('created_at', [$from, $to])
             ->with(['account.linked_account', 'categories']);
 
-        if (! empty($this->category_ids)) {
+        if ($this->category_ids !== []) {
             $matchingIds = Category::whereIn('id', $this->category_ids)->get()
                 ->flatMap(fn (Category $category) => $category->descendants)
                 ->unique()
@@ -131,7 +131,7 @@ new class extends Component
         $incomeTotal = array_sum($trend['income']);
         $expenseTotal = array_sum($trend['expense']);
 
-        if (empty($this->category_ids)) {
+        if ($this->category_ids === []) {
             $this->chart_periods = $trend['periods'];
             $this->chart_series = [
                 ['label' => 'Income', 'color' => '#10b981', 'values' => $trend['income']],
@@ -146,7 +146,7 @@ new class extends Component
             $this->chart_series = $breakdown['series'];
             $this->chart_type = 'area';
             $this->chart_stacked = true;
-            $hasData = collect($breakdown['series'])->contains(fn ($series) => count(array_filter($series['values'])) > 0);
+            $hasData = collect($breakdown['series'])->contains(fn ($series): bool => count(array_filter($series['values'])) > 0);
         }
 
         $transactionsList = $this->transactionsQuery($accounts, $from, $to)

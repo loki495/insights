@@ -61,7 +61,7 @@ class Request
         if ($this->method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             if (($this->headers['Content-Type'] ?? null) === 'application/json') {
-                if (! empty($this->data)) {
+                if ($this->data !== []) {
                     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->data));
                 }
             } else {
@@ -73,7 +73,7 @@ class Request
         }
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $headers = array_map(fn ($header): string => "$header: {$this->headers[$header]}", array_keys($this->headers));
+        $headers = array_map(fn (string $header): string => "$header: {$this->headers[$header]}", array_keys($this->headers));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         $response = curl_exec($ch);

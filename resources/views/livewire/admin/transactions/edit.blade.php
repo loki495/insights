@@ -10,9 +10,9 @@ use Livewire\Volt\Component;
 
 new class extends Component
 {
-    public $account_id = null;
+    public $account_id;
 
-    public $transaction_id = null;
+    public $transaction_id;
 
     public $amount = 0;
 
@@ -77,7 +77,7 @@ new class extends Component
     }
 
     #[Computed]
-    public function pairCandidates()
+    public function pairCandidates(): \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Collection
     {
         if (! $this->transaction_id || $this->type !== 'transfer' || $this->transfer_pair_id || trim($this->pair_search) === '') {
             return collect();

@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('user cannot view another users linked account index', function () {
+test('user cannot view another users linked account index', function (): void {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
     $linkedAccount2 = LinkedAccount::factory()->for($user2)->create([
@@ -23,7 +23,7 @@ test('user cannot view another users linked account index', function () {
         ->assertForbidden();
 });
 
-test('user cannot view another users account show page', function () {
+test('user cannot view another users account show page', function (): void {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
     $linkedAccount2 = LinkedAccount::factory()->for($user2)->create([
@@ -46,7 +46,7 @@ test('user cannot view another users account show page', function () {
         ->assertForbidden();
 });
 
-test('user can view their own account', function () {
+test('user can view their own account', function (): void {
     $user = User::factory()->create();
     $linkedAccount = LinkedAccount::factory()->for($user)->create([
         'item_id' => 'item_1',
