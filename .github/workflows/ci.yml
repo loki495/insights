@@ -26,7 +26,7 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer:v2
-          extensions: intl
+          extensions: intl, sockets, pcntl
           coverage: pcov
 
       - name: Setup Node
@@ -40,6 +40,9 @@ jobs:
 
       - name: Install Node Dependencies
         run: npm ci
+
+      - name: Install Playwright browser (for pest-plugin-browser)
+        run: npx playwright install --with-deps chromium
 
       - name: Copy Environment File
         run: cp .env.example .env

@@ -21,6 +21,7 @@
         "nunomaduro/essentials": "@dev"
     },
     "require-dev": {
+        "ext-pcntl": "*",
         "barryvdh/laravel-debugbar": "^4.0",
         "calebdw/larastan-livewire": "^2.1",
         "fakerphp/faker": "^1.24.1",
@@ -33,6 +34,7 @@
         "nunomaduro/collision": "^8.7",
         "peckphp/peck": "^0.1.2",
         "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-browser": "^4.3",
         "pestphp/pest-plugin-laravel": "^4.0",
         "pestphp/pest-plugin-type-coverage": "^4.0",
         "phpstan/extension-installer": "^1.4.3",

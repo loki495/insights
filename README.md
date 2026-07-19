@@ -161,6 +161,16 @@ vendor/bin/phpstan analyse
 composer test
 ```
 
+The test suite includes a small [Pest browser test](https://pestphp.com/docs/browser-testing) suite
+(`tests/Browser/`, real Chromium via Playwright — used for things a server-rendered Feature test
+can't see, like JS console errors) alongside the usual Feature/Unit tests. It needs two things the
+rest of the suite doesn't:
+
+- The `sockets` and `pcntl` PHP extensions (bare-metal only — already included in the Docker image
+  via `docker/setup-dev-container.sh`).
+- Playwright's Chromium browser: `npm install && npx playwright install --with-deps chromium`
+  (also already baked into the Docker image; bare-metal needs it run once manually).
+
 ## Notes
 
 This project is actively evolving; some routes and UI components may still change.
