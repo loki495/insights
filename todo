@@ -1,5 +1,26 @@
 - autocategorize rules
 
+## Type pill click-to-edit + inline transfer pairing (2026-07-19)
+- [x] Clicking a transaction's type pill (list row or mobile card) opens a
+      small popup to change it — same quick-edit pattern already used for
+      categories, no page navigation needed. For transfer-typed
+      transactions, the same popup also shows the paired leg (with Unpair)
+      or a search-to-pair control when unpaired — previously only
+      available on the full edit page. Switching away from "transfer"
+      auto-clears any existing pairing.
+- [x] Extracted pairWith()/unpair()/searchUnpairedTransferCandidates()
+      from the edit page onto the Transaction model so both the edit page
+      and this new popup share one implementation.
+- [x] Follow-up fixes from live testing on the collapsible Chart/Filters/
+      Details sections added earlier this session: chevrons weren't
+      rotating (`:class` on a `<flux:icon>` component gets treated as
+      Blade's own prop-binding syntax and silently dropped — moved the
+      binding onto a plain wrapping `<span>` instead, which isn't a Blade
+      component tag); inconsistent gap between sections (mismatched
+      `gap-4`/`gap-8` in sibling flex containers); Chart section vanishing
+      entirely instead of just showing empty when the current filters had
+      nothing to chart (now always renders, like Filters/Details do).
+
 ## UI tweaks + account nicknames (2026-07-19)
 - [x] Type pill moved under the date (desktop table + mobile card), transaction
       id dropped from the list display entirely (still shown on the edit
