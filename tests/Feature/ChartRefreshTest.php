@@ -53,16 +53,6 @@ it('refreshes the chart when a filter property changes', function (): void {
     $test->assertDispatched('refresh-chart');
 });
 
-it('does not refresh the chart merely from toggling selected_transactions', function (): void {
-    $account = makeAccountForChartRefreshTest();
-    $txn = Transaction::factory()->for($account)->create(['name' => 'Txn', 'amount' => -5, 'currency' => 'USD']);
-
-    $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
-
-    $test->assertNotDispatched('refresh-chart');
-});
-
 it('refreshes the chart after saveCategory', function (): void {
     $category = Category::create(['name' => 'Groceries']);
     $account = makeAccountForChartRefreshTest();
@@ -92,8 +82,7 @@ it('refreshes the chart after bulkAssignCategory', function (): void {
     $txn = Transaction::factory()->for($account)->create(['name' => 'Txn', 'amount' => -5, 'currency' => 'USD']);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
-    $test->call('bulkAssignCategory', $category->id);
+    $test->call('bulkAssignCategory', $category->id, [$txn->id]);
 
     $test->assertDispatched('refresh-chart');
 });
@@ -105,8 +94,7 @@ it('refreshes the chart after bulkDeleteTransactions', function (): void {
     ]);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
-    $test->call('bulkDeleteTransactions');
+    $test->call('bulkDeleteTransactions', [$txn->id]);
 
     $test->assertDispatched('refresh-chart');
 });

@@ -41,8 +41,7 @@ it('bulkAssignCategory syncs the given category onto every selected transaction'
     $untouched = Transaction::factory()->for($account)->create(['name' => 'Groceries', 'amount' => -50, 'currency' => 'USD']);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn1->id, $txn2->id]);
-    $test->call('bulkAssignCategory', $category->id);
+    $test->call('bulkAssignCategory', $category->id, [$txn1->id, $txn2->id]);
 
     expect($txn1->refresh()->categories()->pluck('categories.id')->all())->toBe([$category->id]);
     expect($txn2->refresh()->categories()->pluck('categories.id')->all())->toBe([$category->id]);
@@ -58,22 +57,9 @@ it('bulkAssignCategory replaces (not appends to) each transaction\'s existing ca
     $txn->categories()->sync([$oldCategory->id]);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
-    $test->call('bulkAssignCategory', $newCategory->id);
+    $test->call('bulkAssignCategory', $newCategory->id, [$txn->id]);
 
     expect($txn->refresh()->categories()->pluck('categories.id')->all())->toBe([$newCategory->id]);
-});
-
-it('bulkAssignCategory clears the selection afterwards', function (): void {
-    $category = Category::create(['name' => 'Subscriptions']);
-    $account = makeAccountForBulkTest();
-    $txn = Transaction::factory()->for($account)->create(['name' => 'Netflix', 'amount' => -15.99, 'currency' => 'USD']);
-
-    $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
-    $test->call('bulkAssignCategory', $category->id);
-
-    expect($test->get('selected_transactions'))->toBe([]);
 });
 
 it('bulkAssignCategory refuses to categorize a transaction belonging to another user', function (): void {
@@ -89,8 +75,7 @@ it('bulkAssignCategory refuses to categorize a transaction belonging to another 
     test()->actingAs($ownAccount->linked_account->user);
 
     $test = Livewire::test('components.transactions', ['account' => $ownAccount]);
-    $test->set('selected_transactions', [$ownTxn->id, $otherTxn->id]);
-    $test->call('bulkAssignCategory', $category->id);
+    $test->call('bulkAssignCategory', $category->id, [$ownTxn->id, $otherTxn->id]);
 
     $test->assertForbidden();
 });
@@ -103,23 +88,11 @@ it('bulkAssignType sets the given type onto every selected transaction', functio
     $untouched = Transaction::factory()->for($account)->create(['name' => 'Groceries', 'amount' => -50, 'currency' => 'USD', 'type' => 'expense']);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn1->id, $txn2->id]);
-    $test->call('bulkAssignType', 'transfer');
+    $test->call('bulkAssignType', 'transfer', [$txn1->id, $txn2->id]);
 
     expect($txn1->refresh()->type)->toBe('transfer');
     expect($txn2->refresh()->type)->toBe('transfer');
     expect($untouched->refresh()->type)->toBe('expense');
-});
-
-it('bulkAssignType clears the selection afterwards', function (): void {
-    $account = makeAccountForBulkTest();
-    $txn = Transaction::factory()->for($account)->create(['name' => 'Netflix', 'amount' => -15.99, 'currency' => 'USD']);
-
-    $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
-    $test->call('bulkAssignType', 'income');
-
-    expect($test->get('selected_transactions'))->toBe([]);
 });
 
 it('bulkAssignType rejects an invalid type', function (): void {
@@ -127,9 +100,8 @@ it('bulkAssignType rejects an invalid type', function (): void {
     $txn = Transaction::factory()->for($account)->create(['name' => 'Netflix', 'amount' => -15.99, 'currency' => 'USD']);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$txn->id]);
 
-    expect(fn () => $test->call('bulkAssignType', 'bogus'))
+    expect(fn () => $test->call('bulkAssignType', 'bogus', [$txn->id]))
         ->toThrow(InvalidArgumentException::class);
 });
 
@@ -144,8 +116,7 @@ it('bulkAssignType refuses to change the type of a transaction belonging to anot
     test()->actingAs($ownAccount->linked_account->user);
 
     $test = Livewire::test('components.transactions', ['account' => $ownAccount]);
-    $test->set('selected_transactions', [$ownTxn->id, $otherTxn->id]);
-    $test->call('bulkAssignType', 'transfer');
+    $test->call('bulkAssignType', 'transfer', [$ownTxn->id, $otherTxn->id]);
 
     $test->assertForbidden();
 });
@@ -167,8 +138,7 @@ it('bulkDeleteTransactions deletes only manually-added transactions among the se
     ]);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$manual->id, $synced->id]);
-    $test->call('bulkDeleteTransactions');
+    $test->call('bulkDeleteTransactions', [$manual->id, $synced->id]);
 
     expect(Transaction::find($manual->id))->toBeNull();
     expect(Transaction::find($synced->id))->not->toBeNull();
@@ -187,26 +157,9 @@ it('bulkDeleteTransactions detaches categories from deleted transactions', funct
     $manual->categories()->sync([$category->id]);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$manual->id]);
-    $test->call('bulkDeleteTransactions');
+    $test->call('bulkDeleteTransactions', [$manual->id]);
 
     expect(DB::table('category_transaction')->where('transaction_id', $manual->id)->count())->toBe(0);
-});
-
-it('bulkDeleteTransactions clears the selection afterwards', function (): void {
-    $account = makeAccountForBulkTest();
-    $manual = Transaction::factory()->for($account)->create([
-        'name' => 'Manual Entry',
-        'amount' => -10,
-        'currency' => 'USD',
-        'original' => ['manual' => true],
-    ]);
-
-    $test = Livewire::test('components.transactions', ['account' => $account]);
-    $test->set('selected_transactions', [$manual->id]);
-    $test->call('bulkDeleteTransactions');
-
-    expect($test->get('selected_transactions'))->toBe([]);
 });
 
 it('bulkDeleteTransactions refuses to delete a transaction belonging to another user', function (): void {
@@ -224,8 +177,7 @@ it('bulkDeleteTransactions refuses to delete a transaction belonging to another 
     test()->actingAs($ownAccount->linked_account->user);
 
     $test = Livewire::test('components.transactions', ['account' => $ownAccount]);
-    $test->set('selected_transactions', [$ownTxn->id, $otherTxn->id]);
-    $test->call('bulkDeleteTransactions');
+    $test->call('bulkDeleteTransactions', [$ownTxn->id, $otherTxn->id]);
 
     $test->assertForbidden();
 });
