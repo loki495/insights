@@ -27,9 +27,9 @@ new class extends Component
 }
 
 ?>
-<x-page-wrapper heading="Reports"
+<x-page-wrapper heading="Transaction Search"
     subheading="{{ $category?->id > 0 ? $category->name : 'All Categories' }}"
-    :breadcrumbs="['Reports' => 'reports.index', 'Categories' => 'reports.category.index']"
+    :breadcrumbs="['Transaction Search' => null]"
 >
 
         <livewire:components.transactions :category="$category" :allow_accounts="true" :allow_running_balance="false" />

@@ -28,7 +28,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::name('reports.')->group(function () {
-        Volt::route('reports', 'admin.reports.index')->name('index');
         Volt::route('reports/balance', 'admin.reports.balance.index')->name('balance.index');
         Volt::route('reports/income-expense', 'admin.reports.income-expense.index')->name('income-expense.index');
         Volt::route('reports/category/{category?}', 'admin.reports.category.index')->name('category.index');

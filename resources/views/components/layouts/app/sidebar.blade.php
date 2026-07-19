@@ -46,9 +46,14 @@
                     <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Categories') }}</span>
                 </flux:navlist.item>
 
+                <flux:navlist.item icon="magnifying-glass" :href="route('reports.category.index')" :current="request()->routeIs('reports.category.*')" wire:navigate>
+                    <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Transaction Search') }}</span>
+                </flux:navlist.item>
+
                 <div class="in-data-flux-sidebar-collapsed-desktop:hidden">
-                    <flux:navlist.group class="!cursor-pointer" heading="Reports" expandable :expanded="request()->routeIs('reports.*')">
-                        <flux:navlist.item icon="list-bullet" :href="route('reports.category.index')" :current="request()->routeIs('reports.category.*')" wire:navigate>{{ __('By Categories') }}</flux:navlist.item>
+                    <flux:navlist.group class="!cursor-pointer" heading="Reports" expandable :expanded="request()->routeIs('reports.balance.*', 'reports.income-expense.*')">
+                        <flux:navlist.item icon="scale" :href="route('reports.balance.index')" :current="request()->routeIs('reports.balance.*')" wire:navigate>{{ __('Balance') }}</flux:navlist.item>
+                        <flux:navlist.item icon="arrows-right-left" :href="route('reports.income-expense.index')" :current="request()->routeIs('reports.income-expense.*')" wire:navigate>{{ __('Income / Expense') }}</flux:navlist.item>
                     </flux:navlist.group>
                 </div>
 
