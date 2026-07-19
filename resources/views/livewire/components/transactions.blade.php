@@ -51,6 +51,8 @@ new class extends Component
 
     public $selected_transactions = [];
 
+    protected bool $chartNeedsRefresh = false;
+
     public $chart_labels = [];
 
     public $chart_values = [];
@@ -233,11 +235,31 @@ new class extends Component
         $this->resetPage();
     }
 
+    /**
+     * The chart aggregates the full (unpaginated) date-range query, so it
+     * doesn't need recomputing on a page-only navigation (nextPage/
+     * previousPage/gotoPage bypass this hook entirely, since they set
+     * $this->paginators directly rather than syncing a client property).
+     * selected_transactions is excluded since toggling checkboxes doesn't
+     * change what the chart should show.
+     */
+    public function updated($name): void
+    {
+        if ($name === 'selected_transactions') {
+            return;
+        }
+
+        $this->chartNeedsRefresh = true;
+    }
+
     public function with(): array
     {
         $query = $this->getTransactionsQuery();
 
-        $this->updateChartData();
+        if ($this->chartNeedsRefresh) {
+            $this->updateChartData();
+            $this->chartNeedsRefresh = false;
+        }
 
         $transactions = $query
             ->clone()
@@ -468,6 +490,7 @@ new class extends Component
     #[On('transactions-updated')]
     public function refreshTransactions(): void
     {
+        $this->chartNeedsRefresh = true;
         $this->resetPage();
     }
 
@@ -480,6 +503,7 @@ new class extends Component
 
         $this->category_id = (int) $categoryId;
         $this->category = Category::find($this->category_id);
+        $this->chartNeedsRefresh = true;
         $this->resetPage();
     }
 
@@ -492,6 +516,7 @@ new class extends Component
             $this->category_id = 0;
             $this->category = null;
         }
+        $this->chartNeedsRefresh = true;
         $this->resetPage();
     }
 
@@ -501,6 +526,7 @@ new class extends Component
         $this->authorize('update', $transaction);
         $transaction->categories()->sync([$category_id]);
         $transaction->save();
+        $this->chartNeedsRefresh = true;
     }
 
     /**
@@ -591,6 +617,7 @@ new class extends Component
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('update', $transaction);
         $transaction->categories()->sync([]);
+        $this->chartNeedsRefresh = true;
     }
 
     public function deleteTransaction($transaction_id)
@@ -599,6 +626,7 @@ new class extends Component
         $this->authorize('delete', $transaction);
         $transaction->categories()->detach();
         $transaction->delete();
+        $this->chartNeedsRefresh = true;
     }
 
     public function bulkAssignCategory($category_id): void
@@ -611,6 +639,7 @@ new class extends Component
         }
 
         $this->selected_transactions = [];
+        $this->chartNeedsRefresh = true;
     }
 
     public function bulkDeleteTransactions(): void
@@ -628,6 +657,7 @@ new class extends Component
         }
 
         $this->selected_transactions = [];
+        $this->chartNeedsRefresh = true;
     }
 }
 ?>
