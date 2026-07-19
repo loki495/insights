@@ -184,6 +184,28 @@ it('reportable() excludes transfers and adjustments but includes income and expe
     expect(Transaction::reportable()->pluck('name')->sort()->values()->all())->toBe(['Groceries', 'Paycheck']);
 });
 
+// --- 'removed' transactions (Plaid /transactions/sync) ---
+
+it('deletes a transaction when Plaid reports it as removed', function (): void {
+    $account = makeAccountForTypeTest(['plaid_account_id' => 'plaid_checking_removed']);
+
+    UpdateAccountTransactionsAction::run(plaidTransactionPayload([
+        'account_id' => 'plaid_checking_removed',
+        'transaction_id' => 'txn_to_remove',
+    ]), 'added');
+
+    expect(Transaction::where('transaction_id', 'txn_to_remove')->exists())->toBeTrue();
+
+    // Plaid's sync 'removed' entries are minimal — just the identifying fields, not a full
+    // transaction payload — so this must delete by id without touching getUsableTransaction().
+    UpdateAccountTransactionsAction::run([
+        'transaction_id' => 'txn_to_remove',
+        'account_id' => 'plaid_checking_removed',
+    ], 'removed');
+
+    expect(Transaction::where('transaction_id', 'txn_to_remove')->exists())->toBeFalse();
+});
+
 it('reportable() still includes a transaction with no type set yet, rather than silently hiding it', function (): void {
     // SQL's `NOT IN` excludes NULLs by default — an un-backfilled or newly-created transaction
     // must not vanish from every report just because it hasn't been classified yet.
