@@ -11,5 +11,4 @@ class GetLiabilities extends Endpoint
     public $path = 'liabilities/get';
 
     public $method = 'POST';
-
 }

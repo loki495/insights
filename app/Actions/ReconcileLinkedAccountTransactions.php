@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Models\LinkedAccount;
-use Carbon\Carbon;
 
 final class ReconcileLinkedAccountTransactions
 {
@@ -26,7 +25,7 @@ final class ReconcileLinkedAccountTransactions
                 /*     $last_day = $transaction->created_at->copy(); */
                 /* } */
 
-                if (!$force && $transaction->running_balance === $balance) {
+                if (! $force && $transaction->running_balance === $balance) {
                     break;
                 }
                 $transaction->running_balance = $balance;
@@ -37,7 +36,7 @@ final class ReconcileLinkedAccountTransactions
 
                 $name = $transaction->name;
                 $name = substr($name, 0, 30);
-                //echo("$transaction->created_at\t$name\t$transaction->transaction_type\t$transaction->amount\t$transaction->running_balance\t(next balance: $balance)\n");
+                // echo("$transaction->created_at\t$name\t$transaction->transaction_type\t$transaction->amount\t$transaction->running_balance\t(next balance: $balance)\n");
             }
         }
     }

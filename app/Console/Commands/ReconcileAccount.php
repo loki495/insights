@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Actions\ReconcileLinkedAccountTransactions;
 use App\Models\LinkedAccount;
 use Illuminate\Console\Command;

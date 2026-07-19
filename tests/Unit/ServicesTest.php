@@ -23,4 +23,4 @@ it('fails if endpoint class does not exist', function (): void {
 
     $plaid->getNonExistentEndpoint();
 
-})->throws(\Exception::class, 'Unknown endpoint: getNonExistentEndpoint');
+})->throws(Exception::class, 'Unknown endpoint: getNonExistentEndpoint');

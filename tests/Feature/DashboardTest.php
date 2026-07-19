@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Models\Account;
+use App\Models\LinkedAccount;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('guests are redirected to the login page', function (): void {
     $response = $this->get('/');
@@ -13,12 +16,12 @@ test('guests are redirected to the login page', function (): void {
 
 test('authenticated users can visit the dashboard and see accounts', function (): void {
     $user = User::factory()->create();
-    $linkedAccount = \App\Models\LinkedAccount::factory()->for($user)->create([
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
         'provider_name' => 'Test Bank',
         'item_id' => 'item_123',
         'access_token' => 'access_123',
     ]);
-    $account = \App\Models\Account::factory()->for($linkedAccount, 'linked_account')->create([
+    $account = Account::factory()->for($linkedAccount, 'linked_account')->create([
         'plaid_account_id' => 'account_123',
         'mask' => '1234',
         'name' => 'Checking Account',

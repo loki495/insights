@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
-use App\Models\LinkedAccount;
 use App\Models\Account;
+use App\Models\LinkedAccount;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('user cannot view another users linked account index', function () {
     $user1 = User::factory()->create();
