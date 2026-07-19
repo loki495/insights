@@ -3,7 +3,23 @@
     "ignore": {
         "words": [
             "php",
-            "rebase"
+            "rebase",
+            "cors",
+            "filesystems",
+            "yml",
+            "favicon",
+            "js",
+            "navbar",
+            "navlist",
+            "debugbar",
+            "reportable",
+            "granularities",
+            "substring",
+            "hardcoded",
+            "install's",
+            "sql's",
+            "nul",
+            "unpair"
         ],
         "paths": []
     }
