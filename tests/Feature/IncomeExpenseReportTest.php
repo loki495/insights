@@ -155,3 +155,57 @@ test('clearing the category selection returns to the Income/Expense chart', func
         return count($series) === 2 && $series[0]['label'] === 'Income' && $series[1]['label'] === 'Expense';
     });
 });
+
+test('lists the transactions that make up the totals', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'income']);
+    Transaction::factory()->for($account)->create(['name' => 'Groceries', 'amount' => -300, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+
+    $test->assertViewHas('transactionsList', function ($list) {
+        return $list->total() === 2;
+    });
+    $test->assertSee('Paycheck');
+    $test->assertSee('Groceries');
+});
+
+test('the transaction list excludes transfers, matching the totals above it', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'income']);
+    Transaction::factory()->for($account)->create(['name' => 'Card Payment', 'amount' => -500, 'currency' => 'USD', 'created_at' => now(), 'type' => 'transfer']);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+
+    $test->assertViewHas('transactionsList', function ($list) {
+        return $list->total() === 1;
+    });
+    $test->assertDontSee('Card Payment');
+});
+
+test('the transaction list narrows to the selected category, matching the chart', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    $groceries = Category::create(['name' => 'Groceries']);
+
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'income']);
+    $groceryTxn = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -300, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+    $groceryTxn->categories()->sync([$groceries->id]);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+    $test->set('category_ids', [$groceries->id]);
+
+    $test->assertViewHas('transactionsList', function ($list) {
+        return $list->total() === 1;
+    });
+    $test->assertSee('Store');
+    $test->assertDontSee('Paycheck');
+});

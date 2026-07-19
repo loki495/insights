@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 use App\Actions\Reports\BuildCategoryBreakdownTrendAction;
 use App\Actions\Reports\BuildIncomeExpenseTrendAction;
+use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
+use Livewire\WithPagination;
 
 new class extends Component
 {
+    use HasDisplayTimezoneDateRange;
+    use WithPagination;
+
     #[Session]
     public string $granularity = 'monthly';
 
@@ -23,6 +29,10 @@ new class extends Component
     public string $date_from = '';
 
     public string $date_to = '';
+
+    public string $date_from_local = '';
+
+    public string $date_to_local = '';
 
     public array $chart_periods = [];
 
@@ -34,8 +44,25 @@ new class extends Component
 
     public function mount(): void
     {
-        $this->date_from = (string) carbon()->startOfYear();
-        $this->date_to = (string) carbon()->now();
+        $this->date_from = (string) now()->startOfYear();
+        $this->date_to = (string) now();
+        $this->date_from_local = $this->toDisplayTimezone($this->date_from);
+        $this->date_to_local = $this->toDisplayTimezone($this->date_to);
+    }
+
+    public function updatedDateFromLocal(string $value): void
+    {
+        $this->date_from = $this->fromDisplayTimezone($value);
+    }
+
+    public function updatedDateToLocal(string $value): void
+    {
+        $this->date_to = $this->fromDisplayTimezone($value);
+    }
+
+    public function updating(): void
+    {
+        $this->resetPage();
     }
 
     /**
@@ -53,6 +80,29 @@ new class extends Component
     public function categories()
     {
         return Category::all()->sortBy('fullName')->values();
+    }
+
+    /**
+     * @param  Collection<int, Account>  $accounts
+     */
+    private function transactionsQuery(Collection $accounts, Carbon $from, Carbon $to)
+    {
+        $query = Transaction::query()
+            ->whereIn('account_id', $accounts->pluck('id'))
+            ->reportable()
+            ->whereBetween('created_at', [$from, $to])
+            ->with(['account.linked_account', 'categories']);
+
+        if (! empty($this->category_ids)) {
+            $matchingIds = Category::whereIn('id', $this->category_ids)->get()
+                ->flatMap(fn (Category $category) => $category->descendants)
+                ->unique()
+                ->values();
+
+            $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $matchingIds));
+        }
+
+        return $query;
     }
 
     public function with(): array
@@ -85,11 +135,16 @@ new class extends Component
             $hasData = collect($breakdown['series'])->contains(fn ($series) => count(array_filter($series['values'])) > 0);
         }
 
+        $transactionsList = $this->transactionsQuery($accounts, $from, $to)
+            ->orderByDesc('created_at')
+            ->paginate(25);
+
         return [
             'incomeTotal' => $incomeTotal,
             'expenseTotal' => $expenseTotal,
             'netTotal' => $incomeTotal - $expenseTotal,
             'hasData' => $hasData,
+            'transactionsList' => $transactionsList,
         ];
     }
 }
@@ -115,11 +170,11 @@ new class extends Component
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">From</label>
-            <x-input type="datetime-local" wire:model.live="date_from" class="w-full"></x-input>
+            <x-input type="datetime-local" wire:model.live="date_from_local" class="w-full"></x-input>
         </div>
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">To</label>
-            <x-input type="datetime-local" wire:model.live="date_to" class="w-full"></x-input>
+            <x-input type="datetime-local" wire:model.live="date_to_local" class="w-full"></x-input>
         </div>
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Granularity</label>
@@ -182,6 +237,89 @@ new class extends Component
                 Nothing to chart for the current date range.
             </div>
         @endif
+    </div>
+
+    <div class="flex flex-col gap-2">
+        <flux:heading size="md">Transactions</flux:heading>
+
+        <div class="hidden sm:block overflow-x-auto rounded-xl bg-zinc-100 dark:bg-white/10 p-4">
+            <x-table class="min-w-full">
+                <x-slot name="head">
+                    <x-table.tr>
+                        <x-table.th>Date</x-table.th>
+                        <x-table.th>Account</x-table.th>
+                        <x-table.th>Description</x-table.th>
+                        <x-table.th>Category</x-table.th>
+                        <x-table.th>Type</x-table.th>
+                        <x-table.th class="text-right">Amount</x-table.th>
+                    </x-table.tr>
+                </x-slot>
+                <x-slot name="body">
+                    @forelse ($transactionsList as $transaction)
+                        @php
+                            $typeStyles = [
+                                'income' => ['label' => 'Income', 'class' => 'bg-emerald-600'],
+                                'expense' => ['label' => 'Expense', 'class' => 'bg-zinc-500'],
+                                'transfer' => ['label' => 'Transfer', 'class' => 'bg-blue-600'],
+                                'adjustment' => ['label' => 'Adjustment', 'class' => 'bg-amber-600'],
+                            ];
+                            $typeStyle = $typeStyles[$transaction->type ?? null] ?? null;
+                        @endphp
+                        <x-table.tr wire:key="income-expense-list-{{ $transaction->id }}">
+                            <x-table.td class="text-nowrap">{{ $transaction->created_at->format('M j, Y') }}</x-table.td>
+                            <x-table.td class="text-nowrap">{{ $transaction->account?->display_name ?? '—' }}</x-table.td>
+                            <x-table.td>
+                                <div>{{ $transaction->name }}</div>
+                                @if($transaction->merchant_name && $transaction->merchant_name !== $transaction->name)
+                                    <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $transaction->merchant_name }}</div>
+                                @endif
+                            </x-table.td>
+                            <x-table.td>
+                                <div class="flex gap-1 flex-wrap">
+                                    @foreach($transaction->categories as $category)
+                                        <span
+                                            class="text-xs px-1.5 py-0.5 rounded-md text-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]"
+                                            style="background-color: {{ $category->color ?: '#3b82f6' }}"
+                                        >{{ $category->name }}</span>
+                                    @endforeach
+                                </div>
+                            </x-table.td>
+                            <x-table.td>
+                                @if($typeStyle)
+                                    <span class="text-xs px-1.5 py-0.5 rounded-md text-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)] {{ $typeStyle['class'] }}">{{ $typeStyle['label'] }}</span>
+                                @endif
+                            </x-table.td>
+                            <x-table.td class="text-right text-nowrap">{!! currency($transaction->amount, $transaction->currency, true) !!}</x-table.td>
+                        </x-table.tr>
+                    @empty
+                        <x-table.tr>
+                            <x-table.td colspan="6" class="text-center py-4 text-zinc-500 dark:text-zinc-400">No transactions found.</x-table.td>
+                        </x-table.tr>
+                    @endforelse
+                </x-slot>
+            </x-table>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:hidden">
+            @forelse ($transactionsList as $transaction)
+                <div wire:key="income-expense-card-{{ $transaction->id }}" class="rounded-xl bg-zinc-100 dark:bg-white/10 p-3 flex flex-col gap-1">
+                    <div class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                        <span>{{ $transaction->created_at->format('M j, Y') }}</span>
+                        <span>{{ $transaction->account?->display_name ?? '—' }}</span>
+                    </div>
+                    <div class="font-medium">{{ $transaction->name }}</div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold">{!! currency($transaction->amount, $transaction->currency, true) !!}</span>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-4 text-zinc-500 dark:text-zinc-400">No transactions found.</div>
+            @endforelse
+        </div>
+
+        <div class="w-full">
+            {{ $transactionsList->links() }}
+        </div>
     </div>
 
 </x-page-wrapper>
