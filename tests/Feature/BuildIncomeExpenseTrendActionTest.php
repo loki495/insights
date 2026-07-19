@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Reports\BuildIncomeExpenseTrendAction;
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use App\Models\User;
@@ -110,6 +111,73 @@ it('groups into quarterly and yearly periods', function (): void {
 
     expect($yearly['periods'])->toBe(['2026']);
     expect($yearly['income'])->toBe([200.0]);
+});
+
+it('groups into daily periods', function (): void {
+    $account = makeAccountForIncomeExpenseTrendTest();
+
+    Transaction::factory()->for($account)->create(['name' => 'A', 'amount' => 100, 'currency' => 'USD', 'created_at' => '2026-01-05', 'type' => 'income']);
+    Transaction::factory()->for($account)->create(['name' => 'B', 'amount' => -20, 'currency' => 'USD', 'created_at' => '2026-01-06', 'type' => 'expense']);
+
+    $result = BuildIncomeExpenseTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-05'),
+        Carbon::parse('2026-01-06'),
+        'daily',
+    );
+
+    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026']);
+    expect($result['income'])->toBe([100.0, 0.0]);
+    expect($result['expense'])->toBe([0.0, 20.0]);
+});
+
+it('filters to the given categories and their descendants', function (): void {
+    $account = makeAccountForIncomeExpenseTrendTest();
+
+    $parent = Category::create(['name' => 'Expenses']);
+    $groceries = Category::create(['name' => 'Groceries', 'parent_id' => $parent->id]);
+    $rent = Category::create(['name' => 'Rent']);
+
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'income']);
+
+    $groceryTxn = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -100, 'currency' => 'USD', 'created_at' => '2026-01-11', 'type' => 'expense']);
+    $groceryTxn->categories()->sync([$groceries->id]);
+
+    $rentTxn = Transaction::factory()->for($account)->create(['name' => 'Landlord', 'amount' => -800, 'currency' => 'USD', 'created_at' => '2026-01-12', 'type' => 'expense']);
+    $rentTxn->categories()->sync([$rent->id]);
+
+    $result = BuildIncomeExpenseTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-01'),
+        Carbon::parse('2026-01-31'),
+        'monthly',
+        [$parent->id],
+    );
+
+    // Only the Groceries-tagged expense (under $parent) counts; the untagged paycheck and the
+    // Rent expense (a different, unselected category) both drop out.
+    expect($result['income'])->toBe([0.0]);
+    expect($result['expense'])->toBe([100.0]);
+});
+
+it('counts a transaction once even if it matches more than one selected category', function (): void {
+    $account = makeAccountForIncomeExpenseTrendTest();
+
+    $groceries = Category::create(['name' => 'Groceries']);
+    $household = Category::create(['name' => 'Household']);
+
+    $txn = Transaction::factory()->for($account)->create(['name' => 'Costco', 'amount' => -200, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
+    $txn->categories()->sync([$groceries->id, $household->id]);
+
+    $result = BuildIncomeExpenseTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-01'),
+        Carbon::parse('2026-01-31'),
+        'monthly',
+        [$groceries->id, $household->id],
+    );
+
+    expect($result['expense'])->toBe([200.0]);
 });
 
 it('rejects an invalid granularity', function (): void {

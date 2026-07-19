@@ -108,6 +108,7 @@ new class extends Component
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Granularity</label>
             <flux:select wire:model.live="granularity" class="w-full sm:w-40">
+                <flux:select.option value="daily">Daily</flux:select.option>
                 <flux:select.option value="monthly">Monthly</flux:select.option>
                 <flux:select.option value="quarterly">Quarterly</flux:select.option>
                 <flux:select.option value="yearly">Yearly</flux:select.option>

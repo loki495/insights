@@ -61,9 +61,9 @@ new class extends Component
         $from = Carbon::parse($this->date_from);
         $to = Carbon::parse($this->date_to);
 
-        // Always computed, regardless of the category filter below — the summary cards stay a
-        // stable overall picture; only the trend chart's shape changes with category selection.
-        $trend = BuildIncomeExpenseTrendAction::run($accounts, $from, $to, $this->granularity);
+        // Narrowed to the selected categories (if any) — the summary cards reflect exactly what
+        // the chart below is showing, not the account-wide picture.
+        $trend = BuildIncomeExpenseTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids);
         $incomeTotal = array_sum($trend['income']);
         $expenseTotal = array_sum($trend['expense']);
 
@@ -124,6 +124,7 @@ new class extends Component
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Granularity</label>
             <flux:select wire:model.live="granularity" class="w-full sm:w-40">
+                <flux:select.option value="daily">Daily</flux:select.option>
                 <flux:select.option value="monthly">Monthly</flux:select.option>
                 <flux:select.option value="quarterly">Quarterly</flux:select.option>
                 <flux:select.option value="yearly">Yearly</flux:select.option>

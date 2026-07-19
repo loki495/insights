@@ -94,7 +94,7 @@ test('renders a trend chart once there is reportable activity', function (): voi
     $test->assertDontSee('Nothing to chart for the current date range.');
 });
 
-test('selecting categories switches the chart to a category breakdown, without changing the summary cards', function (): void {
+test('selecting categories switches the chart to a category breakdown', function (): void {
     $user = User::factory()->create();
     $account = makeAccountForIncomeExpenseReportTest($user);
     $groceries = Category::create(['name' => 'Groceries']);
@@ -108,13 +108,35 @@ test('selecting categories switches the chart to a category breakdown, without c
     $test = Livewire::test('admin.reports.income-expense.index');
     $test->set('category_ids', [$groceries->id]);
 
-    // Summary cards are unaffected by the category filter.
-    $test->assertViewHas('incomeTotal', 2000.0);
-    $test->assertViewHas('expenseTotal', 300.0);
-
     $test->assertSet('chart_series', function ($series) use ($groceries) {
         return count($series) === 1 && $series[0]['category_id'] === $groceries->id && array_sum($series[0]['values']) === 300.0;
     });
+});
+
+test('selecting categories narrows the summary totals to just those categories', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    $groceries = Category::create(['name' => 'Groceries']);
+
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'income']);
+    $groceryTxn = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -300, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+    $groceryTxn->categories()->sync([$groceries->id]);
+    // Uncategorized — should drop out once the filter narrows to Groceries.
+    Transaction::factory()->for($account)->create(['name' => 'Rent', 'amount' => -800, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+
+    // Unfiltered: everything counts.
+    $test->assertViewHas('incomeTotal', 2000.0);
+    $test->assertViewHas('expenseTotal', 1100.0);
+
+    $test->set('category_ids', [$groceries->id]);
+
+    // Filtered: only the Groceries-tagged expense counts.
+    $test->assertViewHas('incomeTotal', 0.0);
+    $test->assertViewHas('expenseTotal', 300.0);
 });
 
 test('clearing the category selection returns to the Income/Expense chart', function (): void {
