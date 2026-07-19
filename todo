@@ -57,9 +57,13 @@ this session, Phase 2/3 not started.
       that hit an FK error mid-cleanup and left orphaned rows in the real
       dev db the first time; caught and cleaned up manually, real data
       confirmed back to the exact pre-session counts before moving on).
-- [ ] Phase 3 — stub a nullable `transactions.owner` column (household vs.
-      personal), no UI/logic yet. Note for whenever this gets built for real:
-      the live category data already has ad hoc per-person forks (`Bars -
+- [x] Phase 3 — stubbed a nullable `transactions.owner` string column, no
+      UI/logic yet (deliberately free-form, not an FK/enum — real
+      household/ownership modeling hasn't been designed). Verified safe on
+      a disposable DB copy first (589 rows preserved), one small
+      regression test. All three phases of the accounting-model rework now
+      shipped. Note for whenever ownership gets built for real: the live
+      category data already has ad hoc per-person forks (`Bars -
       Andres`/`Bars - Sally`, a `Sally` expense category separate from the
       `Sally` income category) that a real owner field should let us collapse.
 
