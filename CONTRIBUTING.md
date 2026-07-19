@@ -48,6 +48,16 @@ introducing a new pattern for the same kind of problem.
 - Open PRs against `main`.
 - Small, focused PRs get reviewed faster than large ones. If you're planning something big,
   opening an issue first to discuss the approach is a good idea.
+- **Sign off your commits** (`git commit -s`, or add `Signed-off-by: Your Name <email>` to the
+  message yourself). This is a [Developer Certificate of
+  Origin](https://developercertificate.org/) — a lightweight statement that you wrote the change
+  or otherwise have the right to submit it under this project's license. No CLA, no copyright
+  assignment — you keep authorship of your own contribution.
+
+## License
+
+This project is licensed under [AGPL-3.0](LICENSE). By contributing, you agree your contribution
+is licensed under the same terms.
 
 ## Reporting bugs
 
