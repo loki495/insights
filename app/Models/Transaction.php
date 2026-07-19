@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\TransactionFactory;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -118,5 +119,60 @@ class Transaction extends Model
         if ($this->type !== $type) {
             $this->update(['type' => $type]);
         }
+    }
+
+    /**
+     * Links two transactions as the two legs of the same transfer. Never allowed across the
+     * same account — that's what protects a same-account refund from being mistaken for a
+     * transfer leg (see MatchTransferPairsAction, which enforces the same rule automatically).
+     */
+    public function pairWith(self $other): void
+    {
+        if ($other->account_id === $this->account_id) {
+            throw new \InvalidArgumentException('Cannot pair two transactions from the same account.');
+        }
+
+        $this->update(['transfer_pair_id' => $other->id]);
+        $other->update(['transfer_pair_id' => $this->id]);
+    }
+
+    /**
+     * Clears the pairing on both legs, if any.
+     */
+    public function unpair(): void
+    {
+        if ($this->transfer_pair_id) {
+            static::where('id', $this->transfer_pair_id)->update(['transfer_pair_id' => null]);
+        }
+
+        $this->update(['transfer_pair_id' => null]);
+    }
+
+    /**
+     * Unpaired, opposite-account transfer transactions matching a search term — candidates for
+     * manually pairing $excludeTransactionId with the correct other leg.
+     *
+     * @return EloquentCollection<int, self>
+     */
+    public static function searchUnpairedTransferCandidates(int $excludeTransactionId, int $excludeAccountId, string $search): EloquentCollection
+    {
+        if (trim($search) === '') {
+            return new EloquentCollection;
+        }
+
+        return static::query()
+            ->where('id', '!=', $excludeTransactionId)
+            ->where('account_id', '!=', $excludeAccountId)
+            ->where('type', 'transfer')
+            ->whereNull('transfer_pair_id')
+            ->where(function ($query) use ($search) {
+                $term = '%'.$search.'%';
+                $query->where('name', 'like', $term)
+                    ->orWhere('merchant_name', 'like', $term);
+            })
+            ->with('account')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
     }
 }
