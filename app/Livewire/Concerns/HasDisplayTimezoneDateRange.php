@@ -31,4 +31,26 @@ trait HasDisplayTimezoneDateRange
             ->setTimezone(config('app.timezone'))
             ->format('Y-m-d H:i:s');
     }
+
+    /**
+     * A year-to-date default range (start of the *current* year through now, never a hardcoded
+     * year), computed directly in the display timezone so "start of year" means Jan 1 local time.
+     * The query-facing values are converted straight from the full-precision Carbon instances,
+     * not through the minute-truncated "_local" strings — those only hold what
+     * <input type="datetime-local"> can represent.
+     *
+     * @return array{from: string, from_local: string, to: string, to_local: string}
+     */
+    private function defaultYearToDateRange(): array
+    {
+        $nowLocal = now(config('app.display_timezone'));
+        $fromLocal = $nowLocal->copy()->startOfYear();
+
+        return [
+            'from' => $fromLocal->copy()->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+            'from_local' => $fromLocal->format('Y-m-d\TH:i'),
+            'to' => $nowLocal->copy()->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+            'to_local' => $nowLocal->format('Y-m-d\TH:i'),
+        ];
+    }
 }

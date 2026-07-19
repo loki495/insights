@@ -30,8 +30,8 @@ trait FiltersBySearchAndAmount
             // CAST is load-bearing: SQLite/PDO binds `?` with TEXT affinity, and comparing that
             // against a function-call expression like ABS(amount) (no column affinity of its
             // own) makes SQLite fall back to lexicographic string comparison — "1000" < "500"
-            // alphabetically — silently corrupting the filter. Forcing both sides numeric avoids
-            // it (see the same fix/comment on the Transaction Search query).
+            // alphabetically. Forcing both sides numeric avoids that (same pattern used in the
+            // Transaction Search query).
             $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $amountMin]);
         }
 

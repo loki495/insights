@@ -48,7 +48,7 @@ new class extends Component
             <div class="flex flex-col gap-4 w-full sm:w-1/2">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                     <label for="search">Search</label>
-                    <x-input type="text" wire:model.live="search" placeholder="Search" class="w-full"></x-input>
+                    <x-input type="text" wire:model.live.debounce="search" placeholder="Search" class="w-full"></x-input>
                 </div>
             </div>
         </div>
