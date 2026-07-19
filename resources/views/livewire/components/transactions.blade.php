@@ -887,12 +887,15 @@ new class extends Component
                 </div>
             </div>
 
-            <details class="w-full lg:hidden shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10">
-                <summary class="cursor-pointer select-none p-2 font-medium">Details</summary>
-                <div class="p-2 pt-0">
+            <div class="w-full lg:hidden shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10" x-data="{ detailsOpen: false }">
+                <button type="button" @click="detailsOpen = !detailsOpen" class="cursor-pointer select-none p-2 font-medium w-full text-left flex items-center gap-1">
+                    <flux:icon.chevron-right class="size-3! transition-transform" :class="{ 'rotate-90': detailsOpen }" />
+                    Details
+                </button>
+                <div x-show="detailsOpen" x-cloak class="p-2 pt-0">
                     @include('livewire.components.partials.transaction-summary-details')
                 </div>
-            </details>
+            </div>
 
             <div class="hidden lg:block w-full lg:w-auto shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10 p-2">
                 @include('livewire.components.partials.transaction-summary-details')
