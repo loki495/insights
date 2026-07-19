@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Reports\BuildBalanceTrendAction;
+use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
 use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -11,6 +12,8 @@ use Livewire\Volt\Component;
 
 new class extends Component
 {
+    use HasDisplayTimezoneDateRange;
+
     private const array LIABILITY_TYPES = ['credit', 'loan'];
 
     #[Session]
@@ -19,6 +22,10 @@ new class extends Component
     public string $date_from = '';
 
     public string $date_to = '';
+
+    public string $date_from_local = '';
+
+    public string $date_to_local = '';
 
     public array $chart_periods = [];
 
@@ -30,8 +37,20 @@ new class extends Component
 
     public function mount(): void
     {
-        $this->date_from = (string) carbon()->startOfYear();
-        $this->date_to = (string) carbon()->now();
+        $this->date_from = (string) now()->startOfYear();
+        $this->date_to = (string) now();
+        $this->date_from_local = $this->toDisplayTimezone($this->date_from);
+        $this->date_to_local = $this->toDisplayTimezone($this->date_to);
+    }
+
+    public function updatedDateFromLocal(string $value): void
+    {
+        $this->date_from = $this->fromDisplayTimezone($value);
+    }
+
+    public function updatedDateToLocal(string $value): void
+    {
+        $this->date_to = $this->fromDisplayTimezone($value);
     }
 
     /**
@@ -99,11 +118,11 @@ new class extends Component
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">From</label>
-            <x-input type="datetime-local" wire:model.live="date_from" class="w-full"></x-input>
+            <x-input type="datetime-local" wire:model.live="date_from_local" class="w-full"></x-input>
         </div>
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">To</label>
-            <x-input type="datetime-local" wire:model.live="date_to" class="w-full"></x-input>
+            <x-input type="datetime-local" wire:model.live="date_to_local" class="w-full"></x-input>
         </div>
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Granularity</label>
