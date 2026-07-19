@@ -1,9 +1,10 @@
 <?php
 
 declare(strict_types=1);
+use App\Services\Plaid\PlaidService;
 
 it('gets plaid status', function (): void {
-    $plaid = app(\App\Services\Plaid\PlaidService::class, ['environment' => \App\Services\Plaid\PlaidService::ENV_STATUS]);
+    $plaid = app(PlaidService::class, ['environment' => PlaidService::ENV_STATUS]);
     $response = $plaid->getAPIStatus();
 
     expect($response)

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OriginalCategory extends Model
 {
-
     protected $fillable = [
         'name',
         'plaid_id',
@@ -21,12 +20,12 @@ class OriginalCategory extends Model
         'pf_confidence',
     ];
 
-    public function transactions() : HasMany
+    public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
-    public function total() : Attribute
+    public function total(): Attribute
     {
         return Attribute::make(
             get: fn ($value) => $this->transactions->sum('amount')

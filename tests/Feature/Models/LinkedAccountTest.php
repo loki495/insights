@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 use App\Models\LinkedAccount;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('has valid toArray response', function (): void {
     $user = User::factory()->create();

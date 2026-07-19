@@ -6,8 +6,6 @@ namespace App\Actions;
 
 use App\Models\Account;
 use App\Models\LinkedAccount;
-use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Support\Facades\DB;
 
 final class UpdateAccountAction
 {
