@@ -4,7 +4,7 @@
     'clickEvent' => ''
 ])
 
-<div class="w-full relative rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white dark:bg-neutral-800 shadow-sm">
+<div {{ $attributes->merge(['class' => 'relative rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white dark:bg-neutral-800 shadow-sm']) }}>
     <div class="h-64 relative">
         <div id="{{ Str::slug($title) }}-legend-container" class="mb-4"></div>
         <canvas id="{{ Str::slug($title) }}"></canvas>
@@ -13,7 +13,6 @@
 
 @script
 <script>
-    const ctx = document.getElementById('{{ Str::slug($title) }}');
     let chartObj = null;
 
     // Use functions to get fresh data from Livewire without making the chart object itself reactive
@@ -30,9 +29,20 @@
 
         if (chartObj) {
             chartObj.destroy();
+            chartObj = null;
         }
 
         if (!data.labels || data.labels.length === 0) {
+            return;
+        }
+
+        // Re-query rather than caching the canvas at script-setup time: the
+        // caller conditionally removes/re-adds this element (transaction
+        // count going to/from zero), leaving a brand new canvas node in
+        // place of the old one.
+        const ctx = document.getElementById('{{ Str::slug($title) }}');
+
+        if (!ctx) {
             return;
         }
 
