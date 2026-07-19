@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 use Vite;
 
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureModels();
         $this->configureUrl();
         $this->configureVite();
+        $this->configureNumbers();
     }
 
     public function configureCommands(): void
@@ -58,12 +60,21 @@ class AppServiceProvider extends ServiceProvider
         Vite::usePrefetchStrategy('aggressive');
     }
 
+    /**
+     * currency() (app/Helpers/functions.php) formats via Number::currency(), which defaults to
+     * the 'en' locale unless told otherwise — this keeps it in sync with APP_LOCALE instead of
+     * needing a second, redundant env var.
+     */
+    public function configureNumbers(): void
+    {
+        Number::useLocale(config('app.locale'));
+    }
+
     public function configureServices(): void
     {
         $this->app->singleton(PlaidService::class, fn (Application $app, array $args): PlaidService => new PlaidService(
             $args['environment'],
             config('plaid.clientId'),
-            config('plaid.apiKey'),
         ));
     }
 }
