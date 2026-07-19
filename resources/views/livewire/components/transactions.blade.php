@@ -28,6 +28,9 @@ new class extends Component
     #[Session]
     public array $account_ids = [];
 
+    #[Session]
+    public array $type_filters = [];
+
     public ?Account $account = null;
 
     #[Session]
@@ -152,6 +155,9 @@ new class extends Component
             })
             ->when($this->only_uncategorized ?? false, function ($query) {
                 return $query->doesntHave('categories');
+            })
+            ->when(! empty($this->type_filters), function ($query) {
+                return $query->whereIn('type', $this->type_filters);
             })
             ->with('categories')
             ->with('originalCategory')
@@ -744,6 +750,18 @@ new class extends Component
                             <flux:checkbox wire:model.live.debounce="only_uncategorized" />
                             <flux:label>Only show transactions without categories</flux:label>
                         </flux:field>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
+                        <label for="type">Type</label>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1">
+                            @foreach(['income' => 'Income', 'expense' => 'Expense', 'transfer' => 'Transfer', 'adjustment' => 'Adjustment'] as $type_value => $type_label)
+                            <flux:field variant="inline">
+                                <flux:checkbox wire:model.live="type_filters" value="{{ $type_value }}" />
+                                <flux:label>{{ $type_label }}</flux:label>
+                            </flux:field>
+                            @endforeach
+                        </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">

@@ -55,21 +55,68 @@ class Transaction extends Model
         return $this->belongsTo(Transaction::class, 'parent_id');
     }
 
+    /**
+     * @return BelongsTo<Transaction>
+     */
+    public function transferPair(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'transfer_pair_id');
+    }
+
+    /**
+     * Everything except positively-identified transfers/adjustments. A transaction with no
+     * `type` yet (never classified) stays reportable by default rather than silently vanishing
+     * from totals — SQL's `NOT IN` excludes NULLs on its own, so that's made explicit here.
+     */
     public function scopeReportable($query)
     {
-        $non_reportable_ids = Category::nonReportableIds();
+        return $query->where(function ($query) {
+            $query->whereNotIn('type', ['transfer', 'adjustment'])
+                ->orWhereNull('type');
+        });
+    }
 
-        return $query
-            ->where(function ($query) {
-                $query
-                    ->where(function ($q) {
-                        $q->whereNull('transactions.parent_id')
-                            ->where('is_split', false); // regular top-level
-                    })
-                    ->orWhereNotNull('parent_transaction_id'); // split children
-                // })
-                // ->doesntHave('categories', function ($query) use ($non_reportable_ids) {
-                // $query->whereIn('id', $non_reportable_ids);
-            });
+    /**
+     * Best-guess type from Plaid's own personal-finance-category data, plus amount sign as a fallback.
+     * Does not consider the app's own Category tags — see refreshType() for that layer.
+     */
+    public static function classifyType(?OriginalCategory $category, int|float $amount): string
+    {
+        $primary = $category?->pf_primary;
+        $detailed = $category?->pf_detailed;
+
+        if (in_array($primary, ['TRANSFER_IN', 'TRANSFER_OUT'], true)) {
+            return 'transfer';
+        }
+
+        // Plaid buckets credit-card payments under LOAN_PAYMENTS, not its own TRANSFER_* primary —
+        // but paying a card is functionally a transfer once both sides are tracked.
+        if ($detailed === 'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT') {
+            return 'transfer';
+        }
+
+        if ($primary === 'INCOME') {
+            return 'income';
+        }
+
+        return $amount > 0 ? 'income' : 'expense';
+    }
+
+    /**
+     * Recompute and persist `type`, layering the app's own "Transfers" category tag (if any)
+     * on top of the Plaid-derived guess from classifyType().
+     */
+    public function refreshType(): void
+    {
+        $type = static::classifyType($this->originalCategory, $this->amount);
+
+        $transferCategoryIds = Category::transferCategoryDescendantIds();
+        if ($transferCategoryIds !== [] && $this->categories()->whereIn('categories.id', $transferCategoryIds)->exists()) {
+            $type = 'transfer';
+        }
+
+        if ($this->type !== $type) {
+            $this->update(['type' => $type]);
+        }
     }
 }
