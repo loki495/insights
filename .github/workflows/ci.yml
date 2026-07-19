@@ -1,4 +1,4 @@
-name: tests
+name: ci
 
 on:
   push:
@@ -11,21 +11,23 @@ on:
       - main
 
 jobs:
-  ci:
+  test:
     runs-on: ubuntu-latest
-    environment: Testing
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install aspell (for peck typo checks)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq aspell aspell-en
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.4
+          php-version: '8.4'
           tools: composer:v2
           extensions: intl
-          coverage: xdebug
+          coverage: pcov
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -33,11 +35,11 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install Node Dependencies
-        run: npm i
-
-      - name: Install Dependencies
+      - name: Install Composer Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install Node Dependencies
+        run: npm ci
 
       - name: Copy Environment File
         run: cp .env.example .env
@@ -48,5 +50,8 @@ jobs:
       - name: Build Assets
         run: npm run build
 
-      - name: Run Tests
-        run: ./vendor/bin/pest
+      # Runs rector --dry-run, pint --test, peck, phpstan, and pest --coverage — the same
+      # `composer test` a contributor is told to run locally, so CI can't drift out of sync
+      # with the documented workflow.
+      - name: Run test suite
+        run: composer test
