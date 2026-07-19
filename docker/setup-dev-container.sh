@@ -20,6 +20,9 @@ apt-get install -y --no-install-recommends \
     libfreetype6-dev \
     libxpm-dev \
     libzip-dev \
+    libicu-dev \
+    aspell \
+    aspell-en \
     zip \
     vim \
     unzip
@@ -83,8 +86,8 @@ else
 fi
 
 # Install PHP extensions
-docker-php-ext-install gd mysqli pdo_mysql zip
-docker-php-ext-enable gd mysqli pdo_mysql zip
+docker-php-ext-install gd mysqli pdo_mysql zip intl
+docker-php-ext-enable gd mysqli pdo_mysql zip intl
 
 # Install Composer
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
