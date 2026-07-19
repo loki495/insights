@@ -51,3 +51,18 @@ it('filters down to just the selected types', function (): void {
     expect($test->instance()->getTransactionsQuery()->count())->toBe(1);
     expect($test->instance()->getTransactionsQuery()->first()->name)->toBe('To Savings');
 });
+
+it('renders a type pill for each transaction, and an "Unclassified" pill when type is unset', function (): void {
+    $account = makeAccountForTypeFilterTest();
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 1000, 'currency' => 'USD', 'type' => 'income']);
+    Transaction::factory()->for($account)->create(['name' => 'To Savings', 'amount' => -200, 'currency' => 'USD', 'type' => 'transfer']);
+    Transaction::factory()->for($account)->create(['name' => 'Mystery', 'amount' => -20, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+
+    // "Income"/"Transfer" alone would also match the category/original-category dropdown
+    // options on this page, so assert on the pill's distinctive color classes instead.
+    $test->assertSeeHtml('bg-emerald-600');
+    $test->assertSeeHtml('bg-blue-600');
+    $test->assertSeeHtml('Unclassified');
+});
