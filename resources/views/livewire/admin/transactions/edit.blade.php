@@ -202,7 +202,7 @@ new class extends Component
                             wire:click="pairWith({{ $candidate->id }})"
                             class="cursor-pointer text-left px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10"
                         >
-                            {{ $candidate->name }} &mdash; {{ $candidate->account->display_name }}, {{ $candidate->created_at->format('M j, Y') }} ({{ $candidate->amount }})
+                            {{ $candidate->name }} &mdash; {{ $candidate->account->display_name }}, {{ $candidate->created_at->format('M j, Y') }} ({{ currency($candidate->amount, $candidate->currency, true) }})
                         </button>
                         @endforeach
                         @if(trim($pair_search) !== '' && $this->pairCandidates->isEmpty())

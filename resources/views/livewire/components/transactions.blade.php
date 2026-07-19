@@ -682,6 +682,12 @@ new class extends Component
         return [
             'type' => $transaction->type,
             'pair' => $this->formatTransferPair($transaction->transferPair),
+            'transaction' => [
+                'name' => $transaction->name,
+                'merchant_name' => $transaction->merchant_name,
+                'amount' => currency($transaction->amount, $transaction->currency, true),
+                'date' => $transaction->created_at->format('M j, Y'),
+            ],
         ];
     }
 
@@ -755,6 +761,7 @@ new class extends Component
         return [
             'id' => $pair->id,
             'label' => $pair->name.' — '.($pair->account?->display_name ?? 'Unknown account').', '.$pair->created_at->format('M j, Y'),
+            'amount' => currency($pair->amount, $pair->currency, true),
         ];
     }
 
@@ -780,6 +787,7 @@ new class extends Component
     <div
         x-data="{
             optimisticCategories: {},
+            optimisticTypes: {},
             categoryList: @js($this->categoryPickerOptions),
             categoryLookup: @js($this->categoryPickerLookup),
             categoryColorPalette: ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#a855f7', '#ec4899', '#14b8a6', '#eab308'],
@@ -1038,15 +1046,19 @@ new class extends Component
             </div>
             <div class="flex flex-col sm:flex-row gap-2 sm:ml-auto">
                 <flux:button size="sm" variant="primary" class="cursor-pointer" @click="$dispatch('bulk-add-category')">Assign Category</flux:button>
-                <flux:dropdown>
-                    <flux:button size="sm" variant="primary" class="cursor-pointer">Assign Type</flux:button>
-                    <flux:menu>
-                        <flux:menu.item @click="bulkAssignType('income')">Income</flux:menu.item>
-                        <flux:menu.item @click="bulkAssignType('expense')">Expense</flux:menu.item>
-                        <flux:menu.item @click="bulkAssignType('transfer')">Transfer</flux:menu.item>
-                        <flux:menu.item @click="bulkAssignType('adjustment')">Adjustment</flux:menu.item>
-                    </flux:menu>
-                </flux:dropdown>
+                <div class="relative" x-data="{ assignTypeOpen: false }" @click.outside="assignTypeOpen = false">
+                    <flux:button size="sm" variant="primary" class="cursor-pointer w-full" @click="assignTypeOpen = !assignTypeOpen">Assign Type</flux:button>
+                    <div
+                        x-show="assignTypeOpen"
+                        x-cloak
+                        class="absolute z-20 mt-1 min-w-full rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 shadow-lg p-1 flex flex-col gap-1"
+                    >
+                        <button type="button" class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-nowrap" @click="assignTypeOpen = false; bulkAssignType('income')">Income</button>
+                        <button type="button" class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-nowrap" @click="assignTypeOpen = false; bulkAssignType('expense')">Expense</button>
+                        <button type="button" class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-nowrap" @click="assignTypeOpen = false; bulkAssignType('transfer')">Transfer</button>
+                        <button type="button" class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-nowrap" @click="assignTypeOpen = false; bulkAssignType('adjustment')">Adjustment</button>
+                    </div>
+                </div>
                 <flux:button size="sm" variant="danger" class="cursor-pointer" wire:confirm="Delete the selected transactions? Only manually-added transactions can be deleted — synced ones will be skipped." @click="bulkDeleteTransactions()">Delete Selected</flux:button>
                 <button type="button" class="cursor-pointer text-sm text-blue-900 dark:text-blue-100 underline self-start sm:self-auto" @click="selected_transactions = []">Clear selection</button>
             </div>
@@ -1339,6 +1351,7 @@ new class extends Component
                     open: false,
                     transaction_id: 0,
                     transaction_type: null,
+                    transaction_details: null,
                     pair: null,
                     pair_search: '',
                     pair_candidates: [],
@@ -1353,18 +1366,30 @@ new class extends Component
                         this.open = true;
                         this.transaction_id = transactionId;
                         this.transaction_type = null;
+                        this.transaction_details = null;
                         this.pair = null;
                         this.pair_search = '';
                         this.pair_candidates = [];
                         $wire.typeEditorData(transactionId).then((data) => {
                             this.transaction_type = data.type;
                             this.pair = data.pair;
+                            this.transaction_details = data.transaction;
                         });
                     },
                     selectType(type) {
+                        // Optimistic: the pill in the list updates instantly (via the shared
+                        // optimisticTypes on the outer scope) rather than waiting on the round trip.
+                        this.optimisticTypes[this.transaction_id] = type;
+                        this.transaction_type = type;
+                        if (type !== 'transfer') {
+                            this.pair = null;
+                        }
                         $wire.saveType(this.transaction_id, type).then((data) => {
                             this.transaction_type = data.type;
                             this.pair = data.pair;
+                            delete this.optimisticTypes[this.transaction_id];
+                        }).catch(() => {
+                            delete this.optimisticTypes[this.transaction_id];
                         });
                     },
                     searchPairs() {
@@ -1404,6 +1429,16 @@ new class extends Component
                         </button>
                     </div>
 
+                    <template x-if="transaction_details">
+                        <div class="flex items-start justify-between gap-2 text-sm border-b border-zinc-200 dark:border-zinc-700 pb-4">
+                            <div class="min-w-0">
+                                <div class="font-medium break-words" x-text="transaction_details?.name"></div>
+                                <div class="text-xs text-zinc-500 dark:text-zinc-400" x-text="transaction_details?.date + (transaction_details?.merchant_name ? ' · ' + transaction_details.merchant_name : '')"></div>
+                            </div>
+                            <div class="font-semibold shrink-0" x-text="transaction_details?.amount"></div>
+                        </div>
+                    </template>
+
                     <div class="grid grid-cols-2 gap-2">
                         <template x-for="option in typeOptions" :key="option.value">
                             <button
@@ -1421,8 +1456,11 @@ new class extends Component
 
                         <template x-if="pair">
                             <div class="flex items-center justify-between gap-2 border border-zinc-300 dark:border-zinc-600 rounded-lg p-2">
-                                <span class="text-sm" x-text="pair?.label"></span>
-                                <flux:button size="sm" variant="danger" @click="clearPair()">Unpair</flux:button>
+                                <div class="flex flex-col text-sm min-w-0">
+                                    <span class="break-words" x-text="pair?.label"></span>
+                                    <span class="text-xs text-zinc-500 dark:text-zinc-400" x-text="pair?.amount"></span>
+                                </div>
+                                <flux:button size="sm" variant="danger" class="shrink-0" @click="clearPair()">Unpair</flux:button>
                             </div>
                         </template>
 
@@ -1434,9 +1472,11 @@ new class extends Component
                                         <button
                                             type="button"
                                             @click="selectPair(candidate.id)"
-                                            class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10"
-                                            x-text="candidate.label"
-                                        ></button>
+                                            class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-between gap-2"
+                                        >
+                                            <span class="min-w-0 break-words" x-text="candidate.label"></span>
+                                            <span class="text-xs text-zinc-500 dark:text-zinc-400 shrink-0" x-text="candidate.amount"></span>
+                                        </button>
                                     </template>
                                     <div x-show="pair_search.trim() && !pairSearching && pair_candidates.length === 0" class="text-sm text-zinc-500 dark:text-zinc-400 px-2 py-1.5">No matching unpaired transfers found.</div>
                                 </div>

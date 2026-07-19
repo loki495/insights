@@ -37,6 +37,8 @@ it('typeEditorData returns the current type and no pair for an unpaired transact
 
     expect($data['type'])->toBe('expense');
     expect($data['pair'])->toBeNull();
+    expect($data['transaction']['name'])->toBe('Groceries');
+    expect($data['transaction']['amount'])->toContain('50');
 });
 
 it('typeEditorData returns the paired transaction\'s info when one exists', function (): void {
@@ -52,6 +54,7 @@ it('typeEditorData returns the paired transaction\'s info when one exists', func
 
     expect($data['pair']['id'])->toBe($pair->id);
     expect($data['pair']['label'])->toContain('Payment Received');
+    expect($data['pair']['amount'])->toContain('100');
 });
 
 it('saveType updates the transaction\'s type', function (): void {
@@ -118,6 +121,7 @@ it('searchTransferPairCandidates finds unpaired transfers from a different accou
     $results = $test->instance()->searchTransferPairCandidates($transaction->id, 'Special');
 
     expect(collect($results)->pluck('id')->all())->toBe([$goodCandidate->id]);
+    expect($results[0]['amount'])->toContain('100');
 });
 
 it('pairTransaction pairs two transactions and returns the pair info', function (): void {
