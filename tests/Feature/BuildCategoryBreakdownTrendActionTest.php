@@ -153,6 +153,28 @@ it('falls back to a default color when the category has none set', function (): 
     expect($result['series'][0]['color'])->toBe('#3b82f6');
 });
 
+it('groups into daily periods', function (): void {
+    $account = makeAccountForCategoryBreakdownTrendTest();
+    $groceries = Category::create(['name' => 'Groceries']);
+
+    $t1 = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -50, 'currency' => 'USD', 'created_at' => '2026-01-05', 'type' => 'expense']);
+    $t1->categories()->sync([$groceries->id]);
+
+    $t2 = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -30, 'currency' => 'USD', 'created_at' => '2026-01-06', 'type' => 'expense']);
+    $t2->categories()->sync([$groceries->id]);
+
+    $result = BuildCategoryBreakdownTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-05'),
+        Carbon::parse('2026-01-06'),
+        'daily',
+        [$groceries->id],
+    );
+
+    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026']);
+    expect($result['series'][0]['values'])->toBe([50.0, 30.0]);
+});
+
 it('rejects an invalid granularity', function (): void {
     $account = makeAccountForCategoryBreakdownTrendTest();
     $category = Category::create(['name' => 'Groceries']);

@@ -136,6 +136,23 @@ it('groups into yearly periods with the expected labels', function (): void {
     expect($result['assets'])->toBe([100.0, 150.0]);
 });
 
+it('groups into daily periods with the expected labels', function (): void {
+    $account = makeAccountForBalanceTrendTest();
+
+    Transaction::factory()->for($account)->create(['name' => 'A', 'amount' => -10, 'currency' => 'USD', 'created_at' => '2026-01-05', 'running_balance' => 100]);
+    Transaction::factory()->for($account)->create(['name' => 'B', 'amount' => -10, 'currency' => 'USD', 'created_at' => '2026-01-06', 'running_balance' => 90]);
+
+    $result = BuildBalanceTrendAction::run(
+        collect([$account]),
+        Carbon::parse('2026-01-05'),
+        Carbon::parse('2026-01-06'),
+        'daily',
+    );
+
+    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026']);
+    expect($result['assets'])->toBe([100.0, 90.0]);
+});
+
 it('rejects an invalid granularity', function (): void {
     $account = makeAccountForBalanceTrendTest();
 

@@ -8,11 +8,11 @@ use Carbon\CarbonInterface;
 use InvalidArgumentException;
 
 /**
- * Shared monthly/quarterly/yearly period bucketing used by every Reports trend action.
+ * Shared daily/monthly/quarterly/yearly period bucketing used by every Reports trend action.
  */
 trait BucketsIntoPeriods
 {
-    private const array GRANULARITIES = ['monthly', 'quarterly', 'yearly'];
+    private const array GRANULARITIES = ['daily', 'monthly', 'quarterly', 'yearly'];
 
     private static function assertValidGranularity(string $granularity): void
     {
@@ -29,6 +29,7 @@ trait BucketsIntoPeriods
         $boundaries = [];
 
         $cursor = match ($granularity) {
+            'daily' => $from->copy()->startOfDay(),
             'monthly' => $from->copy()->startOfMonth(),
             'quarterly' => $from->copy()->startOfQuarter(),
             'yearly' => $from->copy()->startOfYear(),
@@ -36,12 +37,14 @@ trait BucketsIntoPeriods
 
         while ($cursor->lte($to)) {
             $label = match ($granularity) {
+                'daily' => $cursor->format('M j, Y'),
                 'monthly' => $cursor->format('M Y'),
                 'quarterly' => 'Q'.$cursor->quarter.' '.$cursor->format('Y'),
                 'yearly' => $cursor->format('Y'),
             };
 
             $end = match ($granularity) {
+                'daily' => $cursor->copy()->endOfDay(),
                 'monthly' => $cursor->copy()->endOfMonth(),
                 'quarterly' => $cursor->copy()->endOfQuarter(),
                 'yearly' => $cursor->copy()->endOfYear(),
@@ -53,6 +56,7 @@ trait BucketsIntoPeriods
             ];
 
             $cursor = match ($granularity) {
+                'daily' => $cursor->copy()->addDay(),
                 'monthly' => $cursor->copy()->addMonth(),
                 'quarterly' => $cursor->copy()->addQuarter(),
                 'yearly' => $cursor->copy()->addYear(),
