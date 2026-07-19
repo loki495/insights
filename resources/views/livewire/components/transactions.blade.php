@@ -720,7 +720,7 @@ new class extends Component
             @if (!empty($chart_type) && count($chart_labels) > 0)
             <x-chart
                 wire:key="chart-{{ $category_id ?: 'root' }}"
-                class="w-full h-64"
+                class="w-full"
                 :type="$chart_type"
                 :title="__('Category Breakdown')"
                 clickEvent="chart-clicked"
