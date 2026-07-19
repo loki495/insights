@@ -753,20 +753,39 @@ new class extends Component
             </div>
 
             @if (!empty($chart_type) && count($chart_labels) > 0)
-            <x-chart
-                wire:key="chart-{{ $category_id ?: 'root' }}"
-                class="w-full"
-                :type="$chart_type"
-                :title="__('Category Breakdown')"
-                clickEvent="chart-clicked"
-                wire:ignore
-            >
-            </x-chart>
+            {{--
+                Alpine-controlled (not a native <details>) — a native details' `open` attribute
+                lives only in the client DOM, and since the server-rendered markup never includes
+                it, Livewire's morph on every re-render (pagination, search, any filter change)
+                was wiping it back to closed. Alpine's x-data state survives those morphs.
+            --}}
+            <div class="w-full rounded-xl bg-zinc-100 dark:bg-white/10" x-data="{ chartOpen: false }">
+                <button type="button" @click="chartOpen = !chartOpen" class="cursor-pointer select-none p-2 font-medium w-full text-left flex items-center gap-1">
+                    <flux:icon.chevron-right class="size-3! transition-transform" :class="{ 'rotate-90': chartOpen }" />
+                    Chart
+                </button>
+                <div x-show="chartOpen" x-cloak class="p-2 pt-0">
+                    <x-chart
+                        wire:key="chart-{{ $category_id ?: 'root' }}"
+                        class="w-full"
+                        :type="$chart_type"
+                        :title="__('Category Breakdown')"
+                        clickEvent="chart-clicked"
+                        wire:ignore
+                    >
+                    </x-chart>
+                </div>
+            </div>
             @endif
         </div>
 
         <div class="flex flex-col lg:flex-row gap-8 w-full items-start justify-between">
-            <div class="flex flex-col gap-4 items-start grow min-w-0 w-full p-0 lg:pr-8 xl:pr-32">
+            <div class="flex flex-col grow min-w-0 w-full rounded-xl bg-zinc-100 dark:bg-white/10" x-data="{ filtersOpen: false }">
+                <button type="button" @click="filtersOpen = !filtersOpen" class="cursor-pointer select-none p-2 font-medium w-full text-left flex items-center gap-1">
+                    <flux:icon.chevron-right class="size-3! transition-transform" :class="{ 'rotate-90': filtersOpen }" />
+                    Filters
+                </button>
+                <div x-show="filtersOpen" x-cloak class="flex flex-col gap-4 items-start w-full p-2 pt-0">
                 <!-- filters -->
                 <div class="flex flex-col gap-4 items-start w-full">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
@@ -865,6 +884,7 @@ new class extends Component
                 </div>
                 @endif
 
+                </div>
             </div>
 
             <details class="w-full lg:hidden shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10">

@@ -5,13 +5,13 @@
                 <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $item['id'] }}" />
             </div>
             <div class="min-w-0">
-                <div class="text-[11px] text-zinc-500 dark:text-zinc-400">
+                <div class="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                     <span>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }}</span>
+                    @include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])
                     @if ($allow_accounts)
                     <span>&middot; {{ $item['account']['display_name'] }} ({{ $item['account']['linked_account']['provider_name'] }})</span>
                     @endif
                 </div>
-                <div class="mt-1">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
             </div>
         </div>
         <div class="text-right shrink-0">
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="min-w-0">
+    <div class="min-w-0 mt-2">
         <div class="font-medium break-words leading-tight">{{ $item['name'] }}</div>
         @if($item['originalCategory'] || $item['payment_channel'])
         <div class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">

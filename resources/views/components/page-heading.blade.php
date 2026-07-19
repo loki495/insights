@@ -6,6 +6,8 @@
 ])
 <div class="relative w-full page-heading">
 
+    {{-- Breadcrumbs show only the ancestor trail — the heading/subheading below already say
+         "you are here", so a trailing crumb repeating the subheading was pure duplication. --}}
     @if ($breadcrumbs)
     <flux:breadcrumbs class="text-zinc-700 mb-4">
         @foreach ($breadcrumbs as $text => $route)
@@ -15,9 +17,6 @@
                 <flux:breadcrumbs.item>{{ $text }}</flux:breadcrumbs.item>
             @endif
         @endforeach
-
-        <flux:breadcrumbs.item>{!! __($subheading) !!}</flux:breadcrumbs.item>
-
     </flux:breadcrumbs>
     @endif
 
