@@ -671,6 +671,93 @@ new class extends Component
         $this->chartNeedsRefresh = true;
     }
 
+    /**
+     * Initial data for the type/pairing popup when it opens on a given transaction.
+     */
+    public function typeEditorData(int $transactionId): array
+    {
+        $transaction = Transaction::with('transferPair.account')->findOrFail($transactionId);
+        $this->authorize('view', $transaction);
+
+        return [
+            'type' => $transaction->type,
+            'pair' => $this->formatTransferPair($transaction->transferPair),
+        ];
+    }
+
+    public function saveType(int $transactionId, string $type): array
+    {
+        if (! in_array($type, ['income', 'expense', 'transfer', 'adjustment'], true)) {
+            throw new InvalidArgumentException('Invalid type.');
+        }
+
+        $transaction = Transaction::findOrFail($transactionId);
+        $this->authorize('update', $transaction);
+
+        // Pairing only makes sense for transfers — drop a stale pair rather than leave it
+        // dangling once a transaction is corrected to income/expense/adjustment.
+        if ($type !== 'transfer' && $transaction->transfer_pair_id) {
+            $transaction->unpair();
+        }
+
+        $transaction->update(['type' => $type]);
+        $this->chartNeedsRefresh = true;
+
+        return [
+            'type' => $transaction->type,
+            'pair' => $this->formatTransferPair($transaction->refresh()->transferPair),
+        ];
+    }
+
+    /**
+     * @return array<int, array{id: int, label: string}>
+     */
+    public function searchTransferPairCandidates(int $transactionId, string $search): array
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+        $this->authorize('view', $transaction);
+
+        return Transaction::searchUnpairedTransferCandidates($transactionId, $transaction->account_id, $search)
+            ->map(fn (Transaction $candidate) => $this->formatTransferPair($candidate))
+            ->values()
+            ->all();
+    }
+
+    public function pairTransaction(int $transactionId, int $otherTransactionId): ?array
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+        $this->authorize('update', $transaction);
+
+        $other = Transaction::findOrFail($otherTransactionId);
+        $this->authorize('update', $other);
+
+        $transaction->pairWith($other);
+        $this->chartNeedsRefresh = true;
+
+        return $this->formatTransferPair($other);
+    }
+
+    public function unpairTransaction(int $transactionId): void
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+        $this->authorize('update', $transaction);
+
+        $transaction->unpair();
+        $this->chartNeedsRefresh = true;
+    }
+
+    private function formatTransferPair(?Transaction $pair): ?array
+    {
+        if (! $pair) {
+            return null;
+        }
+
+        return [
+            'id' => $pair->id,
+            'label' => $pair->name.' — '.($pair->account?->display_name ?? 'Unknown account').', '.$pair->created_at->format('M j, Y'),
+        ];
+    }
+
     public function bulkDeleteTransactions(): void
     {
         // Only manually-added transactions can be deleted (matches the
@@ -1240,6 +1327,124 @@ new class extends Component
 
                         <flux:button variant="primary" @click="createAndApplyCategory()">Create &amp; Assign</flux:button>
                     </div>
+                </div>
+            </div>
+        </template>
+
+        <template x-teleport="body">
+            <div
+                class="fixed inset-0 flex items-center justify-center z-50 p-4"
+                x-cloak
+                x-data="{
+                    open: false,
+                    transaction_id: 0,
+                    transaction_type: null,
+                    pair: null,
+                    pair_search: '',
+                    pair_candidates: [],
+                    pairSearching: false,
+                    typeOptions: [
+                        { value: 'income', label: 'Income' },
+                        { value: 'expense', label: 'Expense' },
+                        { value: 'transfer', label: 'Transfer' },
+                        { value: 'adjustment', label: 'Adjustment' },
+                    ],
+                    openFor(transactionId) {
+                        this.open = true;
+                        this.transaction_id = transactionId;
+                        this.transaction_type = null;
+                        this.pair = null;
+                        this.pair_search = '';
+                        this.pair_candidates = [];
+                        $wire.typeEditorData(transactionId).then((data) => {
+                            this.transaction_type = data.type;
+                            this.pair = data.pair;
+                        });
+                    },
+                    selectType(type) {
+                        $wire.saveType(this.transaction_id, type).then((data) => {
+                            this.transaction_type = data.type;
+                            this.pair = data.pair;
+                        });
+                    },
+                    searchPairs() {
+                        if (!this.pair_search.trim()) {
+                            this.pair_candidates = [];
+                            return;
+                        }
+                        this.pairSearching = true;
+                        $wire.searchTransferPairCandidates(this.transaction_id, this.pair_search).then((list) => {
+                            this.pair_candidates = list;
+                            this.pairSearching = false;
+                        });
+                    },
+                    selectPair(otherId) {
+                        $wire.pairTransaction(this.transaction_id, otherId).then((pairInfo) => {
+                            this.pair = pairInfo;
+                            this.pair_search = '';
+                            this.pair_candidates = [];
+                        });
+                    },
+                    clearPair() {
+                        $wire.unpairTransaction(this.transaction_id).then(() => {
+                            this.pair = null;
+                        });
+                    },
+                }"
+                x-show="open"
+                x-on:keydown.escape.window="open = false"
+                @edit-type.window="openFor(event.detail.transaction_id)"
+            >
+                <div class="fixed inset-0 bg-zinc-900/50" @click="open = false"></div>
+                <div class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white p-4 rounded-xl w-full max-w-96 z-10 flex flex-col gap-4 shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">Type</span>
+                        <button type="button" class="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-white" @click="open = false">
+                            <flux:icon.x-mark class="size-4" />
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <template x-for="option in typeOptions" :key="option.value">
+                            <button
+                                type="button"
+                                @click="selectType(option.value)"
+                                class="cursor-pointer text-sm px-3 py-2 rounded-lg border"
+                                :class="transaction_type === option.value ? 'border-zinc-800 dark:border-white bg-zinc-100 dark:bg-white/10 font-medium' : 'border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10'"
+                                x-text="option.label"
+                            ></button>
+                        </template>
+                    </div>
+
+                    <div x-show="transaction_type === 'transfer'" x-cloak class="flex flex-col gap-2 border-t border-zinc-200 dark:border-zinc-700 pt-4">
+                        <span class="font-medium text-sm">Transfer Pair</span>
+
+                        <template x-if="pair">
+                            <div class="flex items-center justify-between gap-2 border border-zinc-300 dark:border-zinc-600 rounded-lg p-2">
+                                <span class="text-sm" x-text="pair?.label"></span>
+                                <flux:button size="sm" variant="danger" @click="clearPair()">Unpair</flux:button>
+                            </div>
+                        </template>
+
+                        <template x-if="!pair">
+                            <div class="flex flex-col gap-2">
+                                <x-input type="text" x-model="pair_search" @input.debounce.400ms="searchPairs()" placeholder="Search for the other leg by name/merchant..." class="w-full"></x-input>
+                                <div class="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                                    <template x-for="candidate in pair_candidates" :key="candidate.id">
+                                        <button
+                                            type="button"
+                                            @click="selectPair(candidate.id)"
+                                            class="cursor-pointer text-left text-sm px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10"
+                                            x-text="candidate.label"
+                                        ></button>
+                                    </template>
+                                    <div x-show="pair_search.trim() && !pairSearching && pair_candidates.length === 0" class="text-sm text-zinc-500 dark:text-zinc-400 px-2 py-1.5">No matching unpaired transfers found.</div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <flux:button variant="subtle" class="w-full" @click="open = false">Close</flux:button>
                 </div>
             </div>
         </template>

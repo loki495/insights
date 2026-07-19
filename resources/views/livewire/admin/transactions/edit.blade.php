@@ -83,20 +83,7 @@ new class extends Component
             return collect();
         }
 
-        return Transaction::query()
-            ->where('id', '!=', $this->transaction_id)
-            ->where('account_id', '!=', $this->account_id)
-            ->where('type', 'transfer')
-            ->whereNull('transfer_pair_id')
-            ->where(function ($query) {
-                $term = '%'.$this->pair_search.'%';
-                $query->where('name', 'like', $term)
-                    ->orWhere('merchant_name', 'like', $term);
-            })
-            ->with('account')
-            ->orderByDesc('created_at')
-            ->limit(20)
-            ->get();
+        return Transaction::searchUnpairedTransferCandidates($this->transaction_id, $this->account_id, $this->pair_search);
     }
 
     public function pairWith(int $otherTransactionId): void
@@ -107,12 +94,7 @@ new class extends Component
         $other = Transaction::findOrFail($otherTransactionId);
         $this->authorize('update', $other);
 
-        if ($other->account_id === $transaction->account_id) {
-            throw new InvalidArgumentException('Cannot pair two transactions from the same account.');
-        }
-
-        $transaction->update(['transfer_pair_id' => $other->id]);
-        $other->update(['transfer_pair_id' => $transaction->id]);
+        $transaction->pairWith($other);
 
         $this->transfer_pair_id = $other->id;
         $this->pair_search = '';
@@ -123,11 +105,7 @@ new class extends Component
         $transaction = Transaction::findOrFail($this->transaction_id);
         $this->authorize('update', $transaction);
 
-        if ($transaction->transfer_pair_id) {
-            Transaction::where('id', $transaction->transfer_pair_id)->update(['transfer_pair_id' => null]);
-        }
-
-        $transaction->update(['transfer_pair_id' => null]);
+        $transaction->unpair();
         $this->transfer_pair_id = null;
     }
 
