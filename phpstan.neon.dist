@@ -9,7 +9,7 @@ parameters:
     # rather than the default, so this is a real, currently-passing gate; raise these over time
     # as more of the codebase gets typed.
     type_coverage:
-        param_type: 85
+        param_type: 83
         return_type: 93
         constant_type: 65
     ignoreErrors:

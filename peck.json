@@ -19,7 +19,9 @@
             "install's",
             "sql's",
             "nul",
-            "unpair"
+            "unpair",
+            "idor",
+            "uncategorized"
         ],
         "paths": []
     }

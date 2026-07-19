@@ -18,7 +18,7 @@
             <div class="font-semibold">{!! currency($item['amount'], $item['currency']) !!}</div>
             @if ($showRunningBalance)
             <div class="{{ when($item['running_balance'] < 0, 'text-red-400', 'text-zinc-500 dark:text-zinc-400') }} text-[11px]">
-                {!! currency($item['running_balance'], $item['currency'], 1) !!}
+                {!! currency($item['running_balance'], $item['currency'], true) !!}
             </div>
             @endif
         </div>
