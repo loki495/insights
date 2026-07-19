@@ -654,6 +654,23 @@ new class extends Component
         $this->chartNeedsRefresh = true;
     }
 
+    public function bulkAssignType(string $type): void
+    {
+        if (! in_array($type, ['income', 'expense', 'transfer', 'adjustment'], true)) {
+            throw new InvalidArgumentException('Invalid type.');
+        }
+
+        $transactions = Transaction::whereIn('id', $this->selected_transactions)->get();
+
+        foreach ($transactions as $transaction) {
+            $this->authorize('update', $transaction);
+            $transaction->update(['type' => $type]);
+        }
+
+        $this->selected_transactions = [];
+        $this->chartNeedsRefresh = true;
+    }
+
     public function bulkDeleteTransactions(): void
     {
         // Only manually-added transactions can be deleted (matches the
@@ -700,6 +717,12 @@ new class extends Component
             },
             bulkAssignCategory(categoryId) {
                 $wire.bulkAssignCategory(categoryId).then(() => {
+                    this.selected_transactions = [];
+                    this.selectMode = false;
+                });
+            },
+            bulkAssignType(type) {
+                $wire.bulkAssignType(type).then(() => {
                     this.selected_transactions = [];
                     this.selectMode = false;
                 });
@@ -893,6 +916,15 @@ new class extends Component
             </div>
             <div class="flex flex-col sm:flex-row gap-2 sm:ml-auto">
                 <flux:button size="sm" variant="primary" class="cursor-pointer" @click="$dispatch('bulk-add-category')">Assign Category</flux:button>
+                <flux:dropdown>
+                    <flux:button size="sm" variant="subtle" class="cursor-pointer">Assign Type</flux:button>
+                    <flux:menu>
+                        <flux:menu.item @click="bulkAssignType('income')">Income</flux:menu.item>
+                        <flux:menu.item @click="bulkAssignType('expense')">Expense</flux:menu.item>
+                        <flux:menu.item @click="bulkAssignType('transfer')">Transfer</flux:menu.item>
+                        <flux:menu.item @click="bulkAssignType('adjustment')">Adjustment</flux:menu.item>
+                    </flux:menu>
+                </flux:dropdown>
                 <flux:button size="sm" variant="danger" class="cursor-pointer" wire:confirm="Delete the selected transactions? Only manually-added transactions can be deleted — synced ones will be skipped." @click="bulkDeleteTransactions()">Delete Selected</flux:button>
                 <button type="button" class="cursor-pointer text-sm text-blue-900 dark:text-blue-100 underline self-start sm:self-auto" @click="selected_transactions = []">Clear selection</button>
             </div>

@@ -95,6 +95,61 @@ it('bulkAssignCategory refuses to categorize a transaction belonging to another 
     $test->assertForbidden();
 });
 
+it('bulkAssignType sets the given type onto every selected transaction', function (): void {
+    $account = makeAccountForBulkTest();
+
+    $txn1 = Transaction::factory()->for($account)->create(['name' => 'Card Payment', 'amount' => -100, 'currency' => 'USD', 'type' => 'expense']);
+    $txn2 = Transaction::factory()->for($account)->create(['name' => 'Card Payment 2', 'amount' => -200, 'currency' => 'USD', 'type' => 'expense']);
+    $untouched = Transaction::factory()->for($account)->create(['name' => 'Groceries', 'amount' => -50, 'currency' => 'USD', 'type' => 'expense']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $test->set('selected_transactions', [$txn1->id, $txn2->id]);
+    $test->call('bulkAssignType', 'transfer');
+
+    expect($txn1->refresh()->type)->toBe('transfer');
+    expect($txn2->refresh()->type)->toBe('transfer');
+    expect($untouched->refresh()->type)->toBe('expense');
+});
+
+it('bulkAssignType clears the selection afterwards', function (): void {
+    $account = makeAccountForBulkTest();
+    $txn = Transaction::factory()->for($account)->create(['name' => 'Netflix', 'amount' => -15.99, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $test->set('selected_transactions', [$txn->id]);
+    $test->call('bulkAssignType', 'income');
+
+    expect($test->get('selected_transactions'))->toBe([]);
+});
+
+it('bulkAssignType rejects an invalid type', function (): void {
+    $account = makeAccountForBulkTest();
+    $txn = Transaction::factory()->for($account)->create(['name' => 'Netflix', 'amount' => -15.99, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $test->set('selected_transactions', [$txn->id]);
+
+    expect(fn () => $test->call('bulkAssignType', 'bogus'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('bulkAssignType refuses to change the type of a transaction belonging to another user', function (): void {
+    $ownAccount = makeAccountForBulkTest();
+    $ownTxn = Transaction::factory()->for($ownAccount)->create(['name' => 'Mine', 'amount' => -10, 'currency' => 'USD']);
+
+    $otherUser = User::factory()->create();
+    $otherAccount = makeAccountForBulkTest($otherUser);
+    $otherTxn = Transaction::factory()->for($otherAccount)->create(['name' => 'Not Mine', 'amount' => -10, 'currency' => 'USD']);
+
+    test()->actingAs($ownAccount->linked_account->user);
+
+    $test = Livewire::test('components.transactions', ['account' => $ownAccount]);
+    $test->set('selected_transactions', [$ownTxn->id, $otherTxn->id]);
+    $test->call('bulkAssignType', 'transfer');
+
+    $test->assertForbidden();
+});
+
 it('bulkDeleteTransactions deletes only manually-added transactions among the selection', function (): void {
     $account = makeAccountForBulkTest();
 

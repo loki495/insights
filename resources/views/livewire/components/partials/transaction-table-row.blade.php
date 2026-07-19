@@ -30,6 +30,7 @@
     </x-table.td>
     <x-table.td class="text-right">
         <div>{!! currency($item['amount'], $item['currency']) !!}</div>
+        <div class="mt-1">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
     @if ($showRunningBalance)
         <div class='{{ when($item['running_balance'] < 0, 'text-red-400', 'text-zinc-300') }} text-sm'>{!! currency($item['running_balance'], $item['currency'], 1) !!}</div>
     @endif

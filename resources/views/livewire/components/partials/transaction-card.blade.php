@@ -13,6 +13,7 @@
         </div>
         <div class="text-right shrink-0">
             <div class="font-semibold">{!! currency($item['amount'], $item['currency']) !!}</div>
+            <div class="mt-1">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
             @if ($showRunningBalance)
             <div class="{{ when($item['running_balance'] < 0, 'text-red-400', 'text-zinc-500 dark:text-zinc-400') }} text-[11px]">
                 {!! currency($item['running_balance'], $item['currency'], 1) !!}
