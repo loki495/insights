@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\OriginalCategory;
@@ -14,6 +15,7 @@ use Livewire\WithPagination;
 
 new class extends Component
 {
+    use HasDisplayTimezoneDateRange;
     use WithPagination;
 
     #[Locked]
@@ -30,6 +32,12 @@ new class extends Component
 
     #[Session]
     public array $type_filters = [];
+
+    #[Session]
+    public string $amount_min = '';
+
+    #[Session]
+    public string $amount_max = '';
 
     public ?Account $account = null;
 
@@ -51,6 +59,10 @@ new class extends Component
 
     #[Session]
     public string $date_to = '';
+
+    public string $date_from_local = '';
+
+    public string $date_to_local = '';
 
     protected bool $chartNeedsRefresh = false;
 
@@ -83,10 +95,22 @@ new class extends Component
         $this->category = $category;
         $this->category_id = $category?->id;
 
-        $this->date_from = carbon()->startOfyear();
-        $this->date_to = carbon()->now();
+        $this->date_from = now()->startOfYear();
+        $this->date_to = now();
+        $this->date_from_local = $this->toDisplayTimezone($this->date_from);
+        $this->date_to_local = $this->toDisplayTimezone($this->date_to);
 
         $this->updateChartData();
+    }
+
+    public function updatedDateFromLocal(string $value): void
+    {
+        $this->date_from = $this->fromDisplayTimezone($value);
+    }
+
+    public function updatedDateToLocal(string $value): void
+    {
+        $this->date_to = $this->fromDisplayTimezone($value);
     }
 
     private function parseSearch(string $query): array
@@ -159,6 +183,20 @@ new class extends Component
             })
             ->when(! empty($this->type_filters), function ($query) {
                 return $query->whereIn('type', $this->type_filters);
+            })
+            // Filtered on the transaction's magnitude, not its signed amount — a user thinking
+            // "between $50 and $200" doesn't want to also have to know/guess the sign, and the
+            // Type filter above already covers direction (income/expense/transfer/adjustment).
+            // The CAST is load-bearing: SQLite/PDO binds `?` with TEXT affinity, and comparing
+            // that against a function-call expression like ABS(amount) (which carries no column
+            // affinity of its own) makes SQLite fall back to a lexicographic string comparison —
+            // "1000" < "500" alphabetically — silently corrupting the filter for any value with a
+            // different digit count. Forcing both sides numeric avoids that.
+            ->when($this->amount_min !== '', function ($query) {
+                return $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $this->amount_min]);
+            })
+            ->when($this->amount_max !== '', function ($query) {
+                return $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [(float) $this->amount_max]);
             })
             ->with('categories')
             ->with('originalCategory')
@@ -910,6 +948,15 @@ new class extends Component
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
+                        <label for="amount">Amount</label>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <x-input type="number" step="0.01" min="0" wire:model.live.debounce="amount_min" placeholder="Min" class="w-full sm:w-32"></x-input>
+                            <span class="text-zinc-500 dark:text-zinc-400">–</span>
+                            <x-input type="number" step="0.01" min="0" wire:model.live.debounce="amount_max" placeholder="Max" class="w-full sm:w-32"></x-input>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                         <label for="search">Original Category</label>
                         <flux:select wire:model.live="original_category_id" clearable>
                             <flux:select.option value="0">-- All Original Categories --</flux:select.option>
@@ -931,8 +978,8 @@ new class extends Component
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 w-full">
                         <label for="date">Date</label>
-                        <x-input type="datetime-local" wire:model.live="date_from" placeholder="From" class="w-full"></x-input>
-                        <x-input type="datetime-local" wire:model.live="date_to" placeholder="To" class="w-full"></x-input>
+                        <x-input type="datetime-local" wire:model.live="date_from_local" placeholder="From" class="w-full"></x-input>
+                        <x-input type="datetime-local" wire:model.live="date_to_local" placeholder="To" class="w-full"></x-input>
                     </div>
                 </div>
 
@@ -1066,7 +1113,7 @@ new class extends Component
             card-view="livewire.components.partials.transaction-card"
             empty-message="No transactions found"
             :context="['allow_accounts' => $allow_accounts, 'showRunningBalance' => $showRunningBalance]"
-            loading-target="search,only_uncategorized,original_category_id,category_id,date_from,date_to,account_ids,page,nextPage,previousPage,gotoPage"
+            loading-target="search,only_uncategorized,original_category_id,category_id,date_from_local,date_to_local,account_ids,amount_min,amount_max,page,nextPage,previousPage,gotoPage"
             class="transactions-table min-w-full w-max"
             wire:scroll
         >
