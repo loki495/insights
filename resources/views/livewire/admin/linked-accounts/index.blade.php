@@ -24,10 +24,10 @@ new class extends Component
     }
 
     #[Computed]
-    private function plaid()
+    private function plaid(): \App\Services\Plaid\PlaidService
     {
 
-        if (! $this->plaid_instance) {
+        if (!$this->plaid_instance instanceof \App\Services\Plaid\PlaidService) {
             $this->plaid_instance = plaid();
         }
 
