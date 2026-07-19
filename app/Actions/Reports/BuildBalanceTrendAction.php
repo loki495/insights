@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Actions\Reports;
 
+use App\Actions\Reports\Concerns\BucketsIntoPeriods;
 use App\Models\Account;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
-use InvalidArgumentException;
 
 final class BuildBalanceTrendAction
 {
-    private const array GRANULARITIES = ['monthly', 'quarterly', 'yearly'];
+    use BucketsIntoPeriods;
 
     /**
      * Account types treated as liabilities (subtracted from Net); everything else is an asset.
@@ -31,9 +31,7 @@ final class BuildBalanceTrendAction
      */
     public static function run(Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity): array
     {
-        if (! in_array($granularity, self::GRANULARITIES, true)) {
-            throw new InvalidArgumentException('Invalid granularity.');
-        }
+        self::assertValidGranularity($granularity);
 
         $boundaries = self::periodBoundaries($from, $to, $granularity);
 
@@ -82,46 +80,5 @@ final class BuildBalanceTrendAction
             'liabilities' => $liabilities,
             'net' => $net,
         ];
-    }
-
-    /**
-     * @return array<int, array{label: string, end: CarbonInterface}>
-     */
-    private static function periodBoundaries(CarbonInterface $from, CarbonInterface $to, string $granularity): array
-    {
-        $boundaries = [];
-
-        $cursor = match ($granularity) {
-            'monthly' => $from->copy()->startOfMonth(),
-            'quarterly' => $from->copy()->startOfQuarter(),
-            'yearly' => $from->copy()->startOfYear(),
-        };
-
-        while ($cursor->lte($to)) {
-            $label = match ($granularity) {
-                'monthly' => $cursor->format('M Y'),
-                'quarterly' => 'Q'.$cursor->quarter.' '.$cursor->format('Y'),
-                'yearly' => $cursor->format('Y'),
-            };
-
-            $end = match ($granularity) {
-                'monthly' => $cursor->copy()->endOfMonth(),
-                'quarterly' => $cursor->copy()->endOfQuarter(),
-                'yearly' => $cursor->copy()->endOfYear(),
-            };
-
-            $boundaries[] = [
-                'label' => $label,
-                'end' => $end->greaterThan($to) ? $to->copy() : $end,
-            ];
-
-            $cursor = match ($granularity) {
-                'monthly' => $cursor->copy()->addMonth(),
-                'quarterly' => $cursor->copy()->addQuarter(),
-                'yearly' => $cursor->copy()->addYear(),
-            };
-        }
-
-        return $boundaries;
     }
 }

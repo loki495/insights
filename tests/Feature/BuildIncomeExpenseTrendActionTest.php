@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Actions\Reports\BuildIncomeExpenseTrendAction;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use App\Models\User;
@@ -84,28 +83,6 @@ it('only includes transactions from the given accounts', function (): void {
     );
 
     expect($result['income'])->toBe([100.0]);
-});
-
-it('filters to a category and its descendants when given a category id', function (): void {
-    $account = makeAccountForIncomeExpenseTrendTest();
-
-    $parent = Category::create(['name' => 'Expenses']);
-    $child = Category::create(['name' => 'Groceries', 'parent_id' => $parent->id]);
-
-    $groceries = Transaction::factory()->for($account)->create(['name' => 'Groceries', 'amount' => -100, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
-    $groceries->categories()->sync([$child->id]);
-
-    Transaction::factory()->for($account)->create(['name' => 'Rent', 'amount' => -800, 'currency' => 'USD', 'created_at' => '2026-01-12', 'type' => 'expense']);
-
-    $result = BuildIncomeExpenseTrendAction::run(
-        collect([$account]),
-        Carbon::parse('2026-01-01'),
-        Carbon::parse('2026-01-31'),
-        'monthly',
-        $parent->id,
-    );
-
-    expect($result['expense'])->toBe([100.0]);
 });
 
 it('groups into quarterly and yearly periods', function (): void {

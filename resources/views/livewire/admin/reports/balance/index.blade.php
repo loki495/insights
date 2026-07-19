@@ -24,6 +24,10 @@ new class extends Component
 
     public array $chart_series = [];
 
+    public string $chart_type = 'area';
+
+    public bool $chart_stacked = false;
+
     public function mount(): void
     {
         $this->date_from = (string) carbon()->startOfYear();
@@ -113,7 +117,7 @@ new class extends Component
 
     <div wire:key="balance-trend-{{ $date_from }}-{{ $date_to }}-{{ $granularity }}">
         @if ($assetAccounts->isNotEmpty() || $liabilityAccounts->isNotEmpty())
-            <x-period-chart type="area" title="Net Cash" />
+            <x-period-chart title="Net Cash" />
         @else
             <div class="rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center text-zinc-500 dark:text-zinc-400">
                 Nothing to chart for the current date range.

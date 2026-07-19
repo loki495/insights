@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use App\Models\User;
@@ -91,4 +92,44 @@ test('renders a trend chart once there is reportable activity', function (): voi
     $test = Livewire::test('admin.reports.income-expense.index');
 
     $test->assertDontSee('Nothing to chart for the current date range.');
+});
+
+test('selecting categories switches the chart to a category breakdown, without changing the summary cards', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    $groceries = Category::create(['name' => 'Groceries']);
+
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'income']);
+    $groceryTxn = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -300, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
+    $groceryTxn->categories()->sync([$groceries->id]);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+    $test->set('category_ids', [$groceries->id]);
+
+    // Summary cards are unaffected by the category filter.
+    $test->assertViewHas('incomeTotal', 2000.0);
+    $test->assertViewHas('expenseTotal', 300.0);
+
+    $test->assertSet('chart_series', function ($series) use ($groceries) {
+        return count($series) === 1 && $series[0]['category_id'] === $groceries->id && array_sum($series[0]['values']) === 300.0;
+    });
+});
+
+test('clearing the category selection returns to the Income/Expense chart', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForIncomeExpenseReportTest($user);
+    $groceries = Category::create(['name' => 'Groceries']);
+    Transaction::factory()->for($account)->create(['name' => 'Paycheck', 'amount' => 2000, 'currency' => 'USD', 'created_at' => now(), 'type' => 'income']);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.income-expense.index');
+    $test->set('category_ids', [$groceries->id]);
+    $test->set('category_ids', []);
+
+    $test->assertSet('chart_series', function ($series) {
+        return count($series) === 2 && $series[0]['label'] === 'Income' && $series[1]['label'] === 'Expense';
+    });
 });
