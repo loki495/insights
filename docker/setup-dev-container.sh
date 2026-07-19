@@ -89,6 +89,10 @@ fi
 docker-php-ext-install gd mysqli pdo_mysql zip intl
 docker-php-ext-enable gd mysqli pdo_mysql zip intl
 
+# PCOV for `composer test:unit` / `pest --coverage` (lighter/faster than Xdebug for coverage-only use)
+pecl install pcov
+echo 'extension=pcov.so' > /usr/local/etc/php/conf.d/pcov.ini
+
 # Install Composer
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php composer-setup.php --install-dir=/usr/local/bin --filename=composer
