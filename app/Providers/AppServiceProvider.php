@@ -73,7 +73,7 @@ class AppServiceProvider extends ServiceProvider
     public function configureServices(): void
     {
         $this->app->singleton(PlaidService::class, fn (Application $app, array $args): PlaidService => new PlaidService(
-            $args['environment'],
+            $args['environment'] ?? config('plaid.environment'),
             config('plaid.clientId'),
         ));
     }

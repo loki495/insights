@@ -47,7 +47,7 @@ final class PullLinkedAccountTransactionsAction
             }
         }
 
-        if ($result['has_more'] ?? false) {
+        if ($result['has_more']) {
             self::run($linkedAccount, $result['next_cursor']);
         } else {
             ReconcileLinkedAccountTransactions::run($linkedAccount, $force);

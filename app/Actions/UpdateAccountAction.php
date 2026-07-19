@@ -9,6 +9,9 @@ use App\Models\LinkedAccount;
 
 final class UpdateAccountAction
 {
+    /**
+     * @param  array<string, mixed>  $account_info
+     */
     public static function run(array $account_info, LinkedAccount $linked_account): void
     {
         $plaid = plaid();

@@ -1,19 +1,21 @@
 <?php
 
 declare(strict_types=1);
+
+use App\Models\OriginalCategory;
 use App\Services\Plaid\PlaidService;
 use Carbon\Carbon;
 use Illuminate\Support\Number;
 
 if (! function_exists('plaid')) {
-    function plaid($force_environment = ''): PlaidService
+    function plaid(string $force_environment = ''): PlaidService
     {
         $environment = $force_environment ?: config('plaid.environment');
 
         return app(PlaidService::class, ['environment' => $environment]);
     }
 
-    function currency($amount = null, $currency = 'USD', ?bool $flat = false): string
+    function currency(int|float|null $amount = null, string $currency = 'USD', ?bool $flat = false): string
     {
         if ($amount === null) {
             return '';
@@ -31,12 +33,12 @@ if (! function_exists('plaid')) {
         return '<span class="text-'.$color.' dark:text-'.$darkColor.'">'.$formatted.'</span>';
     }
 
-    function carbon($date = 'now'): Carbon
+    function carbon(DateTimeInterface|string|int|null $date = 'now'): Carbon
     {
         return Carbon::parse($date);
     }
 
-    function htmlQuotes($string): string
+    function htmlQuotes(string $string): string
     {
         $result = trim($string);
         $result = str_replace('"', '&quot;', $result);
@@ -45,9 +47,14 @@ if (! function_exists('plaid')) {
         return $result;
     }
 
-    function upsertPlaidCategory(array $path, string $plaidId, array $pf): App\Models\OriginalCategory
+    /**
+     * @param  array<int, mixed>  $path
+     * @param  array<string, mixed>  $pf
+     */
+    function upsertPlaidCategory(array $path, string $plaidId, array $pf): OriginalCategory
     {
         $parentId = null;
+        $category = null;
 
         foreach ($path as $index => $segment) {
             if (! is_string($segment) || $segment === '') {
@@ -56,8 +63,7 @@ if (! function_exists('plaid')) {
 
             $isLeaf = $index === array_key_last($path);
 
-            /** @var OriginalCategory $category */
-            $category = App\Models\OriginalCategory::firstOrCreate(
+            $category = OriginalCategory::firstOrCreate(
                 [
                     'name' => $segment,
                     'parent_id' => $parentId,
@@ -83,6 +89,10 @@ if (! function_exists('plaid')) {
             }
 
             $parentId = $category->id;
+        }
+
+        if ($category === null) {
+            throw new InvalidArgumentException('upsertPlaidCategory(): $path contained no usable segments.');
         }
 
         return $category;
