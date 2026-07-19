@@ -1,5 +1,8 @@
 <?php
 
+use App\Actions\BuildCategoryBreakdownForFilteredTransactionsAction;
+use App\Actions\BuildTransactionsQueryAction;
+use App\Actions\TransactionFilters;
 use App\Livewire\Concerns\HasCategoryAssignment;
 use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
 use App\Livewire\Concerns\HasTypeAndTransferPairing;
@@ -118,156 +121,26 @@ new class extends Component
         $this->date_to = $this->fromDisplayTimezone($value);
     }
 
-    private function parseSearch(string $query): array
+    private function currentFilters(): TransactionFilters
     {
-        preg_match_all('/([+-]?)"([^"]+)"|([+-]?)(\S+)/', $query, $matches, PREG_SET_ORDER);
-
-        $parsed = [
-            'required' => [],
-            'excluded' => [],
-            'optional' => [],
-        ];
-
-        foreach ($matches as $match) {
-            $prefix = $match[1] ?: $match[3];
-            $term = $match[2] ?: $match[4];
-
-            switch ($prefix) {
-                case '+':
-                    $parsed['required'][] = $term;
-                    break;
-                case '-':
-                    $parsed['excluded'][] = $term;
-                    break;
-                default:
-                    $parsed['optional'][] = $term;
-                    break;
-            }
-        }
-
-        return $parsed;
+        return new TransactionFilters(
+            account: $this->account,
+            accountIds: $this->account_ids,
+            categoryId: $this->category_id,
+            originalCategoryId: $this->original_category_id,
+            onlyUncategorized: (bool) $this->only_uncategorized,
+            typeFilters: $this->type_filters,
+            amountMin: $this->amount_min,
+            amountMax: $this->amount_max,
+            dateFrom: $this->date_from,
+            dateTo: $this->date_to,
+            search: $this->search,
+        );
     }
 
     public function getTransactionsQuery(): Builder
     {
-        $query = Transaction::query();
-
-        // Aggregate views (no specific account picked) only pull from tracked accounts —
-        // reference/excluded accounts stay out of cross-account reports by design. Viewing a
-        // single account directly (below) is unaffected.
-        $ownedAccountIds = auth()->user()->accounts()->tracked()->pluck('accounts.id');
-
-        if ($this->account?->id) {
-            $this->authorize('view', $this->account);
-            $query->where('account_id', $this->account->id);
-        } elseif ($this->account_ids !== []) {
-            // Only show transactions from selected accounts the user owns
-            $query->whereIn('account_id', $ownedAccountIds->intersect($this->account_ids)->values());
-        } else {
-            // If no account is selected, only show transactions from accounts the user owns
-            $query->whereIn('account_id', $ownedAccountIds);
-        }
-
-        $query
-            ->when($this->original_category_id ?? false, fn ($query) => $query->where('original_category_id', $this->original_category_id))
-            ->when($this->category_id ?? false, function ($query) {
-                $category = Category::find($this->category_id);
-                $category_id = $category->id;
-                $descendants = $category->descendants;
-
-                return $query->whereHas('categories', function ($query) use ($category_id, $descendants): void {
-                    $query
-                        ->where('categories.id', $category_id)
-                        ->orWhereIn('categories.id', $descendants);
-                });
-            })
-            ->when($this->only_uncategorized ?? false, fn ($query) => $query->doesntHave('categories'))
-            ->when($this->type_filters !== [], fn ($query) => $query->whereIn('type', $this->type_filters))
-            // Filtered on the transaction's magnitude, not its signed amount — a user thinking
-            // "between $50 and $200" doesn't want to also have to know/guess the sign, and the
-            // Type filter above already covers direction (income/expense/transfer/adjustment).
-            // The CAST is load-bearing: SQLite/PDO binds `?` with TEXT affinity, and comparing
-            // that against a function-call expression like ABS(amount) (which carries no column
-            // affinity of its own) makes SQLite fall back to a lexicographic string comparison —
-            // "1000" < "500" alphabetically — silently corrupting the filter for any value with a
-            // different digit count. Forcing both sides numeric avoids that.
-            ->when($this->amount_min !== '', fn ($query) => $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $this->amount_min]))
-            ->when($this->amount_max !== '', fn ($query) => $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [(float) $this->amount_max]))
-            ->with('categories')
-            ->with('originalCategory')
-            ->whereBetween('transactions.created_at', [$this->date_from, $this->date_to]);
-
-        if ($this->search !== '' && $this->search !== '0') {
-            $terms = $this->parseSearch($this->search);
-
-            // Dynamically build the relevance selectRaw
-            $bindings = [];
-            $scoreParts = [];
-
-            foreach ($terms['optional'] as $term) {
-                foreach (['transactions.name', 'transactions.merchant_name', 'original_categories.name', 'original_categories.pf_detailed'] as $field) {
-                    $scoreParts[] = "CASE WHEN LOWER($field) LIKE ? THEN 1 ELSE 0 END";
-                    $bindings[] = '%'.strtolower((string) $term).'%';
-                }
-            }
-
-            if ($scoreParts !== []) {
-                $scoreExpr = implode(' + ', $scoreParts);
-                $query
-                    ->leftJoin('original_categories', 'transactions.original_category_id', '=', 'original_categories.id')
-                    ->selectRaw("transactions.*, ($scoreExpr) as relevance", $bindings);
-            } else {
-                $query
-                    ->selectRaw('transactions.*, 0 as relevance');
-            }
-
-            $query->where(function ($q) use ($terms): void {
-                $q->where(function ($q1) use ($terms): void {
-                    // Required terms
-                    foreach ($terms['required'] as $term) {
-                        $q1->where(function ($q2) use ($term): void {
-                            $q2->where('transactions.name', 'like', '%'.$term.'%')
-                                ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
-                        });
-                    }
-
-                    // Optional terms
-                    foreach ($terms['optional'] as $term) {
-                        $q1->orWhere(function ($q2) use ($term): void {
-                            $q2->where('transactions.name', 'like', '%'.$term.'%')
-                                ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
-                        });
-                    }
-                });
-
-                // Excluded terms
-                foreach ($terms['excluded'] as $term) {
-                    $q->where(function ($q1) use ($term): void {
-                        $q1->where('transactions.name', 'not like', '%'.$term.'%')
-                            ->where(function ($q2) use ($term): void {
-                                $q2->where('transactions.merchant_name', 'not like', '%'.$term.'%')
-                                    ->orWhereNull('transactions.merchant_name');
-                            })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
-                                $q2->where('name', 'like', '%'.$term.'%');
-                            })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
-                                $q2->where('pf_detailed', 'like', '%'.$term.'%');
-                            });
-                    });
-                }
-
-            });
-        } else {
-            $query
-                ->selectRaw('transactions.*, 0 as relevance');
-        }
-
-        return $query;
+        return BuildTransactionsQueryAction::run(auth()->user(), $this->currentFilters());
     }
 
     public function updating(): void
@@ -328,110 +201,16 @@ new class extends Component
 
     public function updateChartData(): void
     {
-        $query = $this->getTransactionsQuery();
+        $breakdown = BuildCategoryBreakdownForFilteredTransactionsAction::run(
+            $this->getTransactionsQuery(),
+            $this->category_id,
+        );
 
-        // Deliberately not scoped to reportable() — the transaction list/chart here (account view,
-        // transaction search) shows everything matching the current filters, transfers included;
-        // that's what categories are for. Excluding transfers from aggregate income/expense totals
-        // is the dedicated Reports pages' job (see BuildIncomeExpenseTrendAction), not this one.
-        $transactions = $query
-            ->clone()
-            ->with(['categories' => function ($q): void {
-                $q->select('categories.id', 'categories.name', 'categories.color', 'categories.parent_id');
-            }])
-            ->get();
-
-        $chart_data = [];
-        $total_sum = 0;
-
-        // Pre-fetch categories into a map for fast parent lookup
-        $all_categories = Category::all()->keyBy('id');
-
-        foreach ($transactions as $transaction) {
-            $categories = $transaction->categories;
-
-            if ($categories->isEmpty()) {
-                $id = 0;
-                $name = 'Uncategorized';
-                $color = '#9ca3af';
-
-                if (! isset($chart_data[$id])) {
-                    $chart_data[$id] = ['id' => $id, 'label' => $name, 'color' => $color, 'total' => 0];
-                }
-                $chart_data[$id]['total'] += $transaction->amount;
-                $total_sum += abs($transaction->amount);
-
-                continue;
-            }
-
-            foreach ($categories as $category) {
-                $current_filtered_id = $this->category_id ?: 0;
-                $target = null;
-
-                if ($current_filtered_id === 0) {
-                    // Find top level ancestor
-                    $target = $category;
-                    while ($target && $target->parent_id != 0) {
-                        $target = $all_categories->get($target->parent_id);
-                    }
-                } else {
-                    // Is this category a descendant of the current filter?
-                    $temp = $category;
-                    $path = [];
-                    while ($temp) {
-                        $path[] = $temp->id;
-                        if ($temp->id == $current_filtered_id) {
-                            break;
-                        }
-                        $temp = $temp->parent_id ? $all_categories->get($temp->parent_id) : null;
-                    }
-
-                    if (! $temp || $temp->id != $current_filtered_id) {
-                        continue; // Not under current filter
-                    }
-
-                    // Find the child of current_filtered_id in this path
-                    if ($category->id == $current_filtered_id) {
-                        $target = $category;
-                    } else {
-                        // The path is [leaf, ..., child_of_filter, filter]
-                        // We want child_of_filter
-                        $filter_index = array_search($current_filtered_id, $path);
-                        $target = $filter_index !== false && $filter_index > 0 ? $all_categories->get($path[$filter_index - 1]) : $category;
-                    }
-                }
-
-                if ($target) {
-                    if (! isset($chart_data[$target->id])) {
-                        $chart_data[$target->id] = [
-                            'id' => $target->id,
-                            'label' => $target->name,
-                            'color' => $target->color ?: '#3b82f6',
-                            'total' => 0,
-                        ];
-                    }
-                    $chart_data[$target->id]['total'] += $transaction->amount;
-                    $total_sum += abs($transaction->amount);
-                }
-
-                break; // Categorize by first category
-            }
-        }
-
-        $chart_data = collect($chart_data)->values();
-
-        $this->chart_ids = $chart_data->pluck('id')->toArray();
-        $this->chart_labels = $chart_data->pluck('label')->toArray();
-        $this->chart_values = $chart_data->pluck('total')->map(fn ($v): float => round(abs($v), 2))->toArray();
-        $this->chart_colors = $chart_data->pluck('color')->toArray();
-
-        $abs_total = $total_sum;
-        $this->chart_tooltip_labels = $chart_data->map(function (array $item) use ($abs_total): string {
-            $val = abs($item['total']);
-            $percent = $abs_total > 0 ? round(($val / $abs_total) * 100, 1) : 0;
-
-            return currency($item['total'], flat: 1)." ({$percent}%)";
-        })->toArray();
+        $this->chart_ids = $breakdown['ids'];
+        $this->chart_labels = $breakdown['labels'];
+        $this->chart_values = $breakdown['values'];
+        $this->chart_colors = $breakdown['colors'];
+        $this->chart_tooltip_labels = $breakdown['tooltipLabels'];
 
         $this->dispatch('refresh-chart');
     }

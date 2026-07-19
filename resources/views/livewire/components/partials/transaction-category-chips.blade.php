@@ -15,7 +15,7 @@
     @foreach($transaction['categories'] as $category)
     <button
         type="button"
-        @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency'], 1) }}', category_id: {{ $category['id'] }} })"
+        @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency'], true) }}', category_id: {{ $category['id'] }} })"
         class="cursor-pointer text-xs p-1 h-auto rounded-lg shadow-lg text-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]"
         style="background-color: {{ $category['color'] }}"
     >{{ $category['fullName'] }}</button>
