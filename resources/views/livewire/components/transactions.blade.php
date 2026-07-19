@@ -1,6 +1,8 @@
 <?php
 
+use App\Livewire\Concerns\HasCategoryAssignment;
 use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
+use App\Livewire\Concerns\HasTypeAndTransferPairing;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\OriginalCategory;
@@ -15,7 +17,9 @@ use Livewire\WithPagination;
 
 new class extends Component
 {
+    use HasCategoryAssignment;
     use HasDisplayTimezoneDateRange;
+    use HasTypeAndTransferPairing;
     use WithPagination;
 
     #[Locked]
@@ -322,90 +326,6 @@ new class extends Component
         return $accounts;
     }
 
-    #[Computed]
-    public function categories()
-    {
-        return Category::all()->sortBy('fullName')->values();
-    }
-
-    #[Computed]
-    public function categoryPickerOptions(): array
-    {
-        return $this->categories
-            ->map(fn ($category): array => [
-                'id' => $category->id,
-                'name' => $category->name,
-                'full_name' => $category->fullName,
-                'parent_id' => $category->parent_id ?: 0,
-                'color' => $category->color ?: '#3b82f6',
-            ])
-            ->values()
-            ->toArray();
-    }
-
-    #[Computed]
-    public function categoryPickerLookup(): array
-    {
-        return $this->categories
-            ->mapWithKeys(fn ($category): array => [
-                $category->id => [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'full_name' => $category->fullName,
-                    'parent_id' => $category->parent_id ?: 0,
-                    'color' => $category->color ?: '#3b82f6',
-                ],
-            ])
-            ->toArray();
-    }
-
-    /**
-     * For each distinct merchant on the current page, find the category most
-     * commonly used on other transactions from that merchant. Doubles as the
-     * groundwork for a future auto-categorization rule engine.
-     */
-    private function merchantSuggestions($transactions): array
-    {
-        $merchants = collect($transactions)
-            ->pluck('merchant_name')
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($merchants->isEmpty()) {
-            return [];
-        }
-
-        return Transaction::query()
-            ->whereIn('merchant_name', $merchants)
-            ->whereHas('categories')
-            ->with('categories')
-            ->get()
-            ->groupBy('merchant_name')
-            ->map(function ($merchantTransactions): ?array {
-                $topCategoryId = $merchantTransactions
-                    ->flatMap->categories
-                    ->countBy('id')
-                    ->sortDesc()
-                    ->keys()
-                    ->first();
-
-                if (! $topCategoryId) {
-                    return null;
-                }
-
-                $category = $this->categories->firstWhere('id', $topCategoryId);
-
-                return $category ? [
-                    'id' => $category->id,
-                    'name' => $category->fullName,
-                    'color' => $category->color ?: '#3b82f6',
-                ] : null;
-            })
-            ->filter()
-            ->toArray();
-    }
-
     public function updateChartData(): void
     {
         $query = $this->getTransactionsQuery();
@@ -549,106 +469,6 @@ new class extends Component
         $this->resetPage();
     }
 
-    public function saveCategory($transaction_id, $category_id): void
-    {
-        $transaction = Transaction::findOrFail($transaction_id);
-        $this->authorize('update', $transaction);
-        $transaction->categories()->sync([$category_id]);
-        $transaction->save();
-        $this->chartNeedsRefresh = true;
-    }
-
-    /**
-     * Up to two best-guess categories for a single transaction, used to seed
-     * the category picker: the category most commonly assigned to other
-     * transactions from the same merchant, and separately the category most
-     * commonly assigned to other transactions sharing the same Plaid
-     * original category (catches cases merchant_name is missing or too
-     * inconsistent to match on, since Plaid's own categorization is usually
-     * present). Already-assigned categories are excluded.
-     */
-    public function suggestCategoriesForTransaction($transaction_id): array
-    {
-        $transaction = Transaction::findOrFail($transaction_id);
-        $this->authorize('view', $transaction);
-
-        $currentCategoryIds = $transaction->categories->pluck('id');
-
-        return collect([
-            $this->topCategoryFor(fn ($query) => $query->where('merchant_name', $transaction->merchant_name), $transaction, (bool) $transaction->merchant_name),
-            $this->topCategoryFor(fn ($query) => $query->where('original_category_id', $transaction->original_category_id), $transaction, (bool) $transaction->original_category_id),
-        ])
-            ->filter()
-            ->unique('id')
-            ->reject(fn ($suggestion) => $currentCategoryIds->contains($suggestion['id']))
-            ->take(2)
-            ->values()
-            ->toArray();
-    }
-
-    private function topCategoryFor(Closure $scope, Transaction $transaction, bool $enabled): ?array
-    {
-        if (! $enabled) {
-            return null;
-        }
-
-        $query = Transaction::query()->where('id', '!=', $transaction->id);
-        $scope($query);
-
-        $topCategoryId = $query
-            ->whereHas('categories')
-            ->with('categories')
-            ->get()
-            ->flatMap->categories
-            ->countBy('id')
-            ->sortDesc()
-            ->keys()
-            ->first();
-
-        if (! $topCategoryId) {
-            return null;
-        }
-
-        $category = $this->categories->firstWhere('id', $topCategoryId);
-
-        return $category ? [
-            'id' => $category->id,
-            'name' => $category->fullName,
-            'color' => $category->color ?: '#3b82f6',
-        ] : null;
-    }
-
-    public function createCategory(string $name, ?int $parent_id, ?string $color): array
-    {
-        $name = trim($name);
-
-        if ($name === '') {
-            throw new InvalidArgumentException('Category name is required.');
-        }
-
-        $category = Category::create([
-            'name' => $name,
-            'parent_id' => $parent_id ?: 0,
-            'color' => $color ?: '#3b82f6',
-        ]);
-
-        return [
-            'id' => $category->id,
-            'name' => $category->name,
-            'full_name' => $category->fullName,
-            'parent_id' => $category->parent_id ?: 0,
-            'color' => $category->color,
-        ];
-    }
-
-    public function clearCategory($transaction_id): void
-    {
-        $transaction = Transaction::findOrFail($transaction_id);
-        $this->authorize('update', $transaction);
-        $transaction->categories()->sync([]);
-        $this->chartNeedsRefresh = true;
-    }
-
     public function deleteTransaction($transaction_id): void
     {
         $transaction = Transaction::findOrFail($transaction_id);
@@ -656,128 +476,6 @@ new class extends Component
         $transaction->categories()->detach();
         $transaction->delete();
         $this->chartNeedsRefresh = true;
-    }
-
-    public function bulkAssignCategory($category_id, array $transaction_ids): void
-    {
-        $transactions = Transaction::whereIn('id', $transaction_ids)->get();
-
-        foreach ($transactions as $transaction) {
-            $this->authorize('update', $transaction);
-            $transaction->categories()->sync([$category_id]);
-        }
-
-        $this->chartNeedsRefresh = true;
-    }
-
-    public function bulkAssignType(string $type, array $transaction_ids): void
-    {
-        if (! in_array($type, ['income', 'expense', 'transfer', 'adjustment'], true)) {
-            throw new InvalidArgumentException('Invalid type.');
-        }
-
-        $transactions = Transaction::whereIn('id', $transaction_ids)->get();
-
-        foreach ($transactions as $transaction) {
-            $this->authorize('update', $transaction);
-            $transaction->update(['type' => $type]);
-        }
-
-        $this->chartNeedsRefresh = true;
-    }
-
-    /**
-     * Initial data for the type/pairing popup when it opens on a given transaction.
-     */
-    public function typeEditorData(int $transactionId): array
-    {
-        $transaction = Transaction::with('transferPair.account')->findOrFail($transactionId);
-        $this->authorize('view', $transaction);
-
-        return [
-            'type' => $transaction->type,
-            'pair' => $this->formatTransferPair($transaction->transferPair),
-            'transaction' => [
-                'name' => $transaction->name,
-                'merchant_name' => $transaction->merchant_name,
-                'amount' => currency($transaction->amount, $transaction->currency, true),
-                'date' => $transaction->created_at->format('M j, Y'),
-            ],
-        ];
-    }
-
-    public function saveType(int $transactionId, string $type): array
-    {
-        if (! in_array($type, ['income', 'expense', 'transfer', 'adjustment'], true)) {
-            throw new InvalidArgumentException('Invalid type.');
-        }
-
-        $transaction = Transaction::findOrFail($transactionId);
-        $this->authorize('update', $transaction);
-
-        // Pairing only makes sense for transfers — drop a stale pair rather than leave it
-        // dangling once a transaction is corrected to income/expense/adjustment.
-        if ($type !== 'transfer' && $transaction->transfer_pair_id) {
-            $transaction->unpair();
-        }
-
-        $transaction->update(['type' => $type]);
-        $this->chartNeedsRefresh = true;
-
-        return [
-            'type' => $transaction->type,
-            'pair' => $this->formatTransferPair($transaction->refresh()->transferPair),
-        ];
-    }
-
-    /**
-     * @return array<int, array{id: int, label: string}>
-     */
-    public function searchTransferPairCandidates(int $transactionId, string $search): array
-    {
-        $transaction = Transaction::findOrFail($transactionId);
-        $this->authorize('view', $transaction);
-
-        return Transaction::searchUnpairedTransferCandidates($transactionId, $transaction->account_id, $search)
-            ->map(fn (Transaction $candidate): ?array => $this->formatTransferPair($candidate))
-            ->values()
-            ->all();
-    }
-
-    public function pairTransaction(int $transactionId, int $otherTransactionId): ?array
-    {
-        $transaction = Transaction::findOrFail($transactionId);
-        $this->authorize('update', $transaction);
-
-        $other = Transaction::findOrFail($otherTransactionId);
-        $this->authorize('update', $other);
-
-        $transaction->pairWith($other);
-        $this->chartNeedsRefresh = true;
-
-        return $this->formatTransferPair($other);
-    }
-
-    public function unpairTransaction(int $transactionId): void
-    {
-        $transaction = Transaction::findOrFail($transactionId);
-        $this->authorize('update', $transaction);
-
-        $transaction->unpair();
-        $this->chartNeedsRefresh = true;
-    }
-
-    private function formatTransferPair(?Transaction $pair): ?array
-    {
-        if (! $pair instanceof Transaction) {
-            return null;
-        }
-
-        return [
-            'id' => $pair->id,
-            'label' => $pair->name.' — '.($pair->account?->display_name ?? 'Unknown account').', '.$pair->created_at->format('M j, Y'),
-            'amount' => currency($pair->amount, $pair->currency, true),
-        ];
     }
 
     public function bulkDeleteTransactions(array $transaction_ids): void
