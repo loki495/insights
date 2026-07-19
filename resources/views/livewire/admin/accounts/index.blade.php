@@ -42,6 +42,13 @@ new class extends Component
         $this->authorize('update', $account);
         $account->update(['tracking_mode' => $trackingMode]);
     }
+
+    public function updateNickname(int $accountId, ?string $nickname): void
+    {
+        $account = Account::findOrFail($accountId);
+        $this->authorize('update', $account);
+        $account->update(['nickname' => trim((string) $nickname) ?: null]);
+    }
 }
 
 ?>
@@ -61,6 +68,7 @@ new class extends Component
             <x-slot name="head">
                 <x-table.tr>
                     <x-table.th class="text-center">Name</x-table.th>
+                    <x-table.th class="text-center">Nickname</x-table.th>
                     <x-table.th class="text-center">Current Balance</x-table.th>
                     <x-table.th class="text-center">Available Balance</x-table.th>
                     <x-table.th class="text-center">Tracking</x-table.th>

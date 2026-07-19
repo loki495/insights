@@ -5,6 +5,11 @@
     </div>
 
     <div class="flex items-center justify-between gap-2">
+        <div class="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">Nickname</div>
+        <flux:input wire:change="updateNickname({{ $item['id'] }}, $event.target.value)" value="{{ $item['nickname'] }}" placeholder="(none)" size="sm" />
+    </div>
+
+    <div class="flex items-center justify-between gap-2">
         <div class="text-xs text-zinc-500 dark:text-zinc-400">Current Balance</div>
         <div class="font-semibold">{!! currency($item['current_balance']) !!}</div>
     </div>

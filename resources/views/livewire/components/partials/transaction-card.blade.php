@@ -4,16 +4,18 @@
             <div x-show="selectMode" class="pt-0.5 shrink-0">
                 <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $item['id'] }}" />
             </div>
-            <div class="text-[11px] text-zinc-500 dark:text-zinc-400 min-w-0">
-                <span>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }} #{{ $item['id'] }}</span>
-                @if ($allow_accounts)
-                <span>&middot; {{ $item['account']['name'] }} ({{ $item['account']['linked_account']['provider_name'] }})</span>
-                @endif
+            <div class="min-w-0">
+                <div class="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <span>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }}</span>
+                    @if ($allow_accounts)
+                    <span>&middot; {{ $item['account']['display_name'] }} ({{ $item['account']['linked_account']['provider_name'] }})</span>
+                    @endif
+                </div>
+                <div class="mt-1">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
             </div>
         </div>
         <div class="text-right shrink-0">
             <div class="font-semibold">{!! currency($item['amount'], $item['currency']) !!}</div>
-            <div class="mt-1">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
             @if ($showRunningBalance)
             <div class="{{ when($item['running_balance'] < 0, 'text-red-400', 'text-zinc-500 dark:text-zinc-400') }} text-[11px]">
                 {!! currency($item['running_balance'], $item['currency'], 1) !!}

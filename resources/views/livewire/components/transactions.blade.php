@@ -298,7 +298,7 @@ new class extends Component
         // every account across every user with no scoping at all, and included reference/
         // excluded accounts that shouldn't appear as a filterable option in aggregate views.
         $accounts = auth()->user()->accounts()->tracked()->with('linked_account')->get()->sortBy(function ($account) {
-            return $account->linked_account->provider_name.' - '.$account->name;
+            return $account->linked_account->provider_name.' - '.$account->display_name;
         });
 
         return $accounts;
@@ -834,7 +834,7 @@ new class extends Component
                                     -- All Accounts --
                                 @elseif(count($account_ids) === 1)
                                     @php $selectedAccount = $this->accounts->firstWhere('id', $account_ids[0]); @endphp
-                                    {{ $selectedAccount ? $selectedAccount->linked_account->provider_name.' - '.$selectedAccount->name : '1 account selected' }}
+                                    {{ $selectedAccount ? $selectedAccount->linked_account->provider_name.' - '.$selectedAccount->display_name : '1 account selected' }}
                                 @else
                                     {{ count($account_ids) }} accounts selected
                                 @endif
@@ -857,7 +857,7 @@ new class extends Component
                             <flux:checkbox
                                 wire:model.live="account_ids"
                                 value="{{ $account_option->id }}"
-                                label="{{ $account_option->linked_account->provider_name }} - {{ $account_option->name }}"
+                                label="{{ $account_option->linked_account->provider_name }} - {{ $account_option->display_name }}"
                             />
                             @endforeach
                         </div>
@@ -917,7 +917,7 @@ new class extends Component
             <div class="flex flex-col sm:flex-row gap-2 sm:ml-auto">
                 <flux:button size="sm" variant="primary" class="cursor-pointer" @click="$dispatch('bulk-add-category')">Assign Category</flux:button>
                 <flux:dropdown>
-                    <flux:button size="sm" variant="subtle" class="cursor-pointer">Assign Type</flux:button>
+                    <flux:button size="sm" variant="primary" class="cursor-pointer">Assign Type</flux:button>
                     <flux:menu>
                         <flux:menu.item @click="bulkAssignType('income')">Income</flux:menu.item>
                         <flux:menu.item @click="bulkAssignType('expense')">Expense</flux:menu.item>

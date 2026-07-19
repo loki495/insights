@@ -4,37 +4,53 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky stashable class="sidebar border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 resize-x pr-4">
+        <flux:sidebar sticky stashable collapsible class="sidebar border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 resize-x pr-4">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <a href="{{ route('dashboard') }}" class="mr-5 flex items-center space-x-2" wire:navigate>
-                <x-app-logo />
-            </a>
+            <div class="flex items-center justify-between mr-5">
+                <a href="{{ route('dashboard') }}" class="flex items-center space-x-2 min-w-0" wire:navigate>
+                    <x-app-logo />
+                </a>
+                <flux:sidebar.collapse class="hidden lg:flex opacity-100! static!" />
+            </div>
 
             <flux:navlist variant="outline">
-                <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                    <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Dashboard') }}</span>
+                </flux:navlist.item>
 
-                <flux:navlist.group heading="Linked Accounts" :href="route('linked-accounts.index')" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
-                    {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
-                    @foreach (auth()->user()->linkedAccounts()->with('accounts')->get() as $linkedAccount)
-                    <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)">
-                        @foreach ($linkedAccount->accounts as $account)
-                        <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full !p-4">
-                            <div class="font-semibold">{{ $account->name }}</div>
-                            <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, 'USD', true) !!}</div>
-                        </flux:navlist.item>
+                {{-- flux:navlist.* has no built-in desktop-collapse awareness (unlike flux:sidebar.item/group) — groups
+                     without a single representative icon just hide entirely when collapsed, rather than showing
+                     broken/truncated labels. --}}
+                <div class="in-data-flux-sidebar-collapsed-desktop:hidden">
+                    <flux:navlist.group heading="Linked Accounts" :href="route('linked-accounts.index')" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
+                        {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
+                        @foreach (auth()->user()->linkedAccounts()->with('accounts')->get() as $linkedAccount)
+                        <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)">
+                            @foreach ($linkedAccount->accounts as $account)
+                            <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full !p-4">
+                                <div class="font-semibold">{{ $account->display_name }}</div>
+                                <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, 'USD', true) !!}</div>
+                            </flux:navlist.item>
+                            @endforeach
+                        </flux:navlist.group>
                         @endforeach
                     </flux:navlist.group>
-                    @endforeach
-                </flux:navlist.group>
+                </div>
 
-                <flux:navlist.item icon="list-bullet" :href="route('original-categories.index')" :current="request()->routeIs('original-categories.*')" wire:navigate>{{ __('Original Categories') }}</flux:navlist.item>
+                <flux:navlist.item icon="list-bullet" :href="route('original-categories.index')" :current="request()->routeIs('original-categories.*')" wire:navigate>
+                    <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Original Categories') }}</span>
+                </flux:navlist.item>
 
-                <flux:navlist.item icon="list-bullet" :href="route('categories.index')" :current="request()->routeIs('categories.*')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
+                <flux:navlist.item icon="list-bullet" :href="route('categories.index')" :current="request()->routeIs('categories.*')" wire:navigate>
+                    <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Categories') }}</span>
+                </flux:navlist.item>
 
-                <flux:navlist.group class="!cursor-pointer" heading="Reports" expandable :expanded="request()->routeIs('reports.*')">
-                    <flux:navlist.item icon="list-bullet" :href="route('reports.category.index')" :current="request()->routeIs('reports.category.*')" wire:navigate>{{ __('By Categories') }}</flux:navlist.item>
-                </flux:navlist.group>
+                <div class="in-data-flux-sidebar-collapsed-desktop:hidden">
+                    <flux:navlist.group class="!cursor-pointer" heading="Reports" expandable :expanded="request()->routeIs('reports.*')">
+                        <flux:navlist.item icon="list-bullet" :href="route('reports.category.index')" :current="request()->routeIs('reports.category.*')" wire:navigate>{{ __('By Categories') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                </div>
 
             </flux:navlist>
 

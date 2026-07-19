@@ -104,3 +104,67 @@ it('updateTrackingMode refuses to update another user\'s account, even from a le
 
     expect($victimAccount->fresh()->tracking_mode)->toBe('tracked');
 });
+
+it('display_name falls back to the account\'s real name when no nickname is set', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForTrackingTest($user, ['name' => 'Checking', 'nickname' => null]);
+
+    expect($account->display_name)->toBe('Checking');
+});
+
+it('display_name prefers the nickname when one is set', function (): void {
+    $user = User::factory()->create();
+    $account = makeAccountForTrackingTest($user, ['name' => 'Checking', 'nickname' => 'Bill Pay Account']);
+
+    expect($account->display_name)->toBe('Bill Pay Account');
+});
+
+it('the transaction list shows an account\'s nickname instead of its raw name', function (): void {
+    $user = User::factory()->create();
+    test()->actingAs($user);
+
+    $account = makeAccountForTrackingTest($user, ['name' => 'Checking', 'nickname' => 'Bill Pay Account']);
+    Transaction::factory()->for($account)->create(['name' => 'Groceries', 'amount' => -10, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['allow_accounts' => true]);
+
+    $test->assertSeeHtml('Bill Pay Account');
+    $test->assertDontSeeHtml('>Checking<');
+});
+
+it('updateNickname sets an owned account\'s nickname', function (): void {
+    $user = User::factory()->create();
+    test()->actingAs($user);
+    $account = makeAccountForTrackingTest($user);
+
+    Livewire::test('admin.accounts.index', ['linkedAccount' => $account->linked_account])
+        ->call('updateNickname', $account->id, 'Emergency Fund');
+
+    expect($account->fresh()->nickname)->toBe('Emergency Fund');
+});
+
+it('updateNickname normalizes a blank value to null', function (): void {
+    $user = User::factory()->create();
+    test()->actingAs($user);
+    $account = makeAccountForTrackingTest($user, ['nickname' => 'Old Nickname']);
+
+    Livewire::test('admin.accounts.index', ['linkedAccount' => $account->linked_account])
+        ->call('updateNickname', $account->id, '   ');
+
+    expect($account->fresh()->nickname)->toBeNull();
+});
+
+it('updateNickname refuses to update another user\'s account', function (): void {
+    $owner = User::factory()->create();
+    $attacker = User::factory()->create();
+    $victimAccount = makeAccountForTrackingTest($owner);
+    $attackerAccount = makeAccountForTrackingTest($attacker);
+
+    test()->actingAs($attacker);
+
+    Livewire::test('admin.accounts.index', ['linkedAccount' => $attackerAccount->linked_account])
+        ->call('updateNickname', $victimAccount->id, 'Hijacked')
+        ->assertForbidden();
+
+    expect($victimAccount->fresh()->nickname)->toBeNull();
+});

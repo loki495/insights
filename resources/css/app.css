@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
 
+/* vendor/ is gitignored, so Tailwind's automatic content detection never scans it — without
+   this, any Flux utility class that only appears inside the package's own Blade stubs (like
+   the sidebar-collapse state classes) never gets generated, even though the markup using it
+   renders fine. */
+@source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {

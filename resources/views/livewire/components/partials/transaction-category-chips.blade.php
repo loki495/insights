@@ -31,7 +31,13 @@
     >+ {{ $suggestion['name'] }}?</button>
     @endif
 
-    <flux:button size="xs" variant="subtle" inset @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }} })" class="size-2" icon="plus"></flux:button>
+    @if(count($transaction['categories']) === 0)
+    <button
+        type="button"
+        @click="$dispatch('add-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: {{ $transaction['amount'] }} })"
+        class="cursor-pointer text-xs px-2 py-1 h-auto rounded-lg border border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 text-nowrap hover:bg-zinc-100 dark:hover:bg-white/10"
+    >Set category</button>
+    @endif
 </div>
 
 <div class="flex gap-2 items-center flex-wrap" x-show="optimisticCategories[{{ $transaction['id'] }}]" x-cloak>
