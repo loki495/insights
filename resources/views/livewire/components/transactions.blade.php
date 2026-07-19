@@ -384,9 +384,12 @@ new class extends Component
     {
         $query = $this->getTransactionsQuery();
 
+        // Deliberately not scoped to reportable() — the transaction list/chart here (account view,
+        // transaction search) shows everything matching the current filters, transfers included;
+        // that's what categories are for. Excluding transfers from aggregate income/expense totals
+        // is the dedicated Reports pages' job (see BuildIncomeExpenseTrendAction), not this one.
         $transactions = $query
             ->clone()
-            ->reportable()
             ->with(['categories' => function ($q) {
                 $q->select('categories.id', 'categories.name', 'categories.color', 'categories.parent_id');
             }])
