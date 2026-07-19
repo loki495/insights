@@ -52,8 +52,6 @@ new class extends Component
     #[Session]
     public string $date_to = '';
 
-    public $selected_transactions = [];
-
     protected bool $chartNeedsRefresh = false;
 
     public $chart_labels = [];
@@ -249,15 +247,9 @@ new class extends Component
      * doesn't need recomputing on a page-only navigation (nextPage/
      * previousPage/gotoPage bypass this hook entirely, since they set
      * $this->paginators directly rather than syncing a client property).
-     * selected_transactions is excluded since toggling checkboxes doesn't
-     * change what the chart should show.
      */
     public function updated($name): void
     {
-        if ($name === 'selected_transactions') {
-            return;
-        }
-
         $this->chartNeedsRefresh = true;
     }
 
@@ -641,33 +633,31 @@ new class extends Component
         $this->chartNeedsRefresh = true;
     }
 
-    public function bulkAssignCategory($category_id): void
+    public function bulkAssignCategory($category_id, array $transaction_ids): void
     {
-        $transactions = Transaction::whereIn('id', $this->selected_transactions)->get();
+        $transactions = Transaction::whereIn('id', $transaction_ids)->get();
 
         foreach ($transactions as $transaction) {
             $this->authorize('update', $transaction);
             $transaction->categories()->sync([$category_id]);
         }
 
-        $this->selected_transactions = [];
         $this->chartNeedsRefresh = true;
     }
 
-    public function bulkAssignType(string $type): void
+    public function bulkAssignType(string $type, array $transaction_ids): void
     {
         if (! in_array($type, ['income', 'expense', 'transfer', 'adjustment'], true)) {
             throw new InvalidArgumentException('Invalid type.');
         }
 
-        $transactions = Transaction::whereIn('id', $this->selected_transactions)->get();
+        $transactions = Transaction::whereIn('id', $transaction_ids)->get();
 
         foreach ($transactions as $transaction) {
             $this->authorize('update', $transaction);
             $transaction->update(['type' => $type]);
         }
 
-        $this->selected_transactions = [];
         $this->chartNeedsRefresh = true;
     }
 
@@ -765,11 +755,11 @@ new class extends Component
         ];
     }
 
-    public function bulkDeleteTransactions(): void
+    public function bulkDeleteTransactions(array $transaction_ids): void
     {
         // Only manually-added transactions can be deleted (matches the
         // single-delete action); Plaid-synced ones are silently skipped.
-        $transactions = Transaction::whereIn('id', $this->selected_transactions)
+        $transactions = Transaction::whereIn('id', $transaction_ids)
             ->get()
             ->filter(fn (Transaction $transaction) => $transaction->original['manual'] ?? false);
 
@@ -779,7 +769,6 @@ new class extends Component
             $transaction->delete();
         }
 
-        $this->selected_transactions = [];
         $this->chartNeedsRefresh = true;
     }
 }
@@ -811,19 +800,19 @@ new class extends Component
                 this.selected_transactions = [];
             },
             bulkAssignCategory(categoryId) {
-                $wire.bulkAssignCategory(categoryId).then(() => {
+                $wire.bulkAssignCategory(categoryId, this.selected_transactions).then(() => {
                     this.selected_transactions = [];
                     this.selectMode = false;
                 });
             },
             bulkAssignType(type) {
-                $wire.bulkAssignType(type).then(() => {
+                $wire.bulkAssignType(type, this.selected_transactions).then(() => {
                     this.selected_transactions = [];
                     this.selectMode = false;
                 });
             },
             bulkDeleteTransactions() {
-                $wire.bulkDeleteTransactions().then(() => {
+                $wire.bulkDeleteTransactions(this.selected_transactions).then(() => {
                     this.selected_transactions = [];
                     this.selectMode = false;
                 });

@@ -1,6 +1,6 @@
 <x-table.tr wire:loading.remove class="hover:bg-zinc-100 dark:hover:bg-zinc-900/20 border-b border-zinc-300 dark:border-zinc-700 cursor-normal">
     <x-table.td class="text-center" x-show="selectMode">
-        <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $item['id'] }}" class="selected_transaction" />
+        <flux:checkbox x-model="selected_transactions" value="{{ $item['id'] }}" class="selected_transaction" />
     </x-table.td>
     <x-table.td class="text-center">
         <div>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }}</div>

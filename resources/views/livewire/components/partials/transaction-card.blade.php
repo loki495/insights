@@ -2,7 +2,7 @@
     <div class="flex items-start justify-between gap-2">
         <div class="flex items-start gap-2 min-w-0">
             <div x-show="selectMode" class="pt-0.5 shrink-0">
-                <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $item['id'] }}" />
+                <flux:checkbox x-model="selected_transactions" value="{{ $item['id'] }}" />
             </div>
             <div class="min-w-0">
                 <div class="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
