@@ -30,45 +30,30 @@ class Category extends Model
         return $this->belongsToMany(Transaction::class)->withPivot('id');
     }
 
-    protected static array $nameCache = [];
-
     public function fullName(): Attribute
     {
         return new Attribute(
             get: function () {
-                if (isset(static::$nameCache[$this->id])) {
-                    return static::$nameCache[$this->id];
-                }
-
-                $name = $this->parent_id && $this->parent_id !== 0
+                return $this->parent_id && $this->parent_id !== 0
                     ? ($this->parent ? $this->parent->fullName : 'Unknown').' > '.$this->name
                     : $this->name;
-
-                return static::$nameCache[$this->id] = $name;
             },
         );
     }
-
-    protected static array $descendantsCache = [];
 
     public function descendants(): Attribute
     {
         return new Attribute(
             get: function () {
-                if (isset(static::$descendantsCache[$this->id])) {
-                    return static::$descendantsCache[$this->id];
-                }
-
                 $descendants = [$this->id];
 
-                // Get children without triggering extra recursion via attribute if possible
                 $children = Category::where('parent_id', $this->id)->get();
 
                 foreach ($children as $child) {
                     $descendants = array_merge($descendants, $child->descendants);
                 }
 
-                return static::$descendantsCache[$this->id] = $descendants;
+                return $descendants;
             },
         );
     }
