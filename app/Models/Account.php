@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\AccountFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,16 @@ class Account extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * The user-chosen nickname if one is set, falling back to the name Plaid gave the account.
+     */
+    public function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->nickname ?: $this->name,
+        );
     }
 
     public function linked_account(): BelongsTo

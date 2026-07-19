@@ -10,7 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Livewire\Livewire;
 
-function makeAccountWithTransaction(Category $category): Account
+function makeAccountOnly(): Account
 {
     $user = User::factory()->create();
     $linkedAccount = LinkedAccount::factory()->for($user)->create([
@@ -26,14 +26,21 @@ function makeAccountWithTransaction(Category $category): Account
         'subtype' => 'checking',
     ]);
 
+    test()->actingAs($user);
+
+    return $account;
+}
+
+function makeAccountWithTransaction(Category $category): Account
+{
+    $account = makeAccountOnly();
+
     $transaction = Transaction::factory()->for($account)->create([
         'amount' => -20,
         'name' => 'Bar Tab',
         'currency' => 'USD',
     ]);
     $transaction->categories()->sync([$category->id]);
-
-    test()->actingAs($user);
 
     return $account;
 }
@@ -131,6 +138,24 @@ it('saveCategory replaces (not appends) a transaction\'s category', function ():
 
     $transaction->refresh();
     expect($transaction->categories()->pluck('categories.id')->all())->toBe([$categoryB->id]);
+});
+
+it('shows a "Set category" button when a transaction has no category', function (): void {
+    $account = makeAccountOnly();
+    Transaction::factory()->for($account)->create(['name' => 'Mystery Purchase', 'amount' => -15, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+
+    $test->assertSeeHtml('Set category');
+});
+
+it('does not show a "Set category" button once a category is assigned', function (): void {
+    $category = Category::create(['name' => 'Groceries']);
+    $account = makeAccountWithTransaction($category);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+
+    $test->assertDontSeeHtml('Set category');
 });
 
 it('transactions-updated event triggers a re-render without error', function (): void {

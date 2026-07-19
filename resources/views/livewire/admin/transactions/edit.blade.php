@@ -181,7 +181,7 @@ new class extends Component
                 <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Account</label>
                 <flux:select wire:model="account_id" clearable>
                     @foreach($accounts as $account)
-                    <flux:select.option value="{{ $account->id }}">{{ $account->linked_account->provider_name }} - {{ $account->name }} ({{ ucwords($account->subtype) }})</flux:select.option>
+                    <flux:select.option value="{{ $account->id }}">{{ $account->linked_account->provider_name }} - {{ $account->display_name }} ({{ ucwords($account->subtype) }})</flux:select.option>
                     @endforeach
                 </flux:select>
             </div>
@@ -211,7 +211,7 @@ new class extends Component
 
                 @if($transferPair)
                 <div class="flex items-center justify-between gap-2 border border-zinc-300 dark:border-zinc-600 rounded-xl p-3">
-                    <span>{{ $transferPair->name }} ({{ $transferPair->account->name }}, {{ $transferPair->created_at->format('M j, Y') }})</span>
+                    <span>{{ $transferPair->name }} ({{ $transferPair->account->display_name }}, {{ $transferPair->created_at->format('M j, Y') }})</span>
                     <flux:button size="sm" variant="danger" wire:click="unpair">Unpair</flux:button>
                 </div>
                 @else
@@ -224,7 +224,7 @@ new class extends Component
                             wire:click="pairWith({{ $candidate->id }})"
                             class="cursor-pointer text-left px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10"
                         >
-                            {{ $candidate->name }} &mdash; {{ $candidate->account->name }}, {{ $candidate->created_at->format('M j, Y') }} ({{ $candidate->amount }})
+                            {{ $candidate->name }} &mdash; {{ $candidate->account->display_name }}, {{ $candidate->created_at->format('M j, Y') }} ({{ $candidate->amount }})
                         </button>
                         @endforeach
                         @if(trim($pair_search) !== '' && $this->pairCandidates->isEmpty())

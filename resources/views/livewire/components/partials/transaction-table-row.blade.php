@@ -3,12 +3,12 @@
         <flux:checkbox wire:model="selected_transactions" x-model="selected_transactions" value="{{ $item['id'] }}" class="selected_transaction" />
     </x-table.td>
     <x-table.td class="text-center">
-        {{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }}
-        #{{ $item['id'] }}
+        <div>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }}</div>
+        <div class="mt-1 flex justify-center">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
     </x-table.td>
     @if ($allow_accounts)
     <x-table.td class="max-w-lg">
-        <div>{{ $item['account']['name'] }}</div>
+        <div>{{ $item['account']['display_name'] }}</div>
         <div class="text-sm text-zinc-400">{{ $item['account']['linked_account']['provider_name'] }}</div>
     </x-table.td>
     @endif
@@ -30,7 +30,6 @@
     </x-table.td>
     <x-table.td class="text-right">
         <div>{!! currency($item['amount'], $item['currency']) !!}</div>
-        <div class="mt-1">@include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])</div>
     @if ($showRunningBalance)
         <div class='{{ when($item['running_balance'] < 0, 'text-red-400', 'text-zinc-300') }} text-sm'>{!! currency($item['running_balance'], $item['currency'], 1) !!}</div>
     @endif

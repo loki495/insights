@@ -1,5 +1,8 @@
 <x-table.tr>
     <x-table.td>{{ $item['name'] }}</x-table.td>
+    <x-table.td>
+        <flux:input wire:change="updateNickname({{ $item['id'] }}, $event.target.value)" value="{{ $item['nickname'] }}" placeholder="(none)" size="sm" />
+    </x-table.td>
     <x-table.td class="text-right">{!! currency($item['current_balance']) !!}</x-table.td>
     <x-table.td class="text-right">{!! currency($item['available_balance']) !!}</x-table.td>
     <x-table.td>
