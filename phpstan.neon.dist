@@ -14,7 +14,8 @@ parameters:
         constant_type: 65
     ignoreErrors:
         -
-            # Only used from Volt single-file components (resources/views/**), which paths: above
-            # doesn't scan, so PHPStan can't see the real usage.
+            # Every trait in this directory is only ever used from Volt single-file components
+            # (resources/views/**), which paths: above doesn't scan, so PHPStan can't see the real
+            # usage of any of them.
             message: '#is used zero times and is not analysed#'
-            path: app/Livewire/Concerns/HasDisplayTimezoneDateRange.php
+            path: app/Livewire/Concerns/*
