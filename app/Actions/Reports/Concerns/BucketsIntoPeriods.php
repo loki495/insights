@@ -33,6 +33,7 @@ trait BucketsIntoPeriods
             'monthly' => $from->copy()->startOfMonth(),
             'quarterly' => $from->copy()->startOfQuarter(),
             'yearly' => $from->copy()->startOfYear(),
+            default => throw new InvalidArgumentException('Invalid granularity.'),
         };
 
         while ($cursor->lte($to)) {
@@ -41,6 +42,7 @@ trait BucketsIntoPeriods
                 'monthly' => $cursor->format('M Y'),
                 'quarterly' => 'Q'.$cursor->quarter.' '.$cursor->format('Y'),
                 'yearly' => $cursor->format('Y'),
+                default => throw new InvalidArgumentException('Invalid granularity.'),
             };
 
             $end = match ($granularity) {
@@ -48,6 +50,7 @@ trait BucketsIntoPeriods
                 'monthly' => $cursor->copy()->endOfMonth(),
                 'quarterly' => $cursor->copy()->endOfQuarter(),
                 'yearly' => $cursor->copy()->endOfYear(),
+                default => throw new InvalidArgumentException('Invalid granularity.'),
             };
 
             $boundaries[] = [
@@ -60,6 +63,7 @@ trait BucketsIntoPeriods
                 'monthly' => $cursor->copy()->addMonth(),
                 'quarterly' => $cursor->copy()->addQuarter(),
                 'yearly' => $cursor->copy()->addYear(),
+                default => throw new InvalidArgumentException('Invalid granularity.'),
             };
         }
 
