@@ -83,10 +83,17 @@ new class extends Component
         $this->linkedAccounts = auth()->user()->linkedAccounts->toArray();
     }
 
-    public function delete(LinkedAccount $linkedAccount): void
+    public function close(LinkedAccount $linkedAccount): void
     {
         $this->authorize('delete', $linkedAccount);
-        $linkedAccount->delete();
+        $linkedAccount->update(['closed_at' => now()]);
+        $this->updateLinkedAccount();
+    }
+
+    public function reopen(LinkedAccount $linkedAccount): void
+    {
+        $this->authorize('update', $linkedAccount);
+        $linkedAccount->update(['closed_at' => null]);
         $this->updateLinkedAccount();
     }
 }
@@ -102,13 +109,22 @@ new class extends Component
             </x-slot>
             <x-slot name="body">
                 @foreach($linkedAccounts as $linkedAccount)
-                    <x-table.tr>
-                        <x-table.td>{{ $linkedAccount['provider_name'] }}</x-table.td>
+                    <x-table.tr class="{{ $linkedAccount['closed_at'] ? 'opacity-50' : '' }}">
+                        <x-table.td>
+                            {{ $linkedAccount['provider_name'] }}
+                            @if($linkedAccount['closed_at'])
+                            <span class="text-xs text-zinc-500 dark:text-zinc-400">(closed {{ \Illuminate\Support\Carbon::parse($linkedAccount['closed_at'])->format('M j, Y') }})</span>
+                            @endif
+                        </x-table.td>
                         <x-table.td>
                             <div class="flex gap-2">
                                 <x-button icon="list-bullet" title="View Accounts" class="cursor-pointer hover:bg-zinc-200" href="{{ route('linked-accounts.accounts.index', $linkedAccount['id']) }}" wire:navigate></x-button>
                                 <x-button icon="arrow-path" title="Update Access Token" class="cursor-pointer !bg-orange-600 hover:!bg-orange-500 dark:!bg-orange-700 dark:!border-orange-700 dark:hover:!bg-orange-600" wire:click="linkAccount({{ $linkedAccount['id'] }})"></x-button>
-                                <x-button icon="trash" title="Unlink" class="cursor-pointer !bg-red-600 hover:!bg-red-500 dark:!bg-red-700 dark:!border-red-700 dark:hover:!bg-red-600" wire:click="delete({{ $linkedAccount['id'] }})"></x-button>
+                                @if($linkedAccount['closed_at'])
+                                <x-button icon="arrow-uturn-left" title="Reopen" class="cursor-pointer !bg-green-600 hover:!bg-green-500 dark:!bg-green-700 dark:!border-green-700 dark:hover:!bg-green-600" wire:click="reopen({{ $linkedAccount['id'] }})"></x-button>
+                                @else
+                                <x-button icon="x-circle" title="Close" class="cursor-pointer !bg-red-600 hover:!bg-red-500 dark:!bg-red-700 dark:!border-red-700 dark:hover:!bg-red-600" wire:click="close({{ $linkedAccount['id'] }})"></x-button>
+                                @endif
                             </div>
                         </x-table.td>
                     </x-table.tr>

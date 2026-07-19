@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\PullLinkedAccountTransactionsAction;
+use App\Models\Account;
 use App\Models\LinkedAccount;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
@@ -30,6 +31,17 @@ new class extends Component
             'accounts' => $this->linkedAccount->accounts()->paginate(10),
         ];
     }
+
+    public function updateTrackingMode(int $accountId, string $trackingMode): void
+    {
+        if (! in_array($trackingMode, ['tracked', 'reference', 'excluded'], true)) {
+            throw new InvalidArgumentException('Invalid tracking mode.');
+        }
+
+        $account = Account::findOrFail($accountId);
+        $this->authorize('update', $account);
+        $account->update(['tracking_mode' => $trackingMode]);
+    }
 }
 
 ?>
@@ -51,6 +63,7 @@ new class extends Component
                     <x-table.th class="text-center">Name</x-table.th>
                     <x-table.th class="text-center">Current Balance</x-table.th>
                     <x-table.th class="text-center">Available Balance</x-table.th>
+                    <x-table.th class="text-center">Tracking</x-table.th>
                     <x-table.th></x-table.th>
                 </x-table.tr>
             </x-slot>

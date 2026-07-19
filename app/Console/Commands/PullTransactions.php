@@ -32,7 +32,7 @@ class PullTransactions extends Command
         $linked_account_id = $this->argument('linked_account_id');
         $force = $this->argument('force') ? true : false;
 
-        $linked_accounts = LinkedAccount::with('accounts');
+        $linked_accounts = LinkedAccount::with('accounts')->whereNull('closed_at');
         if ($linked_account_id) {
             $linked_accounts = $linked_accounts->where('id', $linked_account_id);
         }
@@ -40,8 +40,8 @@ class PullTransactions extends Command
         $linked_accounts
             ->get()
             ->each(function (LinkedAccount $linkedAccount) use ($force) {
-            PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
-        });
+                PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
+            });
 
         $this->info('Transactions pulled');
     }

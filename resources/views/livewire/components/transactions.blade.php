@@ -125,7 +125,10 @@ new class extends Component
     {
         $query = Transaction::query();
 
-        $ownedAccountIds = auth()->user()->accounts()->pluck('accounts.id');
+        // Aggregate views (no specific account picked) only pull from tracked accounts —
+        // reference/excluded accounts stay out of cross-account reports by design. Viewing a
+        // single account directly (below) is unaffected.
+        $ownedAccountIds = auth()->user()->accounts()->tracked()->pluck('accounts.id');
 
         if ($this->account?->id) {
             $this->authorize('view', $this->account);
@@ -291,7 +294,10 @@ new class extends Component
     #[Computed]
     public function accounts()
     {
-        $accounts = Account::with('linked_account')->get()->sortBy(function ($account) {
+        // Scoped to the authenticated user's own tracked accounts — this previously queried
+        // every account across every user with no scoping at all, and included reference/
+        // excluded accounts that shouldn't appear as a filterable option in aggregate views.
+        $accounts = auth()->user()->accounts()->tracked()->with('linked_account')->get()->sortBy(function ($account) {
             return $account->linked_account->provider_name.' - '.$account->name;
         });
 

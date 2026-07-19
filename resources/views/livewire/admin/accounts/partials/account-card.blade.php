@@ -13,4 +13,13 @@
         <div class="text-xs text-zinc-500 dark:text-zinc-400">Available Balance</div>
         <div class="font-semibold">{!! currency($item['available_balance']) !!}</div>
     </div>
+
+    <div class="flex items-center justify-between gap-2">
+        <div class="text-xs text-zinc-500 dark:text-zinc-400">Tracking</div>
+        <flux:select wire:change="updateTrackingMode({{ $item['id'] }}, $event.target.value)" size="sm">
+            <flux:select.option value="tracked" :selected="$item['tracking_mode'] === 'tracked'">Tracked</flux:select.option>
+            <flux:select.option value="reference" :selected="$item['tracking_mode'] === 'reference'">Reference only</flux:select.option>
+            <flux:select.option value="excluded" :selected="$item['tracking_mode'] === 'excluded'">Excluded</flux:select.option>
+        </flux:select>
+    </div>
 </div>
