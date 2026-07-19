@@ -6,7 +6,6 @@ namespace App\Actions;
 
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
-use Illuminate\Support\Facades\Storage;
 
 final class PullLinkedAccountTransactionsAction
 {
@@ -30,15 +29,7 @@ final class PullLinkedAccountTransactionsAction
             $request_data['cursor'] = $cursor;
         }
 
-        $use_cache = false;
-        $fn = Storage::disk('local')->path('plaid/transactions/'.$linkedAccount->id.'.json');
-        @mkdir(dirname($fn), 0777, true);
-        if ($use_cache && file_exists($fn)) {
-            $result = json_decode((string) file_get_contents($fn), true);
-        } else {
-            $result = $plaid->getItemTransactions(data: $request_data);
-            file_put_contents($fn, json_encode($result));
-        }
+        $result = $plaid->getItemTransactions(data: $request_data);
 
         $types = [
             'added',
