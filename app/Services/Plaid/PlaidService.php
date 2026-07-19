@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Plaid;
 
+use App\Models\OriginalCategory;
 use App\Services\Curl\API;
 
 /**
@@ -50,5 +51,18 @@ class PlaidService extends API
     public function baseUrl(): string
     {
         return 'https://'.$this->environment.'.plaid.com/';
+    }
+
+    public function resolveCategory(array $transactionInfo): ?OriginalCategory
+    {
+        $path = $transactionInfo['category'] ?? null;
+        $plaidId = $transactionInfo['category_id'] ?? null;
+        $pf = $transactionInfo['personal_finance_category'] ?? [];
+
+        if (!is_array($path) || empty($path) || !$plaidId) {
+            return null;
+        }
+
+        return upsertPlaidCategory($path, (string) $plaidId, $pf);
     }
 }
