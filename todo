@@ -269,6 +269,39 @@
       reliably override the browser's own layout sizing for the
       `<details>` element itself.
 
+## Bulk select/categorize/delete + multi-account filter (2026-07-18)
+- [x] Replaced the bulkCategorize() dd() stub with real
+      bulkAssignCategory($category_id) / bulkDeleteTransactions() actions.
+      Added a "Select"/"Cancel Select" toggle exposing checkboxes on both
+      desktop rows and mobile cards (mobile previously had none at all), a
+      "Select All"/"Deselect All" button, and a bulk actions bar (Assign
+      Category / Delete Selected / Clear selection) once >=1 row is
+      selected. Bulk category assignment reuses the existing drill-down
+      picker modal via a bulkMode flag, per explicit request to not build
+      a second modal. Bulk delete keeps the existing manual-only delete
+      rule, silently skipping synced transactions rather than erroring.
+- [x] Converted the transactions component's single-select account_id
+      filter into a multi-select account_ids (array) filter (custom Alpine
+      dropdown of flux:checkbox rows), used on Reports > By Categories and
+      anywhere else allow_accounts is set. getTransactionsQuery() now
+      intersects requested account_ids against the user's actually-owned
+      accounts before querying, closing a real IDOR risk.
+- [x] Added tests/Feature/BulkTransactionActionsTest.php (8 tests) and
+      tests/Feature/AccountsFilterTest.php (3 tests, including a
+      cross-user leak check). Full suite: 73 passing (up from 62).
+- [x] Cleaned up temporary test fixtures (user/linked-account/account/
+      transactions used for live verification) and restored .env
+      (BLAZE_DEBUG=true, removed the temporary DEBUGBAR_ENABLED=false).
+- [ ] Found, NOT fixed (pre-existing, unrelated to this feature): a
+      "Failed to create chart: can't acquire context from the given item"
+      console error when a Livewire re-render takes the transaction list
+      from 0 results back to >0 (e.g. toggling a filter to zero matches,
+      then clearing it) — the chart's `@if (...count($chart_labels) > 0)`
+      gate removes/re-adds the wire:ignore canvas and Chart.js can't
+      reacquire context on the stale reference. Reproducible with any
+      filter causing a 0<->N transition, not specific to the account
+      filter. Renders fine on a fresh page load in every case tested.
+
 ## Later / exploratory (raised by Andres, not scheduled)
 - [ ] Look into Livewire @islands to scope re-renders to just the changed
       row + chart instead of the whole transactions component
