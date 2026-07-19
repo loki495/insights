@@ -21,6 +21,7 @@ services:
       dockerfile_inline: |
         FROM php:8.4-apache
         ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+        COPY package.json /tmp/package.json
         COPY docker/setup-dev-container.sh /tmp/setup.sh
         RUN chmod +x /tmp/setup.sh && /usr/bin/bash /tmp/setup.sh
     networks:

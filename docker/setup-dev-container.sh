@@ -107,13 +107,20 @@ apt-get install -y nodejs
 # Playwright's browser binary + OS-level libs (fonts, headless-rendering libraries, etc.), baked
 # into the image at build time rather than left as a manual post-`docker compose up` step —
 # PLAYWRIGHT_BROWSERS_PATH (set via ENV in docker-compose.yml) makes this a fixed, known location
-# both root (here, at build time) and www-data (at test-run time) agree on. `npx -y` fetches a
-# throwaway copy of the Playwright CLI just to run this install — it doesn't need the project's
-# own node_modules to exist yet (those don't exist during image build; see composer/npm install
-# in the README). Version pinned to match this project's actual pinned `playwright` npm version
-# (package.json) — bump both together.
-npx -y playwright@1.61.1 install --with-deps chromium
-chmod -R 755 "$PLAYWRIGHT_BROWSERS_PATH"
+# both root (here, at build time) and www-data (at test-run time) agree on.
+#
+# The browser version is read from package.json (copied in above) rather than hardcoded here —
+# the browser binary and the `playwright` npm package driving it have to be the same version, and
+# a hardcoded version here would silently drift from package.json the next time someone bumps it,
+# breaking with a protocol-mismatch error rather than a clear one. `npx -y` fetches a throwaway
+# copy of that exact Playwright CLI version just to run this install — it doesn't need the
+# project's own node_modules to exist yet (those don't exist during image build; see composer/npm
+# install in the README). This only self-heals on an image rebuild — bumping package.json's
+# playwright version alone, without `docker compose build`, leaves the baked-in browser stale
+# until the next build.
+PLAYWRIGHT_VERSION=$(node -p "require('/tmp/package.json').devDependencies.playwright" | tr -dc '0-9.')
+npx -y "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium
+chmod -R 777 "$PLAYWRIGHT_BROWSERS_PATH"
 
 # Enable Apache modules
 a2enmod rewrite
