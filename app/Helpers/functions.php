@@ -3,6 +3,7 @@
 declare(strict_types=1);
 use App\Services\Plaid\PlaidService;
 use Carbon\Carbon;
+use Illuminate\Support\Number;
 
 if (! function_exists('plaid')) {
     function plaid($force_environment = ''): PlaidService
@@ -18,24 +19,16 @@ if (! function_exists('plaid')) {
             return '';
         }
 
-        match ($currency) {
-            'USD' => $symbol = '$',
-        };
-
-        $color = 'zinc-700';
-        $darkColor = 'white';
-        if ($amount < 0) {
-            $amount *= -1;
-            $symbol = '-'.$symbol;
-            $color = 'red-700';
-            $darkColor = 'red-400';
-        }
+        $formatted = Number::currency($amount, in: $currency);
 
         if ($flat) {
-            return $symbol.number_format($amount, 2, '.', ',');
+            return $formatted;
         }
 
-        return '<span class="text-'.$color.' dark:text-'.$darkColor.'">'.$symbol.number_format($amount, 2, '.', ',').'</span>';
+        $color = $amount < 0 ? 'red-700' : 'zinc-700';
+        $darkColor = $amount < 0 ? 'red-400' : 'white';
+
+        return '<span class="text-'.$color.' dark:text-'.$darkColor.'">'.$formatted.'</span>';
     }
 
     function carbon($date = 'now'): Carbon

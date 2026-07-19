@@ -51,7 +51,8 @@ not built yet.
 
 - PHP 8.3 or newer, with the extensions Laravel needs by default (BCMath, Ctype, cURL, DOM,
   Fileinfo, JSON, Mbstring, OpenSSL, PCRE, PDO — plus `pdo_sqlite` for the default database, or
-  `pdo_mysql`/etc. if you point `DB_CONNECTION` elsewhere)
+  `pdo_mysql`/etc. if you point `DB_CONNECTION` elsewhere), plus `intl` (used for currency
+  formatting)
 - Composer 2.x
 - Node.js 20 or newer (Tailwind's native CSS engine requires it) and npm
 - A free [Plaid developer account](https://dashboard.plaid.com/signup) — the sandbox environment
