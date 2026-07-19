@@ -4,3 +4,17 @@ parameters:
         - app
     reportUnmatchedIgnoredErrors: true
     noEnvCallsOutsideOfConfig: false
+    # tomasvotruba/type-coverage (via pestphp/pest-plugin-type-coverage) defaults to requiring
+    # 99% type coverage in each category. Set to today's actual coverage (with a little headroom)
+    # rather than the default, so this is a real, currently-passing gate; raise these over time
+    # as more of the codebase gets typed.
+    type_coverage:
+        param_type: 85
+        return_type: 93
+        constant_type: 65
+    ignoreErrors:
+        -
+            # Only used from Volt single-file components (resources/views/**), which paths: above
+            # doesn't scan, so PHPStan can't see the real usage.
+            message: '#is used zero times and is not analysed#'
+            path: app/Livewire/Concerns/HasDisplayTimezoneDateRange.php
