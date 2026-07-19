@@ -86,8 +86,8 @@ else
 fi
 
 # Install PHP extensions
-docker-php-ext-install gd mysqli pdo_mysql zip intl
-docker-php-ext-enable gd mysqli pdo_mysql zip intl
+docker-php-ext-install gd mysqli pdo_mysql zip intl sockets pcntl
+docker-php-ext-enable gd mysqli pdo_mysql zip intl sockets pcntl
 
 # PCOV for `composer test:unit` / `pest --coverage` (lighter/faster than Xdebug for coverage-only use)
 pecl install pcov
@@ -97,6 +97,23 @@ echo 'extension=pcov.so' > /usr/local/etc/php/conf.d/pcov.ini
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 rm composer-setup.php
+
+# Node.js, for pestphp/pest-plugin-browser: Pest (PHP) spawns
+# `node_modules/.bin/playwright run-server` as a subprocess to drive the browser, so `node`
+# needs to be on PATH in this container too, not just insights-vite.
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
+# Playwright's browser binary + OS-level libs (fonts, headless-rendering libraries, etc.), baked
+# into the image at build time rather than left as a manual post-`docker compose up` step —
+# PLAYWRIGHT_BROWSERS_PATH (set via ENV in docker-compose.yml) makes this a fixed, known location
+# both root (here, at build time) and www-data (at test-run time) agree on. `npx -y` fetches a
+# throwaway copy of the Playwright CLI just to run this install — it doesn't need the project's
+# own node_modules to exist yet (those don't exist during image build; see composer/npm install
+# in the README). Version pinned to match this project's actual pinned `playwright` npm version
+# (package.json) — bump both together.
+npx -y playwright@1.61.1 install --with-deps chromium
+chmod -R 755 "$PLAYWRIGHT_BROWSERS_PATH"
 
 # Enable Apache modules
 a2enmod rewrite
