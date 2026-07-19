@@ -78,3 +78,33 @@ it('changes the chart\'s wire:key when drilling into a category', function (): v
     $test->assertSeeHtml('wire:key="chart-'.$parent->id.'"');
     $test->assertDontSeeHtml('wire:key="chart-root"');
 });
+
+it('includes transfer-type transactions in the chart, not just reportable ones', function (): void {
+    // The account view / transaction search chart is deliberately not scoped to reportable() —
+    // it shows everything matching the current filters (that's what categories are for); only the
+    // dedicated Reports pages exclude transfers from their aggregate totals.
+    $category = Category::create(['name' => 'Credit Card Payment']);
+
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_'.uniqid(),
+        'access_token' => 'access_'.uniqid(),
+    ]);
+    $account = Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_'.uniqid(),
+        'mask' => '0000',
+        'name' => 'Credit Card',
+        'official_name' => 'Credit Card Official',
+        'type' => 'credit',
+        'subtype' => 'credit card',
+    ]);
+    $txn = Transaction::factory()->for($account)->create(['name' => 'Payment', 'amount' => -200, 'currency' => 'USD', 'type' => 'transfer']);
+    $txn->categories()->sync([$category->id]);
+
+    test()->actingAs($user);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+
+    expect($test->get('chart_labels'))->toBe(['Credit Card Payment']);
+    expect($test->get('chart_values'))->toBe([200.0]);
+});
