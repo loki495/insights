@@ -30,10 +30,12 @@ final class UpdateAccountTransactionsAction
             $transaction_usable['original_category_id'] = $category->id;
         }
 
-        Transaction::updateOrCreate(
+        $transaction = Transaction::updateOrCreate(
             ['transaction_id' => $transaction_info['transaction_id']],
             $transaction_usable
         );
+
+        $transaction->refreshType();
     }
 
     private static function getUsableTransaction(array $transaction_info): array

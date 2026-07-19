@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    /** @use HasFactory<\Database\Factories\CategoryFactory> */
+    /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
     public function parent(): BelongsTo
@@ -89,7 +90,13 @@ class Category extends Model
         );
     }
 
-    public static function nonReportableIds(): array
+    /**
+     * Ids of the "Transfers" category and its descendants, if that convention exists in this
+     * install's category tree. Used only as an additional signal when classifying transaction
+     * `type` (see Transaction::refreshType()) — not the source of truth for report filtering,
+     * which is driven by `type` directly.
+     */
+    public static function transferCategoryDescendantIds(): array
     {
         $transfers = Category::where('name', 'Transfers')->first();
 

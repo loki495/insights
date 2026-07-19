@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Storage;
@@ -57,6 +56,16 @@ final class PullLinkedAccountTransactionsAction
             self::run($linkedAccount, $result['next_cursor']);
         } else {
             ReconcileLinkedAccountTransactions::run($linkedAccount, $force);
+
+            // Transfers commonly span different institutions (e.g. a Chase checking payment to a
+            // Capital One card), so this matches across all of the user's linked accounts, not just
+            // this one — scoped by user_id so different users' transactions can never be paired.
+            MatchTransferPairsAction::run(
+                Transaction::query()->whereHas(
+                    'account.linked_account',
+                    fn ($query) => $query->where('user_id', $linkedAccount->user_id)
+                )
+            );
         }
     }
 }
