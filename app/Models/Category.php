@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Database\Factories\CategoryFactory;
@@ -9,38 +11,60 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
+/**
+ * @property-read string $fullName
+ * @property-read array<int, int> $descendants
+ * @property-read Collection<int, Transaction> $descendantTransactions
+ * @property-read self $root
+ */
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
+    /**
+     * @return BelongsTo<Category, $this>
+     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
+    /**
+     * @return HasMany<Category, $this>
+     */
     public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id', 'id');
     }
 
+    /**
+     * @return BelongsToMany<Transaction, $this>
+     */
     public function transactions(): BelongsToMany
     {
         return $this->belongsToMany(Transaction::class)->withPivot('id');
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     public function fullName(): Attribute
     {
         return new Attribute(
             get: function () {
-                return $this->parent_id && $this->parent_id !== 0
+                return $this->parent_id
                     ? ($this->parent ? $this->parent->fullName : 'Unknown').' > '.$this->name
                     : $this->name;
             },
         );
     }
 
+    /**
+     * @return Attribute<array<int, int>, never>
+     */
     public function descendants(): Attribute
     {
         return new Attribute(
@@ -58,6 +82,9 @@ class Category extends Model
         );
     }
 
+    /**
+     * @return Attribute<Collection<int, Transaction>, never>
+     */
     public function descendantTransactions(): Attribute
     {
         // CACHE
@@ -80,6 +107,8 @@ class Category extends Model
      * install's category tree. Used only as an additional signal when classifying transaction
      * `type` (see Transaction::refreshType()) — not the source of truth for report filtering,
      * which is driven by `type` directly.
+     *
+     * @return array<int, int>
      */
     public static function transferCategoryDescendantIds(): array
     {
@@ -92,15 +121,16 @@ class Category extends Model
         return $transfers->descendants;
     }
 
-    public function root($last_id = 0): Attribute
+    /**
+     * @return Attribute<self, never>
+     */
+    public function root(?int $last_id = 0): Attribute
     {
         $cat = $this;
         while ($cat->id && $cat->parent_id != $last_id) {
-            // dump($cat->id . ' - ' . $cat->name . ' -> ' . $cat->parent->id . ' - ' . $cat->parent->name);
             $cat = $cat->parent;
         }
 
-        // dump($this->name . ' (' . $this->id . ') ==> ' . $cat->id);
         return new Attribute(
             get: fn () => $cat,
         );
