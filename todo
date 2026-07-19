@@ -25,11 +25,19 @@
       `Account::display_name` accessor (nickname if set, else real name),
       applied everywhere an account name is shown to a user (transaction
       list, account filter/picker, sidebar nav, transaction edit form).
-- [ ] Discussed, not decided: whether the transaction list page (filters +
-      search + chart, all always visible) feels too crowded now, especially
-      below desktop width. Andres is undecided; floated the idea of a
-      toggle to hide/show the filters+chart block. No action taken —
-      revisit if it keeps coming up.
+- [x] Transaction list page felt too crowded with filters+chart always
+      visible — resolved: Chart and Filters are now two separate
+      Details-styled collapsible sections (collapsed by default, same
+      look as the existing "Details" box), so browsing "all transactions"
+      starts lean but reaching for a filter or the chart is still one
+      click away. Built with Alpine rather than native <details> — the
+      native version's open/closed state doesn't survive a Livewire
+      re-render (see below), so it kept snapping shut mid-use.
+      Also fixed in the same pass: mobile card's date/type-pill/account
+      now share one line; page-heading component no longer repeats the
+      subheading as both a trailing breadcrumb crumb and the subheading
+      line below (was showing key info twice on every page using
+      breadcrumbs, not just this one).
 - [ ] Discussed: how transfers to/from untracked accounts (e.g. a family
       member's private account) get handled — currently no automatic
       distinction between "this external transfer is really a gift/
