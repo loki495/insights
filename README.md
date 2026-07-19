@@ -164,3 +164,11 @@ composer test
 ## Notes
 
 This project is actively evolving; some routes and UI components may still change.
+
+## License
+
+Licensed under [AGPL-3.0](LICENSE). In short: you're free to use, modify, and self-host this —
+including commercially — but if you distribute a modified version or run it as a network service,
+you have to make that version's source available under the same license too. Genuinely separate
+add-ons that merely integrate with this app (not modifications to it) aren't required to be
+AGPL — see [CONTRIBUTING.md](CONTRIBUTING.md) if you're contributing.
