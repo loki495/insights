@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property-read float $total
+ */
 class OriginalCategory extends Model
 {
     protected $fillable = [
@@ -20,11 +23,17 @@ class OriginalCategory extends Model
         'pf_confidence',
     ];
 
+    /**
+     * @return HasMany<Transaction, $this>
+     */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
+    /**
+     * @return Attribute<float, never>
+     */
     public function total(): Attribute
     {
         return Attribute::make(
@@ -32,11 +41,17 @@ class OriginalCategory extends Model
         );
     }
 
+    /**
+     * @return BelongsTo<self, $this>
+     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
     }
 
+    /**
+     * @return HasMany<self, $this>
+     */
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');

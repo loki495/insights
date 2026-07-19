@@ -67,18 +67,24 @@ class User extends Authenticatable
     }
 
     /**
-     * @return HasMany<LinkedAccount,User>
+     * @return HasMany<LinkedAccount, $this>
      */
     public function linkedAccounts(): HasMany
     {
         return $this->hasMany(LinkedAccount::class);
     }
 
+    /**
+     * @return HasMany<LinkedAccount, $this>
+     */
     public function linked_accounts(): HasMany
     {
         return $this->linkedAccounts();
     }
 
+    /**
+     * @return HasManyThrough<Account, LinkedAccount, $this>
+     */
     public function accounts(): HasManyThrough
     {
         return $this->hasManyThrough(Account::class, LinkedAccount::class);

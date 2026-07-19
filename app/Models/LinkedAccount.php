@@ -20,6 +20,9 @@ class LinkedAccount extends Model
         'closed_at' => 'datetime',
     ];
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -46,7 +49,7 @@ class LinkedAccount extends Model
     }
 
     /**
-     * @return HasMany<Account>
+     * @return HasMany<Account, $this>
      */
     public function accounts(): HasMany
     {

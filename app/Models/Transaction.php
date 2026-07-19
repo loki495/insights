@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\TransactionFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +23,7 @@ class Transaction extends Model
     ];
 
     /**
-     * @return BelongsTo<Account>
+     * @return BelongsTo<Account, $this>
      */
     public function account(): BelongsTo
     {
@@ -30,38 +31,47 @@ class Transaction extends Model
     }
 
     /**
-     * @return BelongsTo<OriginalCategory>
+     * @return BelongsTo<OriginalCategory, $this>
      */
     public function originalCategory(): BelongsTo
     {
         return $this->belongsTo(OriginalCategory::class);
     }
 
+    /**
+     * @return BelongsToMany<Category, $this>
+     */
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class)->withPivot('id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
     /**
-     * @return HasMany<Transaction>
+     * @return HasMany<Transaction, $this>
      */
     public function children(): HasMany
     {
         return $this->hasMany(Transaction::class, 'parent_id', 'id');
     }
 
-    public function parent()
+    /**
+     * @return BelongsTo<Transaction, $this>
+     */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'parent_id');
     }
 
     /**
-     * @return BelongsTo<Transaction>
+     * @return BelongsTo<Transaction, $this>
      */
     public function transferPair(): BelongsTo
     {
@@ -72,10 +82,13 @@ class Transaction extends Model
      * Everything except positively-identified transfers/adjustments. A transaction with no
      * `type` yet (never classified) stays reportable by default rather than silently vanishing
      * from totals — SQL's `NOT IN` excludes NULLs on its own, so that's made explicit here.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
      */
-    public function scopeReportable($query)
+    public function scopeReportable(Builder $query): Builder
     {
-        return $query->where(function ($query) {
+        return $query->where(function (Builder $query) {
             $query->whereNotIn('type', ['transfer', 'adjustment'])
                 ->orWhereNull('type');
         });
@@ -156,7 +169,7 @@ class Transaction extends Model
      * Unpaired, opposite-account transfer transactions matching a search term — candidates for
      * manually pairing $excludeTransactionId with the correct other leg.
      *
-     * @return EloquentCollection<int, self>
+     * @return EloquentCollection<int, static>
      */
     public static function searchUnpairedTransferCandidates(int $excludeTransactionId, int $excludeAccountId, string $search): EloquentCollection
     {
