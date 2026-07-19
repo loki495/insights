@@ -1,0 +1,30 @@
+# Optional local override for docker-compose.yml.
+#
+# The base docker-compose.yml routes through Traefik on a custom local
+# domain (insights.dev.local.test) — that's this project author's personal
+# multi-project reverse-proxy setup, not something you need.
+#
+# If you don't already run Traefik with an external "web" network, copy this
+# file to docker-compose.override.yml (same directory, gitignored, picked up
+# automatically by `docker compose up` — no extra flags needed) to get
+# direct port access instead:
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   docker compose up -d
+#
+# Then the app is at http://localhost:8000 and Vite at http://localhost:5173.
+# Adjust the left-hand port numbers below if either is already taken on your
+# machine.
+
+services:
+  app:
+    ports:
+      - "8000:80"
+
+  vite:
+    ports:
+      - "5173:5173"
+
+networks:
+  web:
+    external: false

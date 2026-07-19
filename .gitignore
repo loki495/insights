@@ -25,3 +25,5 @@ yarn-error.log
 /docker/logs/
 /.mcp.json
 /.playwright-mcp/
+/docker-compose.override.yml
+/todo

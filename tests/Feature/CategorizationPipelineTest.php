@@ -62,7 +62,7 @@ it('searching transactions does not throw an ambiguous column error', function (
 it('descendants() returns a flat array of ids including self and all nested children', function (): void {
     $expenses = Category::create(['name' => 'Expenses']);
     $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Andres', 'parent_id' => $bars->id]);
+    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
 
     expect($expenses->descendants)->toEqualCanonicalizing([$expenses->id, $bars->id, $leaf->id]);
     expect($bars->descendants)->toEqualCanonicalizing([$bars->id, $leaf->id]);
@@ -72,7 +72,7 @@ it('descendants() returns a flat array of ids including self and all nested chil
 it('filters transactions by a parent category to include all its descendants', function (): void {
     $expenses = Category::create(['name' => 'Expenses']);
     $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Andres', 'parent_id' => $bars->id]);
+    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
 
     $account = makeAccountWithTransaction($leaf);
 
@@ -85,7 +85,7 @@ it('filters transactions by a parent category to include all its descendants', f
 it('drills one level deeper into the chart on each click, matching the categorized transaction', function (): void {
     $expenses = Category::create(['name' => 'Expenses']);
     $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Andres', 'parent_id' => $bars->id]);
+    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
 
     $account = makeAccountWithTransaction($leaf);
 
@@ -100,17 +100,17 @@ it('drills one level deeper into the chart on each click, matching the categoriz
     expect($test->get('chart_labels'))->toBe(['Bars']);
     expect($test->instance()->getTransactionsQuery()->count())->toBe(1);
 
-    // Click into "Bars": should show the leaf "Bars - Andres".
+    // Click into "Bars": should show the leaf "Bars - Alex".
     $test->call('handleChartClick', $bars->id);
     expect($test->get('category_id'))->toBe($bars->id);
-    expect($test->get('chart_labels'))->toBe(['Bars - Andres']);
+    expect($test->get('chart_labels'))->toBe(['Bars - Alex']);
     expect($test->instance()->getTransactionsQuery()->count())->toBe(1);
 });
 
 it('goBack steps back up one level at a time', function (): void {
     $expenses = Category::create(['name' => 'Expenses']);
     $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Andres', 'parent_id' => $bars->id]);
+    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
 
     $account = makeAccountWithTransaction($leaf);
 
