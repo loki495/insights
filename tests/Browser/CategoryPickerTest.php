@@ -142,22 +142,28 @@ it('bulk-assigns a category to multiple selected transactions', function (): voi
 
     test()->actingAs($account->linked_account->user);
 
-    // The Flux `<ui-checkbox>` custom element's own DOM state (checked, aria-checked, value)
-    // updates immediately on click, but its sync into Alpine's `selected_transactions` model
-    // lags slightly behind — a real user's click-then-look-at-the-badge has that gap covered for
-    // free, but back-to-back scripted clicks need an explicit wait() for it to catch up.
+    // The checkbox clicks and the "Assign Category" click are pure client-side Alpine state (no
+    // wire:model on the checkboxes, no server call to open the modal) — verified this by
+    // measuring: the checkbox's own DOM state and the Alpine-driven "N selected" badge both
+    // update in single-digit milliseconds. The final category click is the only step that
+    // actually calls the server ($wire.bulkAssignCategory()), and it needs a wait() after it —
+    // not because anything is slow, but because Execution::wait() yields via Amp\delay() inside
+    // an Amp fiber, cooperatively handing control back to the *same* event loop this plugin's
+    // in-process fake HTTP server runs its request handling on. Without an explicit yield
+    // somewhere, the click's fetch() can be sent by the browser but never actually get serviced
+    // before the test's own DB assertions run — and a plain PHP usleep()-based poll doesn't help
+    // at all, since usleep() is a blocking OS call invisible to Amp's cooperative scheduler
+    // (confirmed empirically: even a full 1s usleep-based poll never saw the write land, while a
+    // single 0.1s wait() reliably does).
     visit('/reports/category')
         ->click('Select')
         ->click(sprintf('.selected_transaction[value="%d"]', $first->id))
-        ->wait(1)
         ->click(sprintf('.selected_transaction[value="%d"]', $second->id))
-        ->wait(1)
         ->assertSee('selected')
         ->click(clickVisibleButton('Assign Category'))
         ->assertSee('transaction(s) selected')
-        ->wait(1)
         ->click(clickVisibleButton('Groceries'))
-        ->wait(1)
+        ->wait(0.1)
         ->assertNoSmoke();
 
     expect($first->fresh()->categories->pluck('name')->all())->toBe(['Groceries']);
