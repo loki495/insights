@@ -48,4 +48,47 @@ function htmlQuotes($string): string
     $result = str_replace("'", '&apos;', $result);
     return $result;
 }
+
+function upsertPlaidCategory(array $path, string $plaidId, array $pf): App\Models\OriginalCategory
+{
+    $parentId = null;
+
+    foreach ($path as $index => $segment) {
+        if (!is_string($segment) || $segment === '') {
+            continue; // guard against weird Plaid data
+        }
+
+        $isLeaf = $index === array_key_last($path);
+
+        /** @var OriginalCategory $category */
+        $category = App\Models\OriginalCategory::firstOrCreate(
+            [
+                'name' => $segment,
+                'parent_id' => $parentId,
+            ],
+            [] // don't set leaf data here yet
+        );
+
+        // Only apply Plaid + PF data on leaf nodes
+        if ($isLeaf) {
+            $needsUpdate =
+            $category->plaid_id === null ||
+                $category->pf_primary === null ||
+                $category->pf_detailed === null;
+
+            if ($needsUpdate) {
+                $category->update([
+                    'plaid_id' => $plaidId,
+                    'pf_primary' => $pf['primary'] ?? null,
+                    'pf_detailed' => $pf['detailed'] ?? null,
+                    'pf_confidence' => $pf['confidence_level'] ?? null,
+                ]);
+            }
+        }
+
+        $parentId = $category->id;
+    }
+
+    return $category;
+}
 }
