@@ -8,10 +8,8 @@ use App\Models\OriginalCategory;
 use App\Services\Curl\API;
 
 /**
- * @method static array{accounts: ?array<array>, added: ?array<array>, removed: ?array<array>, modified: ?array<array>} getItemTransactions(array{access_token: string} $data)
- *
+ * @method static array{accounts: ?array<array>, added: ?array<array>, removed: ?array<array>, modified: ?array<array>, has_more: bool, next_cursor: string} getItemTransactions(array{access_token: string} $data)
  */
-
 class PlaidService extends API
 {
     const ENV_SANDBOX = 'sandbox';
@@ -59,7 +57,7 @@ class PlaidService extends API
         $plaidId = $transactionInfo['category_id'] ?? null;
         $pf = $transactionInfo['personal_finance_category'] ?? [];
 
-        if (!is_array($path) || empty($path) || !$plaidId) {
+        if (! is_array($path) || empty($path) || ! $plaidId) {
             return null;
         }
 
