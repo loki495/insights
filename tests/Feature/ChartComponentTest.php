@@ -10,12 +10,9 @@ use App\Models\User;
 use Livewire\Livewire;
 
 it('forwards wire:ignore, wire:key, and extra classes onto the chart\'s root element', function (): void {
-    // Regression test: chart.blade.php never referenced $attributes, so
-    // wire:ignore/wire:key/class passed by the transactions component were
-    // silently dropped. This let Livewire's morph touch the wire:ignore'd
-    // canvas on every request, and (separately) meant wire:key couldn't
-    // help Livewire reconcile the element across the @if gate that removes
-    // it entirely when there are zero results.
+    // chart.blade.php's root element must forward $attributes — wire:ignore keeps Livewire's
+    // morph from touching the canvas, and wire:key lets it reconcile the element correctly
+    // across the @if gate that removes it entirely when there are zero results.
     $user = User::factory()->create();
     $linkedAccount = LinkedAccount::factory()->for($user)->create([
         'item_id' => 'item_'.uniqid(),
@@ -42,13 +39,9 @@ it('forwards wire:ignore, wire:key, and extra classes onto the chart\'s root ele
 });
 
 it('changes the chart\'s wire:key when drilling into a category', function (): void {
-    // Regression test: the chart's wire:key is "chart-{category_id}", so it
-    // genuinely changes on drill-down (chart-root -> chart-{id}), meaning
-    // Livewire swaps in a brand new canvas DOM node rather than reusing the
-    // old one. chart.blade.php's $wire.$watch callback previously assumed
-    // an existing chartObj meant the canvas was still the same live node,
-    // and called update()/resize() on a Chart.js instance bound to the
-    // old, now-detached canvas — leaving the new one permanently blank.
+    // The wire:key changes on drill-down (chart-root -> chart-{id}), so Livewire swaps in a
+    // brand new canvas node — chart.blade.php's $wire.$watch callback must detect that rather
+    // than assume an existing chartObj still points at a live, connected canvas.
     $parent = Category::create(['name' => 'Expenses']);
     $child = Category::create(['name' => 'Bars', 'parent_id' => $parent->id]);
 
