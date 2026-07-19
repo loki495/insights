@@ -1,5 +1,68 @@
 - autocategorize rules
 
+## Accounting model rework: transaction type + transfer pairing (2026-07-19)
+Full design discussion + plan in this session's conversation (transfer/income/
+expense modeling, ownership, account tracking scope). Phased: Phase 1 done
+this session, Phase 2/3 not started.
+
+- [x] Phase 1 — transaction `type` (income/expense/transfer/adjustment) +
+      transfer pairing. Replaces the old "Transfers"-named-category
+      convention (Category::nonReportableIds(), whose only consumer,
+      scopeReportable(), was already dead code referencing nonexistent
+      is_split/parent_transaction_id columns). New:
+      `transactions.type` + `transactions.transfer_pair_id` (self-referencing,
+      nullOnDelete — verified safe on a throwaway DB copy first, since
+      `migrate --pretend` misleadingly renders SQLite's add-FK table-rebuild
+      as if it drops all other columns; real execution preserves everything).
+      Type is derived at ingest from Plaid's own `pf_primary`/`pf_detailed`
+      (already captured, no new Plaid calls needed) — TRANSFER_IN/OUT and
+      LOAN_PAYMENTS_CREDIT_CARD_PAYMENT (Plaid buckets card payments here,
+      not under TRANSFER_*) both map to `transfer`. `MatchTransferPairsAction`
+      greedily pairs unpaired transfers across different accounts (opposite
+      sign, amount within a 2% FX-tolerant band, same calendar day ±3),
+      flags but doesn't auto-match pairs touching an investment/loan account
+      (unverified sign convention — this install has none to test against).
+      Backfill command `transactions:backfill-types` run against real data:
+      589 transactions -> 38 income / 336 expense / 215 transfer, 42 pairs
+      matched. Spot-checked the 14 real "Credit Card Payment"-tagged
+      transactions (the exact double-counting case from the original
+      design discussion) — all now correctly `type=transfer` and paired.
+      Added a `type` filter (transactions.blade.php) and a manual
+      pair/unpair override UI (admin/transactions/edit.blade.php, since the
+      auto-matcher will sometimes miss or mis-time a pair). `scopeReportable()`
+      rewritten to exclude transfer/adjustment but explicitly keep NULL-type
+      transactions reportable (a real bug caught by tests: SQL's `NOT IN`
+      silently excludes NULLs, which would have made any not-yet-classified
+      transaction vanish from every report). 14 new tests, full suite green,
+      verified live in-browser with a disposable test user (created and fully
+      cleaned up afterward — real account/data untouched).
+- [x] Phase 2 — account `tracking_mode` (tracked/reference/excluded) on
+      `accounts`, plus soft-close on `linked_accounts` (`closed_at`)
+      replacing the old hard `$linkedAccount->delete()` (which silently
+      orphaned accounts/transactions since neither table had a real FK
+      back to linked_accounts — confirmed no orphans existed, so this was
+      safe to add as a real constraint now). "Unlink" is now "Close" (sets
+      closed_at, guarded in both `PullLinkedAccountTransactionsAction` and
+      the bulk `transactions:pull` command so nothing keeps syncing), with
+      a "Reopen" action and the closed institution staying visible
+      (grayed out, "closed on X") instead of disappearing. Added an inline
+      tracking-mode selector to the accounts index. Aggregate transaction
+      views (default listing, chart, account-picker dropdown) now exclude
+      reference/excluded accounts; viewing a specific account directly is
+      unaffected. Found + fixed in passing: the account-picker's query
+      (`components/transactions.blade.php`'s `accounts()`) had **no
+      user-scoping at all** — it listed every account across every user.
+      6 new tests, full suite green (119), verified live with a disposable
+      test user (fully cleaned up after — including a debug tinker script
+      that hit an FK error mid-cleanup and left orphaned rows in the real
+      dev db the first time; caught and cleaned up manually, real data
+      confirmed back to the exact pre-session counts before moving on).
+- [ ] Phase 3 — stub a nullable `transactions.owner` column (household vs.
+      personal), no UI/logic yet. Note for whenever this gets built for real:
+      the live category data already has ad hoc per-person forks (`Bars -
+      Andres`/`Bars - Sally`, a `Sally` expense category separate from the
+      `Sally` income category) that a real owner field should let us collapse.
+
 ## Livewire @islands assessment + chart perf/bug fixes (2026-07-19)
 - [x] Researched Livewire Islands feasibility (already available: this app
       runs Livewire v4.3.3). Verdict: not worth adopting for the current
