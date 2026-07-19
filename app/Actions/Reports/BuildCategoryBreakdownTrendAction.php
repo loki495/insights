@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Reports;
 
 use App\Actions\Reports\Concerns\BucketsIntoPeriods;
+use App\Actions\Reports\Concerns\FiltersBySearchAndAmount;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -14,6 +15,7 @@ use Illuminate\Support\Collection;
 final class BuildCategoryBreakdownTrendAction
 {
     use BucketsIntoPeriods;
+    use FiltersBySearchAndAmount;
 
     /**
      * For each given category (matching it and its descendants, same convention as the rest of
@@ -25,7 +27,7 @@ final class BuildCategoryBreakdownTrendAction
      * @param  array<int, int>  $categoryIds
      * @return array{periods: array<int, string>, series: array<int, array{category_id: int, label: string, color: string, values: array<int, float>}>}
      */
-    public static function run(Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity, array $categoryIds): array
+    public static function run(Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity, array $categoryIds, string $search = '', string $amountMin = '', string $amountMax = ''): array
     {
         self::assertValidGranularity($granularity);
 
@@ -42,13 +44,15 @@ final class BuildCategoryBreakdownTrendAction
                 continue;
             }
 
-            $transactions = Transaction::query()
+            $query = Transaction::query()
                 ->whereIn('account_id', $accountIds)
                 ->reportable()
                 ->whereBetween('created_at', [$from, $to])
-                ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $category->descendants))
-                ->orderBy('created_at')
-                ->get(['created_at', 'amount']);
+                ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $category->descendants));
+
+            self::applySearchAndAmountFilters($query, $search, $amountMin, $amountMax);
+
+            $transactions = $query->orderBy('created_at')->get(['created_at', 'amount']);
 
             $values = array_fill(0, count($periods), 0.0);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Reports;
 
 use App\Actions\Reports\Concerns\BucketsIntoPeriods;
+use App\Actions\Reports\Concerns\FiltersBySearchAndAmount;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -14,6 +15,7 @@ use Illuminate\Support\Collection;
 final class BuildIncomeExpenseTrendAction
 {
     use BucketsIntoPeriods;
+    use FiltersBySearchAndAmount;
 
     /**
      * Buckets reportable() transactions (excludes transfer/adjustment, per
@@ -27,7 +29,7 @@ final class BuildIncomeExpenseTrendAction
      * @param  array<int, int>  $categoryIds
      * @return array{periods: array<int, string>, income: array<int, float>, expense: array<int, float>, net: array<int, float>}
      */
-    public static function run(Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity, array $categoryIds = []): array
+    public static function run(Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity, array $categoryIds = [], string $search = '', string $amountMin = '', string $amountMax = ''): array
     {
         self::assertValidGranularity($granularity);
 
@@ -46,6 +48,8 @@ final class BuildIncomeExpenseTrendAction
 
             $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $matchingIds));
         }
+
+        self::applySearchAndAmountFilters($query, $search, $amountMin, $amountMax);
 
         $transactions = $query->orderBy('created_at')->get(['created_at', 'amount']);
 

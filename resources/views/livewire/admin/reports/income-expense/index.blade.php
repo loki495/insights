@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Reports\BuildCategoryBreakdownTrendAction;
 use App\Actions\Reports\BuildIncomeExpenseTrendAction;
+use App\Actions\Reports\Concerns\FiltersBySearchAndAmount;
 use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
 use App\Models\Account;
 use App\Models\Category;
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 
 new class extends Component
 {
+    use FiltersBySearchAndAmount;
     use HasDisplayTimezoneDateRange;
     use WithPagination;
 
@@ -25,6 +27,15 @@ new class extends Component
 
     #[Session]
     public array $category_ids = [];
+
+    #[Session]
+    public string $search = '';
+
+    #[Session]
+    public string $amount_min = '';
+
+    #[Session]
+    public string $amount_max = '';
 
     public string $date_from = '';
 
@@ -102,6 +113,8 @@ new class extends Component
             $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $matchingIds));
         }
 
+        self::applySearchAndAmountFilters($query, $this->search, $this->amount_min, $this->amount_max);
+
         return $query;
     }
 
@@ -111,9 +124,9 @@ new class extends Component
         $from = Carbon::parse($this->date_from);
         $to = Carbon::parse($this->date_to);
 
-        // Narrowed to the selected categories (if any) — the summary cards reflect exactly what
-        // the chart below is showing, not the account-wide picture.
-        $trend = BuildIncomeExpenseTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids);
+        // Narrowed to the selected categories/search/amount range (if any) — the summary cards
+        // reflect exactly what the chart and list below are showing, not the account-wide picture.
+        $trend = BuildIncomeExpenseTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids, $this->search, $this->amount_min, $this->amount_max);
         $incomeTotal = array_sum($trend['income']);
         $expenseTotal = array_sum($trend['expense']);
 
@@ -127,7 +140,7 @@ new class extends Component
             $this->chart_stacked = false;
             $hasData = count(array_filter($trend['income'])) > 0 || count(array_filter($trend['expense'])) > 0;
         } else {
-            $breakdown = BuildCategoryBreakdownTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids);
+            $breakdown = BuildCategoryBreakdownTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids, $this->search, $this->amount_min, $this->amount_max);
             $this->chart_periods = $breakdown['periods'];
             $this->chart_series = $breakdown['series'];
             $this->chart_type = 'area';
@@ -229,7 +242,22 @@ new class extends Component
         </div>
     </div>
 
-    <div wire:key="income-expense-trend-{{ $date_from }}-{{ $date_to }}-{{ $granularity }}-{{ implode(',', $category_ids) }}">
+    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+        <div class="flex flex-col gap-1 w-full sm:w-64">
+            <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Search</label>
+            <x-input type="text" wire:model.live.debounce="search" placeholder="Name or merchant" class="w-full" clearable></x-input>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Amount</label>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <x-input type="number" step="0.01" min="0" wire:model.live.debounce="amount_min" placeholder="Min" class="w-full sm:w-32"></x-input>
+                <span class="text-zinc-500 dark:text-zinc-400">–</span>
+                <x-input type="number" step="0.01" min="0" wire:model.live.debounce="amount_max" placeholder="Max" class="w-full sm:w-32"></x-input>
+            </div>
+        </div>
+    </div>
+
+    <div wire:key="income-expense-trend-{{ $date_from }}-{{ $date_to }}-{{ $granularity }}-{{ implode(',', $category_ids) }}-{{ $search }}-{{ $amount_min }}-{{ $amount_max }}">
         @if ($hasData)
             <x-period-chart title="Income / Expense Trend" />
         @else
