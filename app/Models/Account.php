@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Account extends Model
 {
-    /** @use HasFactory<\Database\Factories\AccountFactory> */
+    /** @use HasFactory<AccountFactory> */
     use HasFactory;
 
     public function transactions()
@@ -18,8 +19,18 @@ class Account extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    public function linked_account() : BelongsTo
+    public function linked_account(): BelongsTo
     {
         return $this->belongsTo(LinkedAccount::class);
+    }
+
+    /**
+     * Accounts the user actually wants folded into cross-account reports/totals — excludes
+     * `reference` (manually-maintained placeholders) and `excluded` accounts. Viewing a single
+     * account directly is unaffected by this; it only gates aggregate views.
+     */
+    public function scopeTracked($query)
+    {
+        return $query->where('tracking_mode', 'tracked');
     }
 }

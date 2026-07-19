@@ -12,6 +12,10 @@ final class PullLinkedAccountTransactionsAction
 {
     public static function run(LinkedAccount $linkedAccount, ?string $cursor = null, bool $force = false): void
     {
+        if ($linkedAccount->isClosed()) {
+            return;
+        }
+
         $plaid = plaid();
 
         $request_data = [
