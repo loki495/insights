@@ -69,6 +69,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Storage/app.timezone stays UTC — transaction dates are date-only anyway,
+    | so changing it retroactively would reinterpret every existing timestamp.
+    | This is purely for "now"-based defaults shown in date pickers (report
+    | date ranges, etc.) so they match the user's actual wall-clock time.
+    |
+    */
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'UTC'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
