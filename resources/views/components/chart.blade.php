@@ -105,7 +105,11 @@
     $wire.$watch("chart_values", () => {
         const data = getData();
 
-        if (!chartObj) {
+        // wire:key on the wrapping element changes whenever the drilled-into
+        // category changes, so Livewire swaps in a brand new (same-id)
+        // canvas node rather than reusing the old one. chartObj would still
+        // be bound to the old, now-detached canvas in that case.
+        if (!chartObj || !chartObj.canvas.isConnected) {
             initChart();
             return;
         }
