@@ -7,6 +7,7 @@ use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
 use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
 
@@ -18,6 +19,9 @@ new class extends Component
 
     #[Session]
     public string $granularity = 'monthly';
+
+    #[Session]
+    public array $account_ids = [];
 
     public string $date_from = '';
 
@@ -66,9 +70,26 @@ new class extends Component
             ->get();
     }
 
+    /**
+     * All selectable options for the account filter dropdown — unaffected by the filter itself.
+     *
+     * @return Collection<int, Account>
+     */
+    #[Computed]
+    public function accounts()
+    {
+        return $this->trackedAccounts()->sortBy(fn (Account $account): string => $account->linked_account->provider_name.' - '.$account->display_name)->values();
+    }
+
     public function with(): array
     {
         $accounts = $this->trackedAccounts();
+
+        if ($this->account_ids !== []) {
+            // Intersect against the user's own tracked accounts rather than trusting the ids
+            // directly — same IDOR-safety convention as the transaction list's account filter.
+            $accounts = $accounts->whereIn('id', $this->account_ids)->values();
+        }
 
         $assetAccounts = $accounts->reject(fn (Account $account): bool => in_array($account->type, self::LIABILITY_TYPES, true))->values();
         $liabilityAccounts = $accounts->filter(fn (Account $account): bool => in_array($account->type, self::LIABILITY_TYPES, true))->values();
@@ -134,9 +155,52 @@ new class extends Component
                 <flux:select.option value="yearly">Yearly</flux:select.option>
             </flux:select>
         </div>
+        <div class="flex flex-col gap-1 w-full sm:w-auto" x-data="{ accountsOpen: false }">
+            <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Account</label>
+            <div class="relative w-full sm:w-64" @click.outside="accountsOpen = false">
+                <button
+                    type="button"
+                    @click="accountsOpen = !accountsOpen"
+                    class="cursor-pointer flex items-center justify-between w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-left"
+                >
+                    <span>
+                        @if(empty($account_ids))
+                            -- All Accounts --
+                        @elseif(count($account_ids) === 1)
+                            @php $selectedAccount = $this->accounts->firstWhere('id', $account_ids[0]); @endphp
+                            {{ $selectedAccount ? $selectedAccount->linked_account->provider_name.' - '.$selectedAccount->display_name : '1 account selected' }}
+                        @else
+                            {{ count($account_ids) }} accounts selected
+                        @endif
+                    </span>
+                    <flux:icon.chevron-down class="size-4 shrink-0 text-zinc-500" />
+                </button>
+
+                <div
+                    id="balance-accounts-filter-dropdown"
+                    x-show="accountsOpen"
+                    x-cloak
+                    class="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 shadow-lg p-2 flex flex-col gap-1"
+                >
+                    <button
+                        type="button"
+                        wire:click="$set('account_ids', [])"
+                        class="cursor-pointer text-left px-2 py-1.5 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-zinc-100 dark:hover:bg-white/10"
+                    >Clear (All Accounts)</button>
+
+                    @foreach($this->accounts as $account_option)
+                    <flux:checkbox
+                        wire:model.live="account_ids"
+                        value="{{ $account_option->id }}"
+                        label="{{ $account_option->linked_account->provider_name }} - {{ $account_option->display_name }}"
+                    />
+                    @endforeach
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div wire:key="balance-trend-{{ $date_from }}-{{ $date_to }}-{{ $granularity }}">
+    <div wire:key="balance-trend-{{ $date_from }}-{{ $date_to }}-{{ $granularity }}-{{ implode(',', $account_ids) }}">
         @if ($assetAccounts->isNotEmpty() || $liabilityAccounts->isNotEmpty())
             <x-period-chart title="Net Cash" />
         @else
