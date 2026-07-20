@@ -143,6 +143,23 @@ Link. In sandbox mode, use any of
 `user_good`, password `pass_good`) to simulate a real institution with fake accounts and
 transactions.
 
+## Exploring without a Plaid account
+
+Don't want to set up Plaid sandbox credentials just to look around? Seed a demo dataset instead —
+a "Demo Bank" institution with checking/savings/credit-card accounts, ~6 months of randomized but
+realistic transactions (paychecks, groceries, rent, a couple of paired transfers), and some
+transactions left deliberately uncategorized:
+
+```bash
+docker exec -u www-data insights-app php artisan db:seed --class=DemoDataSeeder
+# or, bare metal:
+php artisan db:seed --class=DemoDataSeeder
+```
+
+This creates (or reuses) a `test@example.com` / `password` login. It's not part of the default
+`db:seed` run, so it never runs against a real user's database by accident. The demo institution's
+"Pull Data" button is hidden — there's no real Plaid item behind it, so pulling would just fail.
+
 ## Development
 
 ```bash

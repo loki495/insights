@@ -120,7 +120,9 @@ new class extends Component
     <x-page-wrapper heading="Account Transactions" :subheading="$this->account->linked_account->provider_name . ' - ' . $this->account->display_name . ' - ' . $this->account->mask" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index', 'Accounts' => route('linked-accounts.accounts.index', $this->account->linked_account) ]">
 
         <x-slot name="actions">
+            @unless($this->account->linked_account->is_demo)
             <x-button wire:click="pullData" class="w-full sm:w-auto">Pull Data</x-button>
+            @endunless
         </x-slot>
 
         <livewire:components.transactions :account="$account"></livewire:components.transactions>

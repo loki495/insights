@@ -55,7 +55,9 @@ new class extends Component
     <x-page-wrapper heading="Accounts" subheading="{{ $this->linkedAccount->provider_name }}" :breadcrumbs="['Linked Institutions' => 'linked-accounts.index']">
 
         <x-slot name="actions">
+            @unless($this->linkedAccount->is_demo)
             <x-button wire:click="pullData" class="w-full sm:w-auto">Pull Data</x-button>
+            @endunless
         </x-slot>
 
         <x-responsive-table

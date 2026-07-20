@@ -18,6 +18,7 @@ class LinkedAccount extends Model
     public $casts = [
         'access_token' => 'encrypted',
         'closed_at' => 'datetime',
+        'is_demo' => 'boolean',
     ];
 
     /**
