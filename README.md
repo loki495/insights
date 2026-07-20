@@ -171,6 +171,10 @@ rest of the suite doesn't:
 - Playwright's Chromium browser: `npm install && npx playwright install --with-deps chromium`
   (also already baked into the Docker image; bare-metal needs it run once manually).
 
+If you'd rather skip that setup, `composer test:unit` runs everything except `tests/Browser/`;
+`composer test:browser` runs just the browser suite on its own. `composer test` (and CI) always
+runs both.
+
 ## Notes
 
 This project is actively evolving; some routes and UI components may still change.
