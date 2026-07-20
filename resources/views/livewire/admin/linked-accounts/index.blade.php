@@ -212,51 +212,77 @@ new class extends Component
         </div>
     </x-page-wrapper>
 
-<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-
 @script
 <script type="text/javascript">
+    // A plain top-level <script src="..."> tag only gets executed by the browser's HTML parser
+    // on a genuine hard page load — Livewire's wire:navigate morph inserts this markup via DOM
+    // patching instead, which browsers never execute script tags through, leaving `Plaid`
+    // permanently undefined for anyone who reaches this page via a soft navigation. Loading it
+    // dynamically here, inside the surrounding Blade block Livewire DOES re-run on every mount
+    // regardless of navigation type, makes it work the same way whether this page was
+    // hard-loaded or soft-navigated to. Confirmed via a real browser test hitting both paths
+    // (tests/Browser/PlaidLinkPopupTest.php) — without this, the wire:navigate path threw
+    // "Plaid is not defined" 100% of the time, hard-load never did.
+    function loadPlaidScript() {
+        if (window.Plaid) {
+            return Promise.resolve();
+        }
+        if (!window.__plaidScriptPromise) {
+            window.__plaidScriptPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.plaid.com/link/v2/stable/link-initialize.js';
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Failed to load the Plaid Link script.'));
+                document.head.appendChild(script);
+            });
+        }
+
+        return window.__plaidScriptPromise;
+    }
+
     Livewire.on('triggerPlaid', (event) => {
-        var handler = Plaid.create({
-            // Create a new link_token to initialize Link
-            token: event.link_token,
-            onLoad: function() {
-                // Optional, called when Link loads
-            },
-            onSuccess: function(public_token, metadata) {
-                // Send the public_token to your app server.
-                // The metadata object contains info about the institution the
-                // user selected and the account ID or IDs, if the
-                // Account Select view is enabled.
-                Livewire.dispatch('exchangePublicToken', {
-                    public_token: public_token,
-                });
-            },
-            onExit: function(err, metadata) {
-                // The user exited the Link flow.
-                if (err != null) {
-                    // The user encountered a Plaid API error prior to exiting.
-                    console.log(err, metadata);
+        loadPlaidScript().then(() => {
+            var handler = Plaid.create({
+                // Create a new link_token to initialize Link
+                token: event.link_token,
+                onLoad: function() {
+                    // Optional, called when Link loads
+                },
+                onSuccess: function(public_token, metadata) {
+                    // Send the public_token to your app server.
+                    // The metadata object contains info about the institution the
+                    // user selected and the account ID or IDs, if the
+                    // Account Select view is enabled.
+                    Livewire.dispatch('exchangePublicToken', {
+                        public_token: public_token,
+                    });
+                },
+                onExit: function(err, metadata) {
+                    // The user exited the Link flow.
+                    if (err != null) {
+                        // The user encountered a Plaid API error prior to exiting.
+                        console.log(err, metadata);
+                    }
+                      // metadata contains information about the institution
+                      // that the user selected and the most recent API request IDs.
+                      // Storing this information can be helpful for support.
+                },
+                onEvent: function(eventName, metadata) {
+                    console.log(eventName, metadata);
+                    // Optionally capture Link flow events, streamed through
+                    // this callback as your users connect an Item to Plaid.
+                    // For example:
+                    // eventName = "TRANSITION_VIEW"
+                    // metadata  = {
+                    //   link_session_id: "123-abc",
+                    //   mfa_type:        "questions",
+                    //   timestamp:       "2017-09-14T14:42:19.350Z",
+                    //   view_name:       "MFA",
+                    // }
                 }
-                  // metadata contains information about the institution
-                  // that the user selected and the most recent API request IDs.
-                  // Storing this information can be helpful for support.
-            },
-            onEvent: function(eventName, metadata) {
-                console.log(eventName, metadata);
-                // Optionally capture Link flow events, streamed through
-                // this callback as your users connect an Item to Plaid.
-                // For example:
-                // eventName = "TRANSITION_VIEW"
-                // metadata  = {
-                //   link_session_id: "123-abc",
-                //   mfa_type:        "questions",
-                //   timestamp:       "2017-09-14T14:42:19.350Z",
-                //   view_name:       "MFA",
-                // }
-            }
+            });
+            handler.open();
         });
-        handler.open();
     });
 </script>
 @endscript
