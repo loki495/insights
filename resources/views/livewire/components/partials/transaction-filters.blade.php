@@ -91,6 +91,7 @@
             </button>
 
             <div
+                id="accounts-filter-dropdown"
                 x-show="accountsOpen"
                 x-cloak
                 class="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 shadow-lg p-2 flex flex-col gap-1"
