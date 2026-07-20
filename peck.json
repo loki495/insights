@@ -21,7 +21,9 @@
             "nul",
             "unpair",
             "idor",
-            "uncategorized"
+            "uncategorized",
+            "dockerfile",
+            "entrypoint"
         ],
         "paths": []
     }

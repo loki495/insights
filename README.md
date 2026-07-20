@@ -55,13 +55,21 @@ not built yet.
   formatting)
 - Composer 2.x
 - Node.js 20 or newer (Tailwind's native CSS engine requires it) and npm
-- A free [Plaid developer account](https://dashboard.plaid.com/signup) — the sandbox environment
-  is enough for local development; you don't need a production Plaid agreement to run this locally
+- A Plaid account, **only if you want to link real bank accounts** — see
+  [Linking a bank account](#linking-a-bank-account) below for the sandbox-vs-production
+  distinction. Not needed at all if you're just exploring — see
+  [Exploring without a Plaid account](#exploring-without-a-plaid-account).
 
 ## Getting Started
 
+The steps below are for running the app **locally** (development, or just trying it out) — hot
+reloading, debug output, the works. If you want to actually self-host this for real use, see
+[Production deployment](#production-deployment) instead; it starts from the same repo but a
+different, hardened setup.
+
 Pick whichever setup matches how you like to work. All three end up in the same place: a
-`.env` with your Plaid sandbox keys, a migrated database, and the app running locally.
+migrated database and the app running locally — Plaid credentials in `.env` are only needed once
+you're ready to actually link an account (see below).
 
 ### Option A — Docker (recommended)
 
@@ -69,9 +77,6 @@ Pick whichever setup matches how you like to work. All three end up in the same 
 git clone <this-repo> insights && cd insights
 cp .env.example .env
 ```
-
-Edit `.env` and fill in `PLAID_CLIENT_ID` and `PLAID_API_KEY_SANDBOX` from your
-[Plaid dashboard](https://dashboard.plaid.com/) (leave `PLAID_ENVIRONMENT=sandbox`).
 
 The base `docker-compose.yml` routes through a Traefik reverse proxy on a custom local domain —
 one supported option, not a requirement. If you don't already run Traefik, get direct port access
@@ -85,25 +90,21 @@ Then:
 
 ```bash
 docker compose up -d
-docker exec insights-app composer install
-docker exec insights-app php artisan key:generate
-docker exec insights-app touch database/database.sqlite
-docker exec insights-app php artisan migrate
-docker exec insights-vite npm install
-# docker exec defaults to root, but Apache inside the container runs as
-# www-data — fix ownership now so the app can write its own cache/log files:
-docker exec insights-app chown -R www-data:www-data storage bootstrap/cache
+docker exec -u www-data -e HOME=/tmp insights-app composer install
+docker exec -u www-data insights-app php artisan key:generate
+docker exec -u www-data insights-app touch database/database.sqlite
+docker exec -u www-data insights-app php artisan migrate
 ```
 
-The app is now at **http://localhost:8000**. The `vite` container runs `npm run dev`
-automatically (see its `command:` in `docker-compose.yml`), giving you hot-reloading CSS/JS —
-just restart it (`docker compose restart vite`) after the `npm install` above so it picks up the
-newly-installed dependencies.
+The app is now at **http://localhost:8000**. The `vite` container installs its own dependencies
+and runs `npm run dev` automatically (see its `command:` in `docker-compose.yml`), giving you
+hot-reloading CSS/JS with no separate step.
 
-> **Troubleshooting:** if you ever see a `tempnam(): file created in the system's temporary
-> directory` error after running an `artisan`/`composer` command via `docker exec` (which defaults
-> to root), re-run the `chown` command above — it means a command left root-owned files that
-> `www-data` can no longer write to.
+Every command above runs as `-u www-data` (Apache's own user inside the container, remapped to
+match your host user — see `docker/setup-dev-container.sh`) instead of the `docker exec` default
+of root, so nothing ends up root-owned on disk where `www-data` can't write to it later. `-e
+HOME=/tmp` is only needed for `composer` (it wants a writable home directory for its cache;
+`www-data` doesn't have one by default).
 
 ### Option B — Docker with your own reverse proxy (Traefik, nginx, etc.)
 
@@ -126,8 +127,7 @@ touch database/database.sqlite
 php artisan migrate
 ```
 
-Fill in your Plaid sandbox credentials in `.env` as described above, then start everything
-(web server, queue worker, log tailer, and Vite) with:
+Start everything (web server, queue worker, log tailer, and Vite) with:
 
 ```bash
 composer run dev
@@ -135,24 +135,91 @@ composer run dev
 
 The app will be at whatever `php artisan serve` reports (default `http://localhost:8000`).
 
-## Linking a bank account
+## Production deployment
 
-Once the app is running, register a user, sign in, and use **Linked Accounts** to start Plaid
-Link. In sandbox mode, use any of
-[Plaid's test credentials](https://plaid.com/docs/sandbox/test-credentials/) (e.g. username
-`user_good`, password `pass_good`) to simulate a real institution with fake accounts and
-transactions.
+Everything in [Getting Started](#getting-started) above is a **development** setup — hot-reloading
+Vite, debug output on, `docker-compose.yml`'s image built from `docker/setup-dev-container.sh`
+(SSH server, Node/Playwright for browser tests, `opcache` disabled). None of that belongs in a
+real deployment. Use this instead.
+
+### Docker
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`: at minimum set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` to your real
+domain, and your Plaid credentials (see [Linking a bank account](#linking-a-bank-account)). Leave
+`APP_KEY` blank for now. Optionally set `LOG_CHANNEL=stderr` so application errors show up in
+`docker logs` alongside PHP's own error log (already routed to stderr). Optionally set
+`APP_PORT=9000` (or similar) to change the port the container publishes — defaults to 8000.
+
+```bash
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --show
+# paste the output into .env's APP_KEY=, then:
+docker compose -f docker-compose.prod.yml up -d
+```
+
+`docker-compose.prod.yml` builds a separate, lean image (`docker/Dockerfile.prod`) — no Node, no
+SSH, no dev-only PHP extensions, `npm run build`'s compiled assets baked in at build time instead
+of a live Vite dev server, `opcache` on. Starting it runs pending migrations automatically and
+persists the database in a named volume (`insights-database`), so `docker compose down` /
+`docker compose up -d` again (or rebuilding the image for an update) doesn't lose data.
+
+It also starts a second `scheduler` service running `php artisan schedule:work` — required for
+this app's scheduled Plaid sync (`transactions:pull`, every 10 days — see `routes/console.php`) to
+actually fire on its own. Without it, syncing only happens when you manually click "Pull Data".
+
+**Never re-run `key:generate` against a database that already has data** — `linked_accounts.access_token`
+is encrypted with `APP_KEY`; rotating it makes every existing linked account's stored token
+permanently unreadable. Generate it once, before the first `up -d`, and keep it.
+
+### Bare metal
+
+```bash
+git clone <this-repo> insights && cd insights
+cp .env.example .env
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
+```
+
+Edit `.env` as described above (`APP_ENV=production`, `APP_DEBUG=false`, real `APP_URL`, Plaid
+credentials), generate a real key once (`php artisan key:generate`, only on a database with no
+data in it yet), then:
+
+```bash
+touch database/database.sqlite   # first deploy only, if using the default sqlite driver
+php artisan migrate --force
+```
+
+This app doesn't prescribe a specific web server or process supervisor — deploying a Laravel app
+behind nginx/Apache + php-fpm (or Apache + mod_php) is well-trodden, standard ground; see
+[Laravel's own deployment docs](https://laravel.com/docs/deployment) if you're new to it. Two
+things specific to this app, though:
+
+- Point your web server's document root at `public/`, same as any Laravel app.
+- Register the scheduler: this app has no queue jobs (nothing implements `ShouldQueue`, so
+  `QUEUE_CONNECTION` is unused), but it does have a scheduled task. Add one cron entry:
+  ```
+  * * * * * cd /path/to/insights && php artisan schedule:run >> /dev/null 2>&1
+  ```
+  Laravel's scheduler checks internally what's actually due each minute — you don't need a
+  separate cron line per scheduled command.
 
 ## Exploring without a Plaid account
 
-Don't want to set up Plaid sandbox credentials just to look around? Seed a demo dataset instead —
-a "Demo Bank" institution with checking/savings/credit-card accounts, ~6 months of randomized but
+Want to look around before setting up anything with Plaid? Seed a demo dataset instead — a "Demo
+Bank" institution with checking/savings/credit-card accounts, ~6 months of randomized but
 realistic transactions (paychecks, groceries, rent, a couple of paired transfers), and some
 transactions left deliberately uncategorized:
 
 ```bash
 docker exec -u www-data insights-app php artisan db:seed --class=DemoDataSeeder
-# or, bare metal:
+# production Docker (no fixed container name — use the compose service name instead):
+docker compose -f docker-compose.prod.yml exec app php artisan db:seed --class=DemoDataSeeder --force
+# bare metal:
 php artisan db:seed --class=DemoDataSeeder
 ```
 
@@ -160,37 +227,31 @@ This creates (or reuses) a `test@example.com` / `password` login. It's not part 
 `db:seed` run, so it never runs against a real user's database by accident. The demo institution's
 "Pull Data" button is hidden — there's no real Plaid item behind it, so pulling would just fail.
 
-## Development
+## Linking a bank account
 
-```bash
-# Run the full test suite
-php artisan test
-# or, inside Docker (-u www-data avoids leaving root-owned cache files behind):
-docker exec -u www-data insights-app php artisan test
+Plaid gates API access behind its own developer account, separate from this app entirely — there's
+no shared/built-in Plaid key, so every deployment of this app needs its own credentials from
+[the Plaid dashboard](https://dashboard.plaid.com/). Which kind you need depends on what you're
+doing:
 
-# Code style (auto-fixes)
-vendor/bin/pint
+- **Linking your own real accounts** (actually using this app for yourself): you need Plaid
+  **production** access — a free sandbox signup alone isn't enough. Plaid requires applying for
+  production access (describing your use case; possibly other requirements depending on Plaid's
+  current terms) before it'll return real account data. Once approved, set `PLAID_CLIENT_ID`,
+  `PLAID_API_KEY_PRODUCTION`, and `PLAID_ENVIRONMENT=production` in `.env`.
+- **Trying out the Plaid Link flow itself, or developing/testing Plaid-related code**: a free
+  [Plaid sandbox account](https://dashboard.plaid.com/signup) is instant and enough — it returns
+  fake institutions/transactions, not real bank data. Set `PLAID_CLIENT_ID` and
+  `PLAID_API_KEY_SANDBOX` in `.env`, leave `PLAID_ENVIRONMENT=sandbox`.
 
-# Static analysis
-vendor/bin/phpstan analyse
+Either way, once your `.env` has working credentials: register a user, sign in, and use **Linked
+Accounts** to start Plaid Link. In sandbox mode, use any of
+[Plaid's test credentials](https://plaid.com/docs/sandbox/test-credentials/) (e.g. username
+`user_good`, password `pass_good`) to simulate a real institution.
 
-# All of the above plus Rector's dry-run and a typo check
-composer test
-```
+## Contributing
 
-The test suite includes a small [Pest browser test](https://pestphp.com/docs/browser-testing) suite
-(`tests/Browser/`, real Chromium via Playwright — used for things a server-rendered Feature test
-can't see, like JS console errors) alongside the usual Feature/Unit tests. It needs two things the
-rest of the suite doesn't:
-
-- The `sockets` and `pcntl` PHP extensions (bare-metal only — already included in the Docker image
-  via `docker/setup-dev-container.sh`).
-- Playwright's Chromium browser: `npm install && npx playwright install --with-deps chromium`
-  (also already baked into the Docker image; bare-metal needs it run once manually).
-
-If you'd rather skip that setup, `composer test:unit` runs everything except `tests/Browser/`;
-`composer test:browser` runs just the browser suite on its own. `composer test` (and CI) always
-runs both.
+Want to run the test suite, work on a fix, or open a PR? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Notes
 
