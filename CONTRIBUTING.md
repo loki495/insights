@@ -19,8 +19,14 @@ composer test
 docker exec insights-app composer test
 ```
 
-This runs, in order: Rector (dry-run), Pint, `peck` (typo check), PHPStan, and Pest with coverage.
-All of it needs to pass. A few notes on what "passing" means here:
+This runs, in order: Rector (dry-run), Pint, `peck` (typo check), PHPStan, the PHP test suite
+(`composer test:unit` — Feature + Unit, with coverage), and the browser test suite
+(`composer test:browser` — Pest's Playwright-based browser tests, see
+[Getting Started](README.md#getting-started) for the Node/Playwright setup this needs). All of it
+needs to pass, and CI runs the same `composer test` command. If you're only working on backend PHP
+and don't want to set up the browser-testing toolchain locally, `composer test:unit` alone covers
+everything except `tests/Browser/` — just know CI will still run the browser suite against your PR.
+A few notes on what "passing" means here:
 
 - **PHPStan** runs at level 6 with a type-coverage floor (not the default 99%) — see the comments
   in `phpstan.neon.dist` for why. Raising these thresholds is welcome; lowering them isn't.
