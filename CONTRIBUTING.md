@@ -7,7 +7,9 @@ README's Status section).
 ## Getting set up
 
 See the README's [Getting Started](README.md#getting-started) section for Docker/bare-metal setup
-instructions.
+instructions. You don't need real Plaid credentials to start contributing — see
+[Exploring without a Plaid account](README.md#exploring-without-a-plaid-account) for a seeded demo
+dataset (`php artisan db:seed --class=DemoDataSeeder`).
 
 ## Before opening a PR
 

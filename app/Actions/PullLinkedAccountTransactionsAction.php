@@ -11,7 +11,7 @@ final class PullLinkedAccountTransactionsAction
 {
     public static function run(LinkedAccount $linkedAccount, ?string $cursor = null, bool $force = false): void
     {
-        if ($linkedAccount->isClosed()) {
+        if ($linkedAccount->isClosed() || $linkedAccount->is_demo) {
             return;
         }
 
