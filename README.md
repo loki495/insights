@@ -73,9 +73,9 @@ cp .env.example .env
 Edit `.env` and fill in `PLAID_CLIENT_ID` and `PLAID_API_KEY_SANDBOX` from your
 [Plaid dashboard](https://dashboard.plaid.com/) (leave `PLAID_ENVIRONMENT=sandbox`).
 
-If you don't already run a Traefik reverse proxy (the base `docker-compose.yml` routes through one
-on a custom local domain — that's this project's own author's personal setup, not a requirement),
-get direct port access instead:
+The base `docker-compose.yml` routes through a Traefik reverse proxy on a custom local domain —
+one supported option, not a requirement. If you don't already run Traefik, get direct port access
+instead:
 
 ```bash
 cp docker-compose.override.yml.example docker-compose.override.yml
