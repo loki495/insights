@@ -1,0 +1,53 @@
+# ---- Stage 1: install vendor/ and compile frontend assets ----
+# One stage (not split further) because resources/css/app.css imports
+# vendor/livewire/flux/dist/flux.css and Tailwind scans vendor/livewire/flux/stubs for class
+# usage — the frontend build genuinely depends on composer's output, not just on Node.
+FROM php:8.4-apache AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git unzip curl ca-certificates \
+        libzip-dev libicu-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp \
+    && docker-php-ext-install gd zip intl pdo_mysql \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && rm composer-setup.php \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+COPY . .
+# This project's composer.json has no post-autoload-dump hook, so package discovery isn't
+# regenerated automatically — do it explicitly, and clear any bootstrap/cache/*.php that leaked
+# in from the build context despite .dockerignore, so this always reflects exactly what --no-dev
+# actually installed (a stale dev-generated cache referencing a require-dev-only package, like
+# laravel-debugbar, is a hard boot-time crash under --no-dev, not just a warning).
+RUN rm -f bootstrap/cache/*.php \
+    && composer install --no-dev --optimize-autoloader --no-interaction \
+    && php artisan package:discover --ansi \
+    && npm ci \
+    && npm run build
+
+# ---- Stage 2: lean runtime image — no Node, no dev/test-only PHP extensions, no build tools ----
+FROM php:8.4-apache
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libzip-dev libicu-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp \
+    && docker-php-ext-install gd zip intl pdo_mysql \
+    && a2enmod rewrite headers \
+    && sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY docker/prod.ini /usr/local/etc/php/conf.d/prod.ini
+COPY docker/entrypoint-prod.sh /usr/local/bin/entrypoint-prod.sh
+RUN chmod +x /usr/local/bin/entrypoint-prod.sh
+
+WORKDIR /var/www/html
+COPY --from=build --chown=www-data:www-data /var/www/html /var/www/html
+RUN rm -rf node_modules resources/js resources/css \
+    && chmod -R 775 storage bootstrap/cache
+
+ENTRYPOINT ["entrypoint-prod.sh"]
+CMD ["apache2-foreground"]

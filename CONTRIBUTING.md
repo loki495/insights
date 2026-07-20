@@ -9,7 +9,11 @@ README's Status section).
 See the README's [Getting Started](README.md#getting-started) section for Docker/bare-metal setup
 instructions. You don't need real Plaid credentials to start contributing — see
 [Exploring without a Plaid account](README.md#exploring-without-a-plaid-account) for a seeded demo
-dataset (`php artisan db:seed --class=DemoDataSeeder`).
+dataset (`php artisan db:seed --class=DemoDataSeeder`). If you're specifically working on
+Plaid-integration code and need to exercise the real Link flow, a free
+[Plaid sandbox account](https://dashboard.plaid.com/signup) (fake institutions/transactions, not
+real bank data) is enough — see [Linking a bank account](README.md#linking-a-bank-account) for the
+sandbox-vs-production distinction. You do not need Plaid production access to contribute.
 
 ## Before opening a PR
 
@@ -18,17 +22,16 @@ Run the full check suite:
 ```bash
 composer test
 # or, inside Docker:
-docker exec insights-app composer test
+docker exec -u www-data -e HOME=/tmp insights-app composer test
 ```
 
-This runs, in order: Rector (dry-run), Pint, `peck` (typo check), PHPStan, the PHP test suite
-(`composer test:unit` — Feature + Unit, with coverage), and the browser test suite
-(`composer test:browser` — Pest's Playwright-based browser tests, see
-[Getting Started](README.md#getting-started) for the Node/Playwright setup this needs). All of it
-needs to pass, and CI runs the same `composer test` command. If you're only working on backend PHP
-and don't want to set up the browser-testing toolchain locally, `composer test:unit` alone covers
-everything except `tests/Browser/` — just know CI will still run the browser suite against your PR.
-A few notes on what "passing" means here:
+This runs, in order: Rector (dry-run), Pint, `peck` (typo check), PHPStan, and the test suite
+(`composer test:unit` for Feature + Unit with coverage, `composer test:browser` for the
+Playwright-based browser tests — see below). All of it needs to pass, and CI runs the same
+`composer test` command. If you're only working on backend PHP and don't want to set up the
+browser-testing toolchain locally, `composer test:unit` alone covers everything except
+`tests/Browser/` — just know CI will still run the browser suite against your PR. A few notes on
+what "passing" means here:
 
 - **PHPStan** runs at level 6 with a type-coverage floor (not the default 99%) — see the comments
   in `phpstan.neon.dist` for why. Raising these thresholds is welcome; lowering them isn't.
@@ -40,6 +43,24 @@ A few notes on what "passing" means here:
 
 If Rector suggests a change you disagree with, say so in the PR rather than silently reverting it
 — sometimes its suggestion is wrong for the context.
+
+You can also run pieces individually:
+
+```bash
+php artisan test                 # or: docker exec -u www-data insights-app php artisan test
+vendor/bin/pint                  # code style (auto-fixes)
+vendor/bin/phpstan analyse       # static analysis
+```
+
+The test suite includes a small [Pest browser test](https://pestphp.com/docs/browser-testing)
+suite (`tests/Browser/`, real Chromium via Playwright — used for things a server-rendered Feature
+test can't see, like JS console errors) alongside the usual Feature/Unit tests. It needs two things
+the rest of the suite doesn't:
+
+- The `sockets` and `pcntl` PHP extensions (bare-metal only — already included in the Docker image
+  via `docker/setup-dev-container.sh`).
+- Playwright's Chromium browser: `npm install && npx playwright install --with-deps chromium`
+  (also already baked into the Docker image; bare-metal needs it run once manually).
 
 ## Code style
 

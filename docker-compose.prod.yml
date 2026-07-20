@@ -1,0 +1,33 @@
+name: insights
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${APP_PORT:-8000}:80"
+    volumes:
+      - insights-database:/var/www/html/database
+
+  # Runs the app's scheduled tasks (currently just `transactions:pull`, every 10 days — see
+  # routes/console.php) — without this, scheduled Plaid syncs never fire; you'd be limited to
+  # manually clicking "Pull Data". No queue worker service: this app has no queued jobs at all
+  # (nothing implements ShouldQueue), so QUEUE_CONNECTION is unused in practice.
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    entrypoint: []
+    command: php artisan schedule:work
+    volumes:
+      - insights-database:/var/www/html/database
+
+volumes:
+  insights-database: {}

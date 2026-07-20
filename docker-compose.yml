@@ -32,7 +32,10 @@ services:
     container_name: insights-vite
     restart: unless-stopped
     working_dir: /var/www/html
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    # Installs dependencies on every start rather than requiring a separate manual `npm install`
+    # step — cheap when node_modules is already current (npm no-ops), and picks up a fresh
+    # package.json automatically after a `docker compose restart vite`.
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
     volumes:
       - ./:/var/www/html
     labels:
