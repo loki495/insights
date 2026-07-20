@@ -14,12 +14,12 @@ use App\Services\Plaid\PlaidService;
  * rather than just trusting the fix stays in place.
  *
  * Doesn't engage with the real Plaid Link flow (no real credentials needed, nothing to complete)
- * — getLinkToken() is faked with a syntactically-plausible but bogus token. Confirmed empirically
- * first (via a live MCP-driven browser session) that Plaid's real, CDN-loaded SDK still renders
- * the #plaid-link-iframe-1 iframe shell even with a bogus token — it only rejects the token
- * asynchronously, server-side, well after the iframe already exists — so asserting on that iframe
- * is a reliable, hermetic signal that our own click → dispatch('triggerPlaid') → Plaid.create().open()
- * wiring actually fired, without depending on real Plaid credentials being present in CI.
+ * — getLinkToken() is faked with a syntactically-plausible but bogus token. Plaid's real,
+ * CDN-loaded SDK still renders the #plaid-link-iframe-1 iframe shell even with a bogus token — it
+ * only rejects the token asynchronously, server-side, well after the iframe already exists — so
+ * asserting on that iframe is a reliable, hermetic signal that our own
+ * click → dispatch('triggerPlaid') → Plaid.create().open() wiring actually fired, without
+ * depending on real Plaid credentials being present in CI.
  */
 function fakePlaidLinkToken(): void
 {
