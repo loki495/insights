@@ -30,6 +30,7 @@ services:
   vite:
     image: node:20
     container_name: insights-vite
+    restart: unless-stopped
     working_dir: /var/www/html
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
     volumes:
