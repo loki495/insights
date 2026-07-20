@@ -61,6 +61,8 @@ final class PullLinkedAccountTransactionsAction
                     fn ($query) => $query->where('user_id', $linkedAccount->user_id)
                 )
             );
+
+            $linkedAccount->update(['last_pulled_at' => now()]);
         }
     }
 }

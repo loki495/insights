@@ -168,8 +168,11 @@ persists the database in a named volume (`insights-database`), so `docker compos
 `docker compose up -d` again (or rebuilding the image for an update) doesn't lose data.
 
 It also starts a second `scheduler` service running `php artisan schedule:work` — required for
-this app's scheduled Plaid sync (`transactions:pull`, every 10 days — see `routes/console.php`) to
-actually fire on its own. Without it, syncing only happens when you manually click "Pull Data".
+this app's scheduled Plaid sync (`transactions:pull`, checked hourly — see `routes/console.php`)
+to actually fire on its own. Without it, syncing only happens when you manually click "Pull Data".
+Auto-pull itself is a per-institution setting on the Linked Institutions page (off by default for
+newly-linked institutions, with a configurable "every N hours/days" interval) — the hourly schedule
+just checks which institutions are actually due.
 
 **Never re-run `key:generate` against a database that already has data** — `linked_accounts.access_token`
 is encrypted with `APP_KEY`; rotating it makes every existing linked account's stored token
