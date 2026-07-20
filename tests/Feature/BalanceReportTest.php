@@ -97,3 +97,44 @@ test('renders a trend chart once tracked accounts have transaction history', fun
 
     $test->assertDontSee('Nothing to chart for the current date range.');
 });
+
+test('account_ids empty shows totals across every tracked account', function (): void {
+    $user = User::factory()->create();
+    makeAccountForBalanceReportTest($user, 'depository', ['name' => 'Checking', 'current_balance' => 1000]);
+    makeAccountForBalanceReportTest($user, 'depository', ['name' => 'Savings', 'current_balance' => 500]);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.balance.index');
+
+    $test->assertViewHas('assetsTotal', 1500.0);
+});
+
+test('account_ids filters the totals down to just the selected accounts', function (): void {
+    $user = User::factory()->create();
+    $checking = makeAccountForBalanceReportTest($user, 'depository', ['name' => 'Checking', 'current_balance' => 1000]);
+    makeAccountForBalanceReportTest($user, 'depository', ['name' => 'Savings', 'current_balance' => 500]);
+
+    $this->actingAs($user);
+
+    $test = Livewire::test('admin.reports.balance.index')
+        ->set('account_ids', [$checking->id]);
+
+    $test->assertViewHas('assetsTotal', 1000.0);
+    $test->assertViewHas('assetAccounts', fn ($accounts): bool => $accounts->pluck('id')->all() === [$checking->id]);
+});
+
+test('account_ids is intersected against the user\'s own tracked accounts (IDOR check)', function (): void {
+    $owner = User::factory()->create();
+    $ownAccount = makeAccountForBalanceReportTest($owner, 'depository', ['name' => 'Mine', 'current_balance' => 1000]);
+
+    $otherUser = User::factory()->create();
+    $otherAccount = makeAccountForBalanceReportTest($otherUser, 'depository', ['name' => 'Not Mine', 'current_balance' => 5000]);
+
+    $this->actingAs($owner);
+
+    $test = Livewire::test('admin.reports.balance.index')
+        ->set('account_ids', [$ownAccount->id, $otherAccount->id]);
+
+    $test->assertViewHas('assetsTotal', 1000.0);
+});
