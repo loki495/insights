@@ -185,7 +185,7 @@ new class extends Component
 
     public function updatedCategoryId($value = null): void
     {
-        $this->original_category = OriginalCategory::find($value);
+        $this->category = Category::find($value);
         $this->dispatch('categoryIdChanged', categoryId: $value);
     }
 
