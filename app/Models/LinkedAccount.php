@@ -15,6 +15,10 @@ class LinkedAccount extends Model
     /** @use HasFactory<LinkedAccountFactory> */
     use HasFactory;
 
+    protected $hidden = [
+        'access_token',
+    ];
+
     public $casts = [
         'access_token' => 'encrypted',
         'closed_at' => 'datetime',

@@ -105,7 +105,15 @@ new class extends Component
 
     public function updateLinkedAccount(): void
     {
-        $this->linkedAccounts = auth()->user()->linkedAccounts->toArray();
+        $this->linkedAccounts = auth()->user()->linkedAccounts->map(fn (LinkedAccount $linkedAccount): array => [
+            'id' => $linkedAccount->id,
+            'provider_name' => $linkedAccount->provider_name,
+            'closed_at' => $linkedAccount->closed_at,
+            'auto_pull_enabled' => $linkedAccount->auto_pull_enabled,
+            'auto_pull_interval_value' => $linkedAccount->auto_pull_interval_value,
+            'auto_pull_interval_unit' => $linkedAccount->auto_pull_interval_unit,
+            'last_pulled_at' => $linkedAccount->last_pulled_at,
+        ])->toArray();
     }
 
     public function close(LinkedAccount $linkedAccount): void
