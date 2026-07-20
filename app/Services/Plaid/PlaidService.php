@@ -13,7 +13,6 @@ use App\Services\Curl\API;
  * @method static array{link_token: string} getLinkToken(array<string, mixed> $data)
  * @method static array{item_id: string, access_token: string} exchangePublicToken(array{public_token: string} $data)
  * @method static array{status: array<string, mixed>, page: array{name: string}} getAPIStatus(array<string, mixed> $data = [])
- * @method static array<string, mixed> getLiabilities(array{access_token: string} $data)
  */
 class PlaidService extends API
 {
