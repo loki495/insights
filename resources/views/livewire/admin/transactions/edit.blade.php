@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Volt\Component;
 
@@ -77,7 +78,7 @@ new class extends Component
     }
 
     #[Computed]
-    public function pairCandidates(): \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Collection
+    public function pairCandidates(): Collection|Illuminate\Database\Eloquent\Collection
     {
         if (! $this->transaction_id || $this->type !== 'transfer' || $this->transfer_pair_id || trim($this->pair_search) === '') {
             return collect();
@@ -116,10 +117,17 @@ new class extends Component
             $this->authorize('update', $transaction);
         }
 
-        if ($this->account_id) {
-            $account = Account::findOrFail($this->account_id);
-            $this->authorize('update', $account);
+        // transactions.account_id is a required (non-nullable) foreign key — the Account select
+        // above is `clearable`, so this can genuinely be left empty. Catch it here with a normal
+        // validation error instead of hitting the DB's NOT NULL constraint and throwing a 500.
+        if (! $this->account_id) {
+            $this->addError('account_id', 'Please select an account.');
+
+            return;
         }
+
+        $account = Account::findOrFail($this->account_id);
+        $this->authorize('update', $account);
 
         $original = [
             'manual' => true,
@@ -140,14 +148,10 @@ new class extends Component
 
         $transaction->categories()->sync($this->categories);
 
-        if ($this->account_id) {
-            return redirect()->route('linked-accounts.accounts.show', [
-                'linkedAccount' => Account::find($this->account_id)->linked_account,
-                'account' => $this->account_id,
-            ]);
-        }
-
-        return redirect()->route('reports.category.index.index');
+        return redirect()->route('linked-accounts.accounts.show', [
+            'linkedAccount' => $account->linked_account,
+            'account' => $this->account_id,
+        ]);
     }
 }
 

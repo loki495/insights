@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Models\OriginalCategory;
 use App\Services\Plaid\PlaidService;
-use Carbon\Carbon;
 use Illuminate\Support\Number;
 
 if (! function_exists('plaid')) {
@@ -31,11 +30,6 @@ if (! function_exists('plaid')) {
         $darkColor = $amount < 0 ? 'red-400' : 'white';
 
         return '<span class="text-'.$color.' dark:text-'.$darkColor.'">'.$formatted.'</span>';
-    }
-
-    function carbon(DateTimeInterface|string|int|null $date = 'now'): Carbon
-    {
-        return Carbon::parse($date);
     }
 
     function htmlQuotes(string $string): string
