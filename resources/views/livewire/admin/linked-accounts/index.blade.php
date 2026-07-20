@@ -3,6 +3,7 @@
 use App\Models\LinkedAccount;
 use App\Services\Plaid\PlaidService;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 
@@ -13,6 +14,13 @@ new class extends Component
     public string $environment = '';
 
     private ?PlaidService $plaid_instance = null;
+
+    // Tracks which LinkedAccount (if any) started the current Plaid Link flow, so
+    // exchangePublicToken() knows whether to update it in place ("Update Access Token") or create
+    // a new one ("Link Institution"). Locked so a tampered client payload can't redirect a
+    // legitimately-completed Link flow's token onto an arbitrary other LinkedAccount.
+    #[Locked]
+    public ?int $updating_linked_account_id = null;
 
     protected $listeners = [
         'exchangePublicToken' => '$refresh',
@@ -41,6 +49,8 @@ new class extends Component
             $this->authorize('update', $linkedAccount);
         }
 
+        $this->updating_linked_account_id = $linkedAccount?->id ?: null;
+
         $data = [
             'client_name' => 'Insights',
             'products' => ['transactions'],
@@ -53,7 +63,7 @@ new class extends Component
             ],
         ];
 
-        if ($linkedAccount->id > 0) {
+        if ($linkedAccount && $linkedAccount->id > 0) {
             $data['access_token'] = $linkedAccount->access_token;
         }
 
@@ -71,11 +81,25 @@ new class extends Component
             'public_token' => $public_token,
         ]);
 
-        auth()->user()->linkedAccounts()->create([
-            'item_id' => $result['item_id'],
-            'access_token' => $result['access_token'],
-        ])->updateInfo();
+        if ($this->updating_linked_account_id) {
+            // "Update Access Token" flow — replace the existing item's credentials in place
+            // rather than creating a duplicate LinkedAccount row (Plaid's update-mode Link flow
+            // re-authenticates the SAME item, it doesn't create a new one).
+            $linkedAccount = LinkedAccount::findOrFail($this->updating_linked_account_id);
+            $this->authorize('update', $linkedAccount);
+            $linkedAccount->update([
+                'item_id' => $result['item_id'],
+                'access_token' => $result['access_token'],
+            ]);
+            $linkedAccount->updateInfo();
+        } else {
+            auth()->user()->linkedAccounts()->create([
+                'item_id' => $result['item_id'],
+                'access_token' => $result['access_token'],
+            ])->updateInfo();
+        }
 
+        $this->updating_linked_account_id = null;
         $this->redirectRoute('linked-accounts.index');
     }
 
