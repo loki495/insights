@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\LinkedAccount;
+use App\Services\Plaid\PlaidService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
@@ -11,7 +12,7 @@ new class extends Component
 
     public string $environment = '';
 
-    private ?\App\Services\Plaid\PlaidService $plaid_instance = null;
+    private ?PlaidService $plaid_instance = null;
 
     protected $listeners = [
         'exchangePublicToken' => '$refresh',
@@ -24,10 +25,10 @@ new class extends Component
     }
 
     #[Computed]
-    private function plaid(): \App\Services\Plaid\PlaidService
+    private function plaid(): PlaidService
     {
 
-        if (!$this->plaid_instance instanceof \App\Services\Plaid\PlaidService) {
+        if (! $this->plaid_instance instanceof PlaidService) {
             $this->plaid_instance = plaid();
         }
 
@@ -96,14 +97,32 @@ new class extends Component
         $linkedAccount->update(['closed_at' => null]);
         $this->updateLinkedAccount();
     }
+
+    public function updateAutoPull(LinkedAccount $linkedAccount, bool $enabled, int $intervalValue, string $intervalUnit): void
+    {
+        $this->authorize('update', $linkedAccount);
+
+        if (! in_array($intervalUnit, ['hours', 'days'], true)) {
+            throw new InvalidArgumentException('Invalid interval unit.');
+        }
+
+        $linkedAccount->update([
+            'auto_pull_enabled' => $enabled,
+            'auto_pull_interval_value' => max(1, $intervalValue),
+            'auto_pull_interval_unit' => $intervalUnit,
+        ]);
+        $this->updateLinkedAccount();
+    }
 }
 
 ?>
     <x-page-wrapper heading="Linked Institutions" subheading="Manage your linked institutions.">
+        <div class="w-full overflow-x-auto">
         <x-table>
             <x-slot name="head">
                 <x-table.tr>
                     <x-table.th>Name</x-table.th>
+                    <x-table.th>Auto-Pull</x-table.th>
                     <x-table.th></x-table.th>
                 </x-table.tr>
             </x-slot>
@@ -115,6 +134,37 @@ new class extends Component
                             @if($linkedAccount['closed_at'])
                             <span class="text-xs text-zinc-500 dark:text-zinc-400">(closed {{ \Illuminate\Support\Carbon::parse($linkedAccount['closed_at'])->format('M j, Y') }})</span>
                             @endif
+                        </x-table.td>
+                        <x-table.td>
+                            @unless($linkedAccount['closed_at'])
+                            <div
+                                class="flex flex-col gap-1"
+                                x-data="{
+                                    enabled: {{ $linkedAccount['auto_pull_enabled'] ? 'true' : 'false' }},
+                                    value: {{ $linkedAccount['auto_pull_interval_value'] }},
+                                    unit: '{{ $linkedAccount['auto_pull_interval_unit'] }}',
+                                    save() {
+                                        $wire.updateAutoPull({{ $linkedAccount['id'] }}, this.enabled, this.value, this.unit);
+                                    },
+                                }"
+                            >
+                                <flux:field variant="inline">
+                                    <flux:checkbox x-model="enabled" @change="save()" />
+                                    <flux:label>Enabled</flux:label>
+                                </flux:field>
+                                <div class="flex items-center gap-1 text-sm" x-show="enabled" x-cloak>
+                                    <span class="text-zinc-500 dark:text-zinc-400">every</span>
+                                    <x-input type="number" min="1" x-model.number="value" @change="save()" class="w-16"></x-input>
+                                    <flux:select x-model="unit" @change="save()" class="w-24">
+                                        <flux:select.option value="hours">hours</flux:select.option>
+                                        <flux:select.option value="days">days</flux:select.option>
+                                    </flux:select>
+                                </div>
+                                @if($linkedAccount['last_pulled_at'])
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400">Last pulled {{ \Illuminate\Support\Carbon::parse($linkedAccount['last_pulled_at'])->diffForHumans() }}</span>
+                                @endif
+                            </div>
+                            @endunless
                         </x-table.td>
                         <x-table.td>
                             <div class="flex gap-2">
@@ -131,6 +181,7 @@ new class extends Component
                 @endforeach
             </x-slot>
         </x-table>
+        </div>
 
         <div class="w-full sm:w-48">
             <x-button type="primary" wire:click="linkAccount" class="w-full">Link Institution</x-button>

@@ -13,10 +13,12 @@ services:
     volumes:
       - insights-database:/var/www/html/database
 
-  # Runs the app's scheduled tasks (currently just `transactions:pull`, every 10 days — see
+  # Runs the app's scheduled tasks (currently just `transactions:pull`, hourly — see
   # routes/console.php) — without this, scheduled Plaid syncs never fire; you'd be limited to
-  # manually clicking "Pull Data". No queue worker service: this app has no queued jobs at all
-  # (nothing implements ShouldQueue), so QUEUE_CONNECTION is unused in practice.
+  # manually clicking "Pull Data". The command itself only actually pulls institutions with
+  # auto-pull enabled and due (see each institution's Auto-Pull setting on the Linked Institutions
+  # page — off by default for newly-linked institutions). No queue worker service: this app has no
+  # queued jobs at all (nothing implements ShouldQueue), so QUEUE_CONNECTION is unused in practice.
   scheduler:
     build:
       context: .

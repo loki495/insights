@@ -33,12 +33,18 @@ class PullTransactions extends Command
         $force = (bool) $this->argument('force');
 
         $linked_accounts = LinkedAccount::with('accounts')->whereNull('closed_at');
+
         if ($linked_account_id) {
+            // An explicit id is a deliberate manual/CLI invocation — not subject to the
+            // auto_pull_enabled/interval gating below, same as the UI's "Pull Data" button.
             $linked_accounts = $linked_accounts->where('id', $linked_account_id);
+        } else {
+            $linked_accounts = $linked_accounts->where('auto_pull_enabled', true);
         }
 
         $linked_accounts
             ->get()
+            ->filter(fn (LinkedAccount $linkedAccount): bool => $linked_account_id || $linkedAccount->isAutoPullDue())
             ->each(function (LinkedAccount $linkedAccount) use ($force): void {
                 PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
             });
