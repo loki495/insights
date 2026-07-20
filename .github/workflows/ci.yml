@@ -58,3 +58,96 @@ jobs:
       # with the documented workflow.
       - name: Run test suite
         run: composer test
+
+  docker-prod-smoke:
+    runs-on: ubuntu-latest
+
+    # Builds and boots the actual production image (docker/Dockerfile.prod) — separate from the
+    # `test` job's dev-container-based test suite, this is the only thing that verifies the
+    # production deployment path (README's "Production deployment" section) actually works.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build -f docker/Dockerfile.prod -t insights-prod-smoke .
+
+      - name: Prepare a throwaway production .env
+        run: |
+          cp .env.example .env
+          KEY=$(docker run --rm --entrypoint='' insights-prod-smoke php artisan key:generate --show)
+          sed -i "s|^APP_KEY=.*|APP_KEY=${KEY}|" .env
+          sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
+          sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
+
+      - name: Run the container
+        run: docker run -d --name insights-prod-smoke --env-file .env -p 8099:80 insights-prod-smoke
+
+      - name: Wait for the app to boot (sqlite auto-create + migrate happen on start)
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8099/login || true)
+            if [ "$code" = "200" ]; then
+              echo "App responded 200 after ${i} attempt(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App never responded 200" >&2
+          exit 1
+
+      - name: Confirm compiled assets are actually served
+        run: |
+          asset_path=$(docker exec insights-prod-smoke php -r "
+            \$manifest = json_decode(file_get_contents('public/build/manifest.json'), true);
+            echo '/build/' . \$manifest['resources/css/app.css']['file'];
+          ")
+          code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8099${asset_path}")
+          if [ "$code" != "200" ]; then
+            echo "Compiled asset ${asset_path} did not load (got ${code})" >&2
+            exit 1
+          fi
+          echo "Compiled asset ${asset_path} served correctly"
+
+      - name: Confirm no debug info leaks on a 404
+        run: |
+          body=$(curl -s http://localhost:8099/this-route-does-not-exist)
+          if echo "$body" | grep -qiE "whoops|stack trace|vendor/laravel/framework|Illuminate\\\\"; then
+            echo "404 response looks like it's leaking debug output:" >&2
+            echo "$body" >&2
+            exit 1
+          fi
+          echo "404 response has no debug output"
+
+      - name: Confirm opcache/display_errors are set correctly for production
+        run: |
+          info=$(docker exec insights-prod-smoke php -i)
+          echo "$info" | grep -q "^display_errors => Off => Off$" || { echo "display_errors is not Off" >&2; exit 1; }
+          echo "$info" | grep -q "^opcache.enable => On => On$" || { echo "opcache.enable is not On" >&2; exit 1; }
+          echo "$info" | grep -q "^opcache.validate_timestamps => Off => Off$" || { echo "opcache.validate_timestamps is not Off" >&2; exit 1; }
+          echo "Production PHP settings confirmed"
+
+      - name: Seed demo data
+        run: docker exec insights-prod-smoke php artisan db:seed --class=DemoDataSeeder --force
+
+      - name: Restart and confirm it comes back up cleanly (migrate --force must be idempotent)
+        run: |
+          docker restart insights-prod-smoke
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8099/login || true)
+            if [ "$code" = "200" ]; then
+              echo "App responded 200 after restart"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App never came back up after restart" >&2
+          exit 1
+
+      - name: Dump container logs
+        if: always()
+        run: docker logs insights-prod-smoke || true
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f insights-prod-smoke || true
