@@ -11,6 +11,26 @@ final class PullLinkedAccountTransactionsAction
 {
     public static function run(LinkedAccount $linkedAccount, ?string $cursor = null, bool $force = false): void
     {
+        // Only the outermost call (as opposed to a paginated continuation) should record
+        // success/failure — a later page failing shouldn't erase an earlier page's success, and
+        // "succeeded" should only mean the whole pull (all pages) finished.
+        if ($cursor === null) {
+            try {
+                self::pull($linkedAccount, null, $force);
+                $linkedAccount->update(['last_sync_failed_at' => null, 'last_sync_error' => null]);
+            } catch (\Throwable $e) {
+                $linkedAccount->update(['last_sync_failed_at' => now(), 'last_sync_error' => $e->getMessage()]);
+                throw $e;
+            }
+
+            return;
+        }
+
+        self::pull($linkedAccount, $cursor, $force);
+    }
+
+    private static function pull(LinkedAccount $linkedAccount, ?string $cursor, bool $force): void
+    {
         if ($linkedAccount->isClosed() || $linkedAccount->is_demo) {
             return;
         }
@@ -48,7 +68,7 @@ final class PullLinkedAccountTransactionsAction
         }
 
         if ($result['has_more']) {
-            self::run($linkedAccount, $result['next_cursor']);
+            self::pull($linkedAccount, $result['next_cursor'], $force);
         } else {
             ReconcileLinkedAccountTransactions::run($linkedAccount, $force);
 

@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Actions\PullLinkedAccountTransactionsAction;
 use App\Models\LinkedAccount;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class PullTransactions extends Command
 {
@@ -27,7 +28,7 @@ class PullTransactions extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): void
+    public function handle(): int
     {
         $linked_account_id = $this->argument('linked_account_id');
         $force = (bool) $this->argument('force');
@@ -42,13 +43,31 @@ class PullTransactions extends Command
             $linked_accounts = $linked_accounts->where('auto_pull_enabled', true);
         }
 
+        $failures = 0;
+
         $linked_accounts
             ->get()
             ->filter(fn (LinkedAccount $linkedAccount): bool => $linked_account_id || $linkedAccount->isAutoPullDue())
-            ->each(function (LinkedAccount $linkedAccount) use ($force): void {
-                PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
+            ->each(function (LinkedAccount $linkedAccount) use ($force, &$failures): void {
+                try {
+                    PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
+                } catch (\Throwable $e) {
+                    $failures++;
+                    Log::error('transactions:pull failed for linked account', [
+                        'linked_account_id' => $linkedAccount->id,
+                        'exception' => $e,
+                    ]);
+                }
             });
 
+        if ($failures > 0) {
+            $this->error("Transactions pulled with {$failures} institution(s) failing — see logs.");
+
+            return self::FAILURE;
+        }
+
         $this->info('Transactions pulled');
+
+        return self::SUCCESS;
     }
 }

@@ -56,7 +56,13 @@ new class extends Component
 
     public function pullData(): void
     {
-        PullLinkedAccountTransactionsAction::run($this->account->linked_account);
+        try {
+            PullLinkedAccountTransactionsAction::run($this->account->linked_account);
+        } catch (Throwable) {
+            // Failure is already recorded on the LinkedAccount (last_sync_failed_at/
+            // last_sync_error) and surfaced on the Linked Institutions page — nothing more to do
+            // here than avoid a raw exception page for what was a manual, user-initiated retry.
+        }
 
         $this->dispatch('transactions-updated');
     }

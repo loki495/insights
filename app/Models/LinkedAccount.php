@@ -25,6 +25,7 @@ class LinkedAccount extends Model
         'is_demo' => 'boolean',
         'auto_pull_enabled' => 'boolean',
         'last_pulled_at' => 'datetime',
+        'last_sync_failed_at' => 'datetime',
     ];
 
     /**

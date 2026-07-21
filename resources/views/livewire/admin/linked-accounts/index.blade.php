@@ -113,6 +113,8 @@ new class extends Component
             'auto_pull_interval_value' => $linkedAccount->auto_pull_interval_value,
             'auto_pull_interval_unit' => $linkedAccount->auto_pull_interval_unit,
             'last_pulled_at' => $linkedAccount->last_pulled_at,
+            'last_sync_failed_at' => $linkedAccount->last_sync_failed_at,
+            'last_sync_error' => $linkedAccount->last_sync_error,
         ])->toArray();
     }
 
@@ -194,6 +196,9 @@ new class extends Component
                                 </div>
                                 @if($linkedAccount['last_pulled_at'])
                                 <span class="text-xs text-zinc-500 dark:text-zinc-400">Last pulled {{ \Illuminate\Support\Carbon::parse($linkedAccount['last_pulled_at'])->diffForHumans() }}</span>
+                                @endif
+                                @if($linkedAccount['last_sync_failed_at'])
+                                <span class="text-xs text-red-600 dark:text-red-400" title="{{ $linkedAccount['last_sync_error'] }}">Last sync failed {{ \Illuminate\Support\Carbon::parse($linkedAccount['last_sync_failed_at'])->diffForHumans() }}</span>
                                 @endif
                             </div>
                             @endunless
