@@ -12,6 +12,15 @@ services:
       - "${APP_PORT:-8000}:80"
     volumes:
       - insights-database:/var/www/html/database
+    healthcheck:
+      # Only turns healthy once entrypoint-prod.sh has created the sqlite file and run
+      # `migrate --force` and Apache is actually serving requests — see the scheduler service's
+      # depends_on below for why this matters on a fresh install.
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Runs the app's scheduled tasks (currently just `transactions:pull`, hourly — see
   # routes/console.php) — without this, scheduled Plaid syncs never fire; you'd be limited to
@@ -28,6 +37,9 @@ services:
       - .env
     entrypoint: []
     command: php artisan schedule:work
+    depends_on:
+      app:
+        condition: service_healthy
     volumes:
       - insights-database:/var/www/html/database
 
