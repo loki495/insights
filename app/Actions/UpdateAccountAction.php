@@ -53,8 +53,8 @@ final class UpdateAccountAction
             'type' => $account_info['type'],
             'subtype' => $account_info['subtype'],
             'currency' => $account_info['balances']['iso_currency_code'],
-            'available_balance' => $account_info['balances']['current'],
-            'current_balance' => $account_info['balances']['available'],
+            'available_balance' => $account_info['balances']['available'],
+            'current_balance' => $account_info['balances']['current'],
             'limit' => $account_info['balances']['limit'],
         ]);
     }
