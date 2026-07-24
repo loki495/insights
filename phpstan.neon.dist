@@ -1,5 +1,6 @@
 parameters:
     level: 6
+    tmpDir: storage/phpstan-cache
     paths:
         - app
     reportUnmatchedIgnoredErrors: true

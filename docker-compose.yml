@@ -24,6 +24,10 @@ services:
         COPY package.json /tmp/package.json
         COPY docker/setup-dev-container.sh /tmp/setup.sh
         RUN chmod +x /tmp/setup.sh && /usr/bin/bash /tmp/setup.sh
+        COPY docker/entrypoint-dev.sh /usr/local/bin/entrypoint-dev.sh
+        RUN chmod +x /usr/local/bin/entrypoint-dev.sh
+        ENTRYPOINT ["entrypoint-dev.sh"]
+        CMD ["apache2-foreground"]
     networks:
       - web
 
