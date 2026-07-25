@@ -46,7 +46,12 @@ class AppServiceProvider extends ServiceProvider
     public function configureModels(): void
     {
         Model::shouldBeStrict();
-        Model::unguard();
+
+        // shouldBeStrict() above already enables this unconditionally (bundled with
+        // preventLazyLoading/preventAccessingMissingAttributes) — this narrows just this one
+        // check back to non-production, so an unexpected mass-assignment mismatch is loud
+        // feedback in dev/test but never turns into a 500 for a real user in production.
+        Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
     }
 
     public function configureUrl(): void

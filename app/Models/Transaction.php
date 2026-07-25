@@ -18,6 +18,40 @@ class Transaction extends Model
     /** @use HasFactory<TransactionFactory> */
     use HasFactory;
 
+    /**
+     * created_at/updated_at are deliberately included here, not just the "real" data columns —
+     * Plaid sync (UpdateAccountTransactionsAction) and DemoDataSeeder both mass-assign created_at
+     * to the transaction's actual bank date rather than the row-insertion time, which only works
+     * if it's fillable like any other attribute; Eloquent doesn't exempt timestamps from the
+     * mass-assignment guard just because they're normally auto-managed.
+     *
+     * Deliberately excluded: parent_id, status, running_balance, owner — real columns, but
+     * nothing in the app actually mass-assigns them today (running_balance is set via direct
+     * property assignment + save() in ReconcileLinkedAccountTransactions, not mass assignment).
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'account_id',
+        'transaction_id',
+        'transaction_type',
+        'amount',
+        'name',
+        'currency',
+        'merchant_name',
+        'merchant_entity_id',
+        'payment_channel',
+        'authorized_at',
+        'logo_url',
+        'website',
+        'original',
+        'original_category_id',
+        'type',
+        'transfer_pair_id',
+        'created_at',
+        'updated_at',
+    ];
+
     public $casts = [
         'original' => 'json',
     ];

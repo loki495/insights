@@ -41,6 +41,23 @@ it('saves a new transaction and redirects to the account it was created under', 
     expect(Transaction::where('name', 'Coffee Shop')->where('account_id', $account->id)->exists())->toBeTrue();
 });
 
+it('updates an existing transaction in place rather than creating a new one', function (): void {
+    $account = makeAccountForTransactionEditFormTest();
+    $transaction = Transaction::factory()->for($account)->create([
+        'name' => 'Original Name', 'amount' => -5, 'currency' => 'USD',
+    ]);
+
+    Livewire::test('admin.transactions.edit', ['transaction' => $transaction])
+        ->set('name', 'Updated Name')
+        ->set('amount', -99)
+        ->call('save');
+
+    expect(Transaction::count())->toBe(1);
+    $transaction->refresh();
+    expect($transaction->name)->toBe('Updated Name');
+    expect($transaction->amount)->toBe(-99);
+});
+
 it('shows a validation error instead of crashing when no account is selected', function (): void {
     makeAccountForTransactionEditFormTest();
 

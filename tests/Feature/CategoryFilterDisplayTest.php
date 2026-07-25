@@ -43,7 +43,7 @@ it('does not corrupt original_category when the Category filter changes (regress
     // An OriginalCategory that happens to share the same id as $category — the bug looked this
     // up via the wrong model class using the Category's id, so this id collision is exactly what
     // would have made the bug produce a plausible-looking (but wrong) result instead of just null.
-    OriginalCategory::create(['id' => $category->id, 'name' => 'Unrelated Plaid Category', 'plaid_id' => 'x']);
+    OriginalCategory::factory()->create(['id' => $category->id, 'name' => 'Unrelated Plaid Category', 'plaid_id' => 'x']);
 
     $test = Livewire::test('components.transactions')
         ->set('category_id', $category->id);
