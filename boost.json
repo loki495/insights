@@ -1,11 +1,9 @@
 {
     "agents": [
-        "gemini"
+        "claude_code"
     ],
-    "editors": [
-        "gemini"
-    ],
-    "guidelines": [
+    "guidelines": true,
+    "packages": [
         "livewire/volt"
     ]
 }
