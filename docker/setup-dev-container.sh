@@ -37,9 +37,13 @@ git config --system core.pager cat
 # Clean up apt lists
 rm -rf /var/lib/apt/lists/*
 
-# Fix www-data UID/GID
-groupmod -g 1000 www-data
-usermod -u 1000 www-data
+# Fix www-data UID/GID to match the host user's, so files the container writes into the bind
+# mount (storage/, bootstrap/cache/, vendor/) stay writable by the host user too, and vice versa.
+# Defaults to 1000 (most common first-Linux-user UID) when not supplied, matching prior behavior.
+host_uid="${HOST_UID:-1000}"
+host_gid="${HOST_GID:-1000}"
+groupmod -g "$host_gid" www-data
+usermod -u "$host_uid" www-data
 
 # Apache override configuration
 cat <<EOF > /etc/apache2/conf-enabled/allow-override.conf

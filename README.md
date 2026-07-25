@@ -100,11 +100,23 @@ The app is now at **http://localhost:8000**. The `vite` container installs its o
 and runs `npm run dev` automatically (see its `command:` in `docker-compose.yml`), giving you
 hot-reloading CSS/JS with no separate step.
 
-Every command above runs as `-u www-data` (Apache's own user inside the container, remapped to
-match your host user — see `docker/setup-dev-container.sh`) instead of the `docker exec` default
-of root, so nothing ends up root-owned on disk where `www-data` can't write to it later. `-e
-HOME=/tmp` is only needed for `composer` (it wants a writable home directory for its cache;
-`www-data` doesn't have one by default).
+Every command above runs as `-u www-data` (Apache's own user inside the container) instead of the
+`docker exec` default of root, so nothing ends up root-owned on disk where `www-data` can't write
+to it later. `-e HOME=/tmp` is only needed for `composer` (it wants a writable home directory for
+its cache; `www-data` doesn't have one by default).
+
+`www-data`'s UID/GID inside the container default to 1000/1000 (see
+`docker/setup-dev-container.sh`), which matches the first user on most Linux installs. If `id -u` /
+`id -g` on your host give different numbers (common on macOS, or a non-first Linux user account),
+set `HOST_UID`/`HOST_GID` in your `.env` to match before building — otherwise files the container
+writes into the bind-mounted repo (`storage/`, `vendor/`, etc.) end up owned by a UID/GID your host
+user can't write to:
+
+```bash
+echo "HOST_UID=$(id -u)" >> .env
+echo "HOST_GID=$(id -g)" >> .env
+docker compose up -d --build
+```
 
 ### Option B — Docker with your own reverse proxy (Traefik, nginx, etc.)
 
