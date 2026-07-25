@@ -2,7 +2,8 @@
 
 Thanks for taking a look at this project. It's a personal-finance app I actively use myself,
 currently looking for early feedback — expect some rough edges and unfinished features (see
-README's Status section).
+README's Status section). Participation is governed by the [Code of
+Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting set up
 
