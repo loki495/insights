@@ -10,7 +10,6 @@ final class ReconcileLinkedAccountTransactions
 {
     public static function run(LinkedAccount $linkedAccount, bool $force = false): void
     {
-        /* echo("ID\tNAME\tTYPE\tAMOUNT\tRUNNING\tNEXT\n"); */
         foreach ($linkedAccount->accounts as $account) {
             $balance = $account->current_balance;
             $transactions = $account
@@ -18,13 +17,11 @@ final class ReconcileLinkedAccountTransactions
                 ->orderByRaw('created_at desc, (amount > 0) asc, id asc')
                 ->get();
 
-            $last_day = $transactions->first()->created_at->copy();
-            foreach ($transactions as $transaction) {
-                /* if (!$transaction->created_at->isSameDay($last_day)) { */
-                /*     echo "=====================\n"; */
-                /*     $last_day = $transaction->created_at->copy(); */
-                /* } */
+            if ($transactions->isEmpty()) {
+                continue;
+            }
 
+            foreach ($transactions as $transaction) {
                 if (! $force && $transaction->running_balance === $balance) {
                     break;
                 }
@@ -33,10 +30,6 @@ final class ReconcileLinkedAccountTransactions
 
                 $balance -= $transaction->amount;
                 $balance = round($balance, 2);
-
-                $name = $transaction->name;
-                $name = substr((string) $name, 0, 30);
-                // echo("$transaction->created_at\t$name\t$transaction->transaction_type\t$transaction->amount\t$transaction->running_balance\t(next balance: $balance)\n");
             }
         }
     }
