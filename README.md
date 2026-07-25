@@ -44,14 +44,16 @@ not built yet.
 - Tailwind CSS 4
 - Chart.js
 - Plaid API
-- SQLite (default; configurable via `DB_CONNECTION`)
+- SQLite (default) or MySQL via `DB_CONNECTION` — both are exercised in CI (see
+  `.github/workflows/ci.yml`'s `test`/`test-mysql` jobs). Postgres should work (Laravel supports
+  it natively) but isn't CI-tested yet, so treat it as unverified.
 - Pest (tests), Pint (style), Larastan/PHPStan (static analysis), Rector
 
 ## Requirements
 
 - PHP 8.3 or newer, with the extensions Laravel needs by default (BCMath, Ctype, cURL, DOM,
   Fileinfo, JSON, Mbstring, OpenSSL, PCRE, PDO — plus `pdo_sqlite` for the default database, or
-  `pdo_mysql`/etc. if you point `DB_CONNECTION` elsewhere), plus `intl` (used for currency
+  `pdo_mysql` if you point `DB_CONNECTION` at MySQL instead), plus `intl` (used for currency
   formatting)
 - Composer 2.x
 - Node.js 20 or newer (Tailwind's native CSS engine requires it) and npm
