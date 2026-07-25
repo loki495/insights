@@ -42,6 +42,10 @@ new class extends Component
 
     public function save(): void
     {
+        $this->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
         if ($this->category && $this->category->exists) {
             $this->authorize('update', $this->category);
 

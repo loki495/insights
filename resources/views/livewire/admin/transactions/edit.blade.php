@@ -126,6 +126,10 @@ new class extends Component
             return;
         }
 
+        $this->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
         $account = Account::findOrFail($this->account_id);
         $this->authorize('update', $account);
 
