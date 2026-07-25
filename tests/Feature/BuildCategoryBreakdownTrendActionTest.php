@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 use App\Actions\Reports\BuildCategoryBreakdownTrendAction;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 
-function makeAccountForCategoryBreakdownTrendTest(): Account
+/**
+ * @return array{0: User, 1: Account}
+ */
+function makeAccountForCategoryBreakdownTrendTest(): array
 {
     $user = User::factory()->create();
+    test()->actingAs($user);
 
     $linkedAccount = LinkedAccount::factory()->for($user)->create([
         'item_id' => 'item_'.uniqid(),
         'access_token' => 'access_'.uniqid(),
     ]);
 
-    return Account::factory()->for($linkedAccount, 'linked_account')->create([
+    $account = Account::factory()->for($linkedAccount, 'linked_account')->create([
         'plaid_account_id' => 'plaid_'.uniqid(),
         'mask' => '0000',
         'name' => 'Account',
@@ -27,13 +30,15 @@ function makeAccountForCategoryBreakdownTrendTest(): Account
         'type' => 'depository',
         'subtype' => 'checking',
     ]);
+
+    return [$user, $account];
 }
 
 it('sums each selected category as a magnitude, per period', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
 
-    $groceries = Category::create(['name' => 'Groceries', 'color' => '#10b981']);
-    $eatingOut = Category::create(['name' => 'Eating out', 'color' => '#ef4444']);
+    $groceries = categoryFor($user, 'Groceries', color: '#10b981');
+    $eatingOut = categoryFor($user, 'Eating out', color: '#ef4444');
 
     $g1 = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -100, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
     $g1->categories()->sync([$groceries->id]);
@@ -45,6 +50,7 @@ it('sums each selected category as a magnitude, per period', function (): void {
     $g2->categories()->sync([$groceries->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-02-28'),
@@ -65,15 +71,16 @@ it('sums each selected category as a magnitude, per period', function (): void {
 });
 
 it('includes descendants of a selected parent category', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
 
-    $parent = Category::create(['name' => 'Expenses']);
-    $child = Category::create(['name' => 'Groceries', 'parent_id' => $parent->id]);
+    $parent = categoryFor($user, 'Expenses');
+    $child = categoryFor($user, 'Groceries', $parent->id);
 
     $transaction = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -75, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
     $transaction->categories()->sync([$child->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -85,15 +92,16 @@ it('includes descendants of a selected parent category', function (): void {
 });
 
 it('lets a transaction contribute to more than one selected category', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
 
-    $groceries = Category::create(['name' => 'Groceries']);
-    $household = Category::create(['name' => 'Household']);
+    $groceries = categoryFor($user, 'Groceries');
+    $household = categoryFor($user, 'Household');
 
     $transaction = Transaction::factory()->for($account)->create(['name' => 'Costco', 'amount' => -200, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
     $transaction->categories()->sync([$groceries->id, $household->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -107,13 +115,14 @@ it('lets a transaction contribute to more than one selected category', function 
 });
 
 it('excludes transfers and adjustments even if categorized', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
-    $transfers = Category::create(['name' => 'Transfers']);
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
+    $transfers = categoryFor($user, 'Transfers');
 
     $transaction = Transaction::factory()->for($account)->create(['name' => 'Card Payment', 'amount' => -500, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'transfer']);
     $transaction->categories()->sync([$transfers->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -125,9 +134,10 @@ it('excludes transfers and adjustments even if categorized', function (): void {
 });
 
 it('skips category ids that do not exist', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -139,10 +149,11 @@ it('skips category ids that do not exist', function (): void {
 });
 
 it('falls back to a default color when the category has none set', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
-    $category = Category::create(['name' => 'Misc', 'color' => null]);
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
+    $category = categoryFor($user, 'Misc', color: null);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -154,8 +165,8 @@ it('falls back to a default color when the category has none set', function (): 
 });
 
 it('groups into daily periods', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
-    $groceries = Category::create(['name' => 'Groceries']);
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
+    $groceries = categoryFor($user, 'Groceries');
 
     $t1 = Transaction::factory()->for($account)->create(['name' => 'Store', 'amount' => -50, 'currency' => 'USD', 'created_at' => '2026-01-05', 'type' => 'expense']);
     $t1->categories()->sync([$groceries->id]);
@@ -164,6 +175,7 @@ it('groups into daily periods', function (): void {
     $t2->categories()->sync([$groceries->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-05'),
         Carbon::parse('2026-01-06'),
@@ -176,8 +188,8 @@ it('groups into daily periods', function (): void {
 });
 
 it('filters by a simple search term against name or merchant_name', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
-    $groceries = Category::create(['name' => 'Groceries']);
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
+    $groceries = categoryFor($user, 'Groceries');
 
     $t1 = Transaction::factory()->for($account)->create(['name' => 'Whole Foods Market', 'merchant_name' => 'Whole Foods', 'amount' => -50, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
     $t1->categories()->sync([$groceries->id]);
@@ -185,6 +197,7 @@ it('filters by a simple search term against name or merchant_name', function ():
     $t2->categories()->sync([$groceries->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -197,8 +210,8 @@ it('filters by a simple search term against name or merchant_name', function ():
 });
 
 it('filters by an amount range regardless of sign', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
-    $groceries = Category::create(['name' => 'Groceries']);
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
+    $groceries = categoryFor($user, 'Groceries');
 
     $t1 = Transaction::factory()->for($account)->create(['name' => 'Small', 'amount' => -10, 'currency' => 'USD', 'created_at' => '2026-01-10', 'type' => 'expense']);
     $t1->categories()->sync([$groceries->id]);
@@ -206,6 +219,7 @@ it('filters by an amount range regardless of sign', function (): void {
     $t2->categories()->sync([$groceries->id]);
 
     $result = BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),
@@ -220,10 +234,11 @@ it('filters by an amount range regardless of sign', function (): void {
 });
 
 it('rejects an invalid granularity', function (): void {
-    $account = makeAccountForCategoryBreakdownTrendTest();
-    $category = Category::create(['name' => 'Groceries']);
+    [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
+    $category = categoryFor($user, 'Groceries');
 
     expect(fn (): array => BuildCategoryBreakdownTrendAction::run(
+        $user,
         collect([$account]),
         Carbon::parse('2026-01-01'),
         Carbon::parse('2026-01-31'),

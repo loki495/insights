@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Actions\CreateOrAdoptCategoryAction;
 use App\Actions\ReconcileLinkedAccountTransactions;
 use App\Models\Account;
 use App\Models\Category;
@@ -52,7 +53,7 @@ class DemoDataSeeder extends Seeder
         }
 
         $original = $this->buildOriginalCategoryTaxonomy();
-        $categories = $this->buildCategoryTree();
+        $categories = $this->buildCategoryTree($user);
 
         $linkedAccount = LinkedAccount::create([
             'user_id' => $user->id,
@@ -119,21 +120,27 @@ class DemoDataSeeder extends Seeder
     }
 
     /**
+     * Uses CreateOrAdoptCategoryAction (not a raw Category::create()) so re-running this seeder
+     * against a database that already has "Income"/"Expenses" categories reuses them instead of
+     * creating fresh duplicates, and so the demo user actually adopts everything it seeds — under
+     * the per-user category model, its own transaction chips/reports wouldn't render colors or be
+     * browsable otherwise.
+     *
      * @return array<string, Category>
      */
-    private function buildCategoryTree(): array
+    private function buildCategoryTree(User $user): array
     {
-        $income = Category::create(['name' => 'Income', 'color' => '#16a34a']);
-        $expenses = Category::create(['name' => 'Expenses', 'color' => '#dc2626']);
+        $income = CreateOrAdoptCategoryAction::run($user, null, 'Income', '#16a34a');
+        $expenses = CreateOrAdoptCategoryAction::run($user, null, 'Expenses', '#dc2626');
 
         return [
-            'Paycheck' => Category::create(['name' => 'Paycheck', 'parent_id' => $income->id]),
-            'Groceries' => Category::create(['name' => 'Groceries', 'parent_id' => $expenses->id]),
-            'Dining' => Category::create(['name' => 'Dining', 'parent_id' => $expenses->id]),
-            'Utilities' => Category::create(['name' => 'Utilities', 'parent_id' => $expenses->id]),
-            'Transportation' => Category::create(['name' => 'Transportation', 'parent_id' => $expenses->id]),
-            'Shopping' => Category::create(['name' => 'Shopping', 'parent_id' => $expenses->id]),
-            'Entertainment' => Category::create(['name' => 'Entertainment', 'parent_id' => $expenses->id]),
+            'Paycheck' => CreateOrAdoptCategoryAction::run($user, $income->id, 'Paycheck', '#3b82f6'),
+            'Groceries' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Groceries', '#3b82f6'),
+            'Dining' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Dining', '#3b82f6'),
+            'Utilities' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Utilities', '#3b82f6'),
+            'Transportation' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Transportation', '#3b82f6'),
+            'Shopping' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Shopping', '#3b82f6'),
+            'Entertainment' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Entertainment', '#3b82f6'),
         ];
     }
 

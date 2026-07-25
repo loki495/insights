@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\CreateOrAdoptCategoryAction;
+use App\Actions\EditUserCategoryAction;
 use App\Models\Category;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
@@ -33,25 +35,35 @@ new class extends Component
         $this->parent_id = $category->parent_id;
         $this->name = $category->name;
         $this->description = $category->description;
-        $this->color = $category->color;
+        $this->color = $category->exists
+            ? (auth()->user()->categories()->find($category->id)?->pivot->color ?? '#3b82f6')
+            : '#3b82f6';
     }
 
     public function save(): void
     {
         if ($this->category && $this->category->exists) {
             $this->authorize('update', $this->category);
+
+            $this->category = EditUserCategoryAction::run(
+                auth()->user(),
+                $this->category,
+                $this->parent_id ?: null,
+                $this->name,
+                $this->description,
+                $this->color,
+            );
         } else {
             $this->authorize('create', Category::class);
-        }
 
-        $this->category = Category::updateOrCreate([
-            'id' => $this->category_id,
-        ], [
-            'name' => $this->name,
-            'description' => $this->description,
-            'color' => $this->color,
-            'parent_id' => $this->parent_id ?: 0,
-        ]);
+            $this->category = CreateOrAdoptCategoryAction::run(
+                auth()->user(),
+                $this->parent_id ?: null,
+                $this->name,
+                $this->color,
+                $this->description,
+            );
+        }
 
         $this->redirectRoute('categories.index');
     }

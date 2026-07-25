@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Models\Category;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -54,4 +56,18 @@ expect()->extend('toBeOne', fn () => $this->toBe(1));
 function clickVisibleButton(string $text): string
 {
     return sprintf('button:visible:has-text(%s)', json_encode($text));
+}
+
+/**
+ * Categories are a shared, deduplicated (parent_id, name) vocabulary that a user must adopt (via
+ * the category_user pivot) before it shows up in their picker/reports/lists — a bare
+ * Category::create() is no longer enough on its own for tests exercising anything user-facing.
+ * Mirrors app/Actions/CreateOrAdoptCategoryAction.php's find-or-create + adopt behavior.
+ */
+function categoryFor(User $user, string $name, ?int $parentId = null, ?string $color = null): Category
+{
+    $category = Category::firstOrCreate(['parent_id' => $parentId ?: 0, 'name' => $name]);
+    $user->categories()->syncWithoutDetaching([$category->id => ['color' => $color ?: '#3b82f6']]);
+
+    return $category;
 }

@@ -7,6 +7,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -89,5 +90,17 @@ class User extends Authenticatable
     public function accounts(): HasManyThrough
     {
         return $this->hasManyThrough(Account::class, LinkedAccount::class);
+    }
+
+    /**
+     * Categories this user has adopted (see app/Actions/AdoptCategoryForUserAction.php) — the
+     * per-user "color" pivot column is what a category actually displays as for this user;
+     * Category itself carries no color of its own.
+     *
+     * @return BelongsToMany<Category, $this>
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class)->withPivot('color')->withTimestamps();
     }
 }

@@ -18,6 +18,9 @@ use Illuminate\Support\Collection;
  * @property-read array<int, int> $descendants
  * @property-read Collection<int, Transaction> $descendantTransactions
  * @property-read self $root
+ * @property-read string $color Per-user, not a real column — set at runtime by
+ *   DecorateCategoryColorsForUserAction from the category_user pivot. Absent unless that action
+ *   (or the "categories" computed in HasCategoryAssignment) has run on this instance.
  */
 class Category extends Model
 {
@@ -46,6 +49,18 @@ class Category extends Model
     public function transactions(): BelongsToMany
     {
         return $this->belongsToMany(Transaction::class)->withPivot('id');
+    }
+
+    /**
+     * Users who have adopted this category — see User::categories() and
+     * app/Actions/AdoptCategoryForUserAction.php. Categories carry no color of their own; each
+     * user's color lives on this pivot.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withPivot('color')->withTimestamps();
     }
 
     /**

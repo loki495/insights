@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\DecorateCategoryColorsForUserAction;
 use App\Actions\Reports\BuildCategoryBreakdownTrendAction;
 use App\Actions\Reports\BuildIncomeExpenseTrendAction;
 use App\Actions\Reports\Concerns\FiltersBySearchAndAmount;
@@ -91,7 +92,10 @@ new class extends Component
     #[Computed]
     public function categories()
     {
-        return Category::all()->sortBy('fullName')->values();
+        return auth()->user()->categories()->get()
+            ->each(fn ($category) => $category->setAttribute('color', $category->pivot->color ?: '#3b82f6'))
+            ->sortBy('fullName')
+            ->values();
     }
 
     /**
@@ -141,7 +145,7 @@ new class extends Component
             $this->chart_stacked = false;
             $hasData = count(array_filter($trend['income'])) > 0 || count(array_filter($trend['expense'])) > 0;
         } else {
-            $breakdown = BuildCategoryBreakdownTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids, $this->search, $this->amount_min, $this->amount_max);
+            $breakdown = BuildCategoryBreakdownTrendAction::run(auth()->user(), $accounts, $from, $to, $this->granularity, $this->category_ids, $this->search, $this->amount_min, $this->amount_max);
             $this->chart_periods = $breakdown['periods'];
             $this->chart_series = $breakdown['series'];
             $this->chart_type = 'area';
@@ -152,6 +156,8 @@ new class extends Component
         $transactionsList = $this->transactionsQuery($accounts, $from, $to)
             ->orderByDesc('created_at')
             ->paginate(25);
+
+        DecorateCategoryColorsForUserAction::run(auth()->user(), $transactionsList->getCollection()->flatMap->categories);
 
         return [
             'incomeTotal' => $incomeTotal,

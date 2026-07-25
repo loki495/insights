@@ -10,9 +10,14 @@ use App\Models\Transaction;
 use App\Models\User;
 use Livewire\Livewire;
 
-function makeAccountOnly(): Account
+/**
+ * @return array{0: User, 1: Account}
+ */
+function makeUserAndAccount(): array
 {
     $user = User::factory()->create();
+    test()->actingAs($user);
+
     $linkedAccount = LinkedAccount::factory()->for($user)->create([
         'item_id' => 'item_'.uniqid(),
         'access_token' => 'access_'.uniqid(),
@@ -26,15 +31,11 @@ function makeAccountOnly(): Account
         'subtype' => 'checking',
     ]);
 
-    test()->actingAs($user);
-
-    return $account;
+    return [$user, $account];
 }
 
-function makeAccountWithTransaction(Category $category): Account
+function makeTransactionTaggedWith(Account $account, Category $category): Transaction
 {
-    $account = makeAccountOnly();
-
     $transaction = Transaction::factory()->for($account)->create([
         'amount' => -20,
         'name' => 'Bar Tab',
@@ -42,7 +43,7 @@ function makeAccountWithTransaction(Category $category): Account
     ]);
     $transaction->categories()->sync([$category->id]);
 
-    return $account;
+    return $transaction;
 }
 
 it('searching transactions does not throw an ambiguous column error', function (): void {
@@ -50,8 +51,9 @@ it('searching transactions does not throw an ambiguous column error', function (
     // unqualified `parent_id`, which is genuinely ambiguous once the
     // search feature's leftJoin to original_categories (which also has
     // a parent_id column) is active. Any search term used to 500.
-    $category = Category::create(['name' => 'Anchor']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Anchor');
+    makeTransactionTaggedWith($account, $category);
 
     $test = Livewire::test('components.transactions', ['account' => $account])
         ->set('search', 'Bar');
@@ -70,11 +72,12 @@ it('descendants() returns a flat array of ids including self and all nested chil
 });
 
 it('filters transactions by a parent category to include all its descendants', function (): void {
-    $expenses = Category::create(['name' => 'Expenses']);
-    $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
+    [$user, $account] = makeUserAndAccount();
+    $expenses = categoryFor($user, 'Expenses');
+    $bars = categoryFor($user, 'Bars', $expenses->id);
+    $leaf = categoryFor($user, 'Bars - Alex', $bars->id);
 
-    $account = makeAccountWithTransaction($leaf);
+    makeTransactionTaggedWith($account, $leaf);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->set('category_id', $expenses->id);
@@ -83,11 +86,12 @@ it('filters transactions by a parent category to include all its descendants', f
 });
 
 it('drills one level deeper into the chart on each click, matching the categorized transaction', function (): void {
-    $expenses = Category::create(['name' => 'Expenses']);
-    $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
+    [$user, $account] = makeUserAndAccount();
+    $expenses = categoryFor($user, 'Expenses');
+    $bars = categoryFor($user, 'Bars', $expenses->id);
+    $leaf = categoryFor($user, 'Bars - Alex', $bars->id);
 
-    $account = makeAccountWithTransaction($leaf);
+    makeTransactionTaggedWith($account, $leaf);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
 
@@ -108,11 +112,12 @@ it('drills one level deeper into the chart on each click, matching the categoriz
 });
 
 it('goBack steps back up one level at a time', function (): void {
-    $expenses = Category::create(['name' => 'Expenses']);
-    $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
-    $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
+    [$user, $account] = makeUserAndAccount();
+    $expenses = categoryFor($user, 'Expenses');
+    $bars = categoryFor($user, 'Bars', $expenses->id);
+    $leaf = categoryFor($user, 'Bars - Alex', $bars->id);
 
-    $account = makeAccountWithTransaction($leaf);
+    makeTransactionTaggedWith($account, $leaf);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->call('handleChartClick', $expenses->id);
@@ -128,10 +133,10 @@ it('goBack steps back up one level at a time', function (): void {
 });
 
 it('saveCategory replaces (not appends) a transaction\'s category', function (): void {
-    $categoryA = Category::create(['name' => 'Category A']);
-    $categoryB = Category::create(['name' => 'Category B']);
-    $account = makeAccountWithTransaction($categoryA);
-    $transaction = $account->transactions()->firstOrFail();
+    [$user, $account] = makeUserAndAccount();
+    $categoryA = categoryFor($user, 'Category A');
+    $categoryB = categoryFor($user, 'Category B');
+    $transaction = makeTransactionTaggedWith($account, $categoryA);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->call('saveCategory', $transaction->id, $categoryB->id);
@@ -141,7 +146,7 @@ it('saveCategory replaces (not appends) a transaction\'s category', function ():
 });
 
 it('shows a "Set category" button when a transaction has no category', function (): void {
-    $account = makeAccountOnly();
+    [, $account] = makeUserAndAccount();
     Transaction::factory()->for($account)->create(['name' => 'Mystery Purchase', 'amount' => -15, 'currency' => 'USD']);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
@@ -150,8 +155,9 @@ it('shows a "Set category" button when a transaction has no category', function 
 });
 
 it('does not show a "Set category" button once a category is assigned', function (): void {
-    $category = Category::create(['name' => 'Groceries']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Groceries');
+    makeTransactionTaggedWith($account, $category);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
 
@@ -159,8 +165,9 @@ it('does not show a "Set category" button once a category is assigned', function
 });
 
 it('transactions-updated event triggers a re-render without error', function (): void {
-    $category = Category::create(['name' => 'Groceries']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Groceries');
+    makeTransactionTaggedWith($account, $category);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->dispatch('transactions-updated');
@@ -169,40 +176,47 @@ it('transactions-updated event triggers a re-render without error', function ():
 });
 
 it('createCategory creates a top-level category with a default color', function (): void {
-    $category = Category::create(['name' => 'Anchor']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Anchor');
+    makeTransactionTaggedWith($account, $category);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $created = $test->instance()->createCategory('Brand New Category', null, null);
 
-    $category = Category::where('name', 'Brand New Category')->firstOrFail();
-    expect($category->parent_id)->toBe(0);
-    expect($category->color)->toBe('#3b82f6');
+    $newCategory = Category::where('name', 'Brand New Category')->firstOrFail();
+    $pivotColor = $user->categories()->find($newCategory->id)->pivot->color;
+
+    expect($newCategory->parent_id)->toBe(0);
+    expect($pivotColor)->toBe('#3b82f6');
     expect($created)->toBe([
-        'id' => $category->id,
-        'name' => $category->name,
-        'full_name' => $category->fullName,
+        'id' => $newCategory->id,
+        'name' => $newCategory->name,
+        'full_name' => $newCategory->fullName,
         'parent_id' => 0,
-        'color' => $category->color,
+        'color' => $pivotColor,
     ]);
 });
 
 it('createCategory nests under the given parent with the given color', function (): void {
-    $parent = Category::create(['name' => 'Expenses']);
-    $account = makeAccountWithTransaction($parent);
+    [$user, $account] = makeUserAndAccount();
+    $parent = categoryFor($user, 'Expenses');
+    makeTransactionTaggedWith($account, $parent);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->instance()->createCategory('Subcategory', $parent->id, '#ef4444');
 
     $category = Category::where('name', 'Subcategory')->firstOrFail();
+    $pivotColor = $user->categories()->find($category->id)->pivot->color;
+
     expect($category->parent_id)->toBe($parent->id);
-    expect($category->color)->toBe('#ef4444');
+    expect($pivotColor)->toBe('#ef4444');
     expect($category->parent->name)->toBe('Expenses');
 });
 
 it('createCategory rejects a blank name', function (): void {
-    $category = Category::create(['name' => 'Anchor']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Anchor');
+    makeTransactionTaggedWith($account, $category);
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
 
@@ -211,8 +225,9 @@ it('createCategory rejects a blank name', function (): void {
 });
 
 it('suggestCategoriesForTransaction suggests the category most used by other transactions from the same merchant', function (): void {
-    $category = Category::create(['name' => 'Groceries']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Groceries');
+    makeTransactionTaggedWith($account, $category);
 
     $priorTxn = Transaction::factory()->for($account)->create(['name' => 'Costco Warehouse', 'merchant_name' => 'Costco', 'amount' => -50, 'currency' => 'USD']);
     $priorTxn->categories()->sync([$category->id]);
@@ -227,11 +242,12 @@ it('suggestCategoriesForTransaction suggests the category most used by other tra
 });
 
 it('suggestCategoriesForTransaction falls back to original-category correlation when the merchant differs', function (): void {
-    $category = Category::create(['name' => 'Anchor']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Anchor');
+    makeTransactionTaggedWith($account, $category);
 
     $originalCategory = OriginalCategory::create(['name' => 'Fast Food']);
-    $target = Category::create(['name' => 'Eating Out']);
+    $target = categoryFor($user, 'Eating Out');
 
     $priorTxn = Transaction::factory()->for($account)->create([
         'name' => 'Burger Place Purchase',
@@ -258,8 +274,9 @@ it('suggestCategoriesForTransaction falls back to original-category correlation 
 });
 
 it('suggestCategoriesForTransaction excludes categories already assigned to the transaction', function (): void {
-    $category = Category::create(['name' => 'Anchor']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Anchor');
+    makeTransactionTaggedWith($account, $category);
 
     $priorTxn = Transaction::factory()->for($account)->create(['name' => 'Costco Warehouse', 'merchant_name' => 'Costco', 'amount' => -50, 'currency' => 'USD']);
     $priorTxn->categories()->sync([$category->id]);
@@ -274,12 +291,13 @@ it('suggestCategoriesForTransaction excludes categories already assigned to the 
 });
 
 it('suggestCategoriesForTransaction returns at most two suggestions with the merchant match first', function (): void {
-    $category = Category::create(['name' => 'Anchor']);
-    $account = makeAccountWithTransaction($category);
+    [$user, $account] = makeUserAndAccount();
+    $category = categoryFor($user, 'Anchor');
+    makeTransactionTaggedWith($account, $category);
 
-    $merchantCategory = Category::create(['name' => 'Merchant Match']);
+    $merchantCategory = categoryFor($user, 'Merchant Match');
     $originalCategory = OriginalCategory::create(['name' => 'Some Original']);
-    $originalCategoryCategory = Category::create(['name' => 'Original Match']);
+    $originalCategoryCategory = categoryFor($user, 'Original Match');
 
     $merchantTxn = Transaction::factory()->for($account)->create(['name' => 'Widget Purchase', 'merchant_name' => 'Widget Co', 'amount' => -20, 'currency' => 'USD']);
     $merchantTxn->categories()->sync([$merchantCategory->id]);
@@ -307,4 +325,34 @@ it('suggestCategoriesForTransaction returns at most two suggestions with the mer
     expect($suggestions)->toHaveCount(2);
     expect($suggestions[0]['id'])->toBe($merchantCategory->id);
     expect($suggestions[1]['id'])->toBe($originalCategoryCategory->id);
+});
+
+/**
+ * Regression test for a cross-tenant leak found while implementing per-user category adoption:
+ * merchantSuggestions()/topCategoryFor() queried Transaction::query() with no account/user
+ * scoping at all, so suggestions were computed from every user's transaction history system-wide.
+ * Fixed by scoping both to the acting user's own accounts, same pattern as
+ * BuildTransactionsQueryAction. Both users adopt the *same* shared category row here deliberately
+ * — with a different category per user, adoption-scoping alone would already hide the leak
+ * (userB's `$this->categories->firstWhere(...)` simply wouldn't find userA's category), which
+ * would make this test pass even without the account-scoping fix and prove nothing. Sharing the
+ * row is what actually exercises the fix: userB has legitimate access to the category itself, but
+ * still must never see a suggestion driven by userA's private merchant-categorization history.
+ */
+it('suggestCategoriesForTransaction never surfaces another user\'s categorization of the same merchant', function (): void {
+    [$userA, $accountA] = makeUserAndAccount();
+    $categoryA = categoryFor($userA, 'Groceries');
+    $priorTxnA = Transaction::factory()->for($accountA)->create(['name' => 'Costco Warehouse', 'merchant_name' => 'Costco', 'amount' => -50, 'currency' => 'USD']);
+    $priorTxnA->categories()->sync([$categoryA->id]);
+
+    // makeUserAndAccount() also switches the acting session to userB, matching what a real
+    // second request from userB would look like. userB adopts the SAME shared "Groceries" row.
+    [$userB, $accountB] = makeUserAndAccount();
+    categoryFor($userB, 'Groceries');
+    $newTxnB = Transaction::factory()->for($accountB)->create(['name' => 'Costco Gas', 'merchant_name' => 'Costco', 'amount' => -30, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $accountB]);
+    $suggestions = $test->instance()->suggestCategoriesForTransaction($newTxnB->id);
+
+    expect($suggestions)->toBe([]);
 });
