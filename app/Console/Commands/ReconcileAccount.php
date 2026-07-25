@@ -27,7 +27,7 @@ class ReconcileAccount extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): void
+    public function handle(): int
     {
         $linked_account_id = $this->argument('linked_account_id');
         $force = (bool) $this->argument('force');
@@ -35,6 +35,14 @@ class ReconcileAccount extends Command
         $linked_account = LinkedAccount::with('accounts')
             ->where('id', $linked_account_id)->first();
 
+        if (! $linked_account) {
+            $this->error("Linked account {$linked_account_id} not found.");
+
+            return self::FAILURE;
+        }
+
         ReconcileLinkedAccountTransactions::run($linked_account, $force);
+
+        return self::SUCCESS;
     }
 }
