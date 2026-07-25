@@ -46,8 +46,15 @@ RUN chmod +x /usr/local/bin/entrypoint-prod.sh
 
 WORKDIR /var/www/html
 COPY --from=build --chown=www-data:www-data /var/www/html /var/www/html
+# The placeholder file below (harmless if DB_CONNECTION isn't sqlite) exists so
+# docker-compose.prod.yml's insights-database volume has something real to populate itself with
+# on a fresh mount — entrypoint-prod.sh still creates it too, but that's a fallback for the
+# volume being mounted over storage/app without it ever going through this image at all (e.g.
+# bind-mounting a host directory directly).
 RUN rm -rf node_modules resources/js resources/css \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache \
+    && touch storage/app/database.sqlite \
+    && chown www-data:www-data storage/app/database.sqlite
 
 ENTRYPOINT ["entrypoint-prod.sh"]
 CMD ["apache2-foreground"]

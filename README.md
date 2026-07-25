@@ -92,7 +92,7 @@ Then:
 docker compose up -d
 docker exec -u www-data -e HOME=/tmp insights-app composer install
 docker exec -u www-data insights-app php artisan key:generate
-docker exec -u www-data insights-app touch database/database.sqlite
+docker exec -u www-data insights-app touch storage/app/database.sqlite
 docker exec -u www-data insights-app php artisan migrate
 ```
 
@@ -123,7 +123,7 @@ cp .env.example .env
 composer install
 npm install
 php artisan key:generate
-touch database/database.sqlite
+touch storage/app/database.sqlite
 php artisan migrate
 ```
 
@@ -178,6 +178,19 @@ just checks which institutions are actually due.
 is encrypted with `APP_KEY`; rotating it makes every existing linked account's stored token
 permanently unreadable. Generate it once, before the first `up -d`, and keep it.
 
+**Upgrading an existing deployment from before the sqlite location moved:** older versions of
+this file mounted `insights-database` over the whole `database/` directory instead of
+`storage/app` — that directory-wide mount silently shadowed `database/migrations` after the first
+boot, so new migrations shipped in later updates never actually reached the running container.
+The volume itself doesn't need to change (`database.sqlite` already sits at its root either way,
+since both the old and new mount points are directory mounts) — just pull this update, rebuild,
+and `up -d` as usual; your existing `insights-database` volume is picked up at the new mount point
+automatically. You'll end up with a few harmless unused leftover files (`migrations/`,
+`factories/`, `seeders/`, `.gitignore`) sitting alongside `database.sqlite` in the volume from the
+old directory structure — safe to ignore, or delete via
+`docker compose -f docker-compose.prod.yml exec app sh -c 'cd storage/app && rm -rf migrations factories seeders .gitignore'`
+if you'd rather clean them up.
+
 ### Bare metal
 
 ```bash
@@ -193,7 +206,7 @@ credentials), generate a real key once (`php artisan key:generate`, only on a da
 data in it yet), then:
 
 ```bash
-touch database/database.sqlite   # first deploy only, if using the default sqlite driver
+touch storage/app/database.sqlite   # first deploy only, if using the default sqlite driver
 php artisan migrate --force
 ```
 
