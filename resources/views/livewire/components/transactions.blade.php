@@ -256,6 +256,14 @@ new class extends Component
     {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('delete', $transaction);
+
+        // Only manually-added transactions can be deleted — the Blade side already hides the
+        // trash icon for synced ones, but this is the actual enforcement (matches
+        // bulkDeleteTransactions(), which silently skips non-manual transactions the same way).
+        if (! ($transaction->original['manual'] ?? false)) {
+            return;
+        }
+
         $transaction->categories()->detach();
         $transaction->delete();
         $this->chartNeedsRefresh = true;
