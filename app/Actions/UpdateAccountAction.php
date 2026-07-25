@@ -22,10 +22,15 @@ final class UpdateAccountAction
             ->where('mask', $account_info['mask'])
             ->whereHas('linked_account', function ($q) use ($linked_account): void {
                 $q->where('item_id', $linked_account->item_id);
-            });
+            })
+            ->first();
 
-        if ($account->exists()) {
-
+        if ($account) {
+            // Deliberately a model instance's update(), not a query builder's — the latter
+            // compiles straight to a raw SQL UPDATE and bypasses Eloquent attribute casting
+            // entirely (App\Casts\MoneyCast on the balance columns would silently never run,
+            // writing raw dollar amounts where cents are expected). Confirmed by a real test
+            // failure when this was still a builder-level update.
             $account->update([
                 'plaid_account_id' => $account_info['account_id'],
                 'mask' => $account_info['mask'],
