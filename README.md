@@ -257,6 +257,21 @@ This creates (or reuses) a `test@example.com` / `password` login. It's not part 
 `db:seed` run, so it never runs against a real user's database by accident. The demo institution's
 "Pull Data" button is hidden — there's no real Plaid item behind it, so pulling would just fail.
 
+## Password reset / mail delivery
+
+The "Forgot your password?" link on the login page is live and works out of the box, but
+`.env.example` defaults `MAIL_MAILER=log` — no real email ever gets sent, the reset link is
+written to `storage/logs/laravel.log` (or, in the Docker setups, `docker/logs/laravel.log`)
+instead. Fine for local development, but a problem for a real deployment: if you lock yourself out
+without configuring real mail delivery first, digging the reset link out of a log file is your only
+way back in.
+
+For a real deployment, set `MAIL_MAILER` to a real driver (`smtp`, or a transactional-email
+provider Laravel supports) and fill in the matching `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/
+`MAIL_PASSWORD`/`MAIL_FROM_ADDRESS` values in `.env` — see [Laravel's mail
+documentation](https://laravel.com/docs/mail) for the full list of supported drivers and their
+config options.
+
 ## Linking a bank account
 
 Plaid gates API access behind its own developer account, separate from this app entirely — there's
