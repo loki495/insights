@@ -43,10 +43,11 @@ final class UpdateAccountTransactionsAction
      */
     private static function getUsableTransaction(array $transaction_info): array
     {
-        $account_id = Account::query()->where('plaid_account_id', $transaction_info['account_id'])->first()->id;
-        if (! $account_id) {
+        $account = Account::query()->where('plaid_account_id', $transaction_info['account_id'])->first();
+        if (! $account) {
             throw new \Exception('Account not found - '.$transaction_info['account_id']);
         }
+        $account_id = $account->id;
 
         // adjust amount sign so that Debit (money OUT) is negative and Credit (money IN) is positive
         $amount = -1 * $transaction_info['amount'];
