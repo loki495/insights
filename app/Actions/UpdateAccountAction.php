@@ -14,8 +14,6 @@ final class UpdateAccountAction
      */
     public static function run(array $account_info, LinkedAccount $linked_account): void
     {
-        plaid();
-
         $account = Account::query()
             ->where('name', $account_info['name'])
             ->where('official_name', $account_info['official_name'])
