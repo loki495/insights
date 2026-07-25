@@ -162,6 +162,30 @@ it('bulkDeleteTransactions detaches categories from deleted transactions', funct
     expect(DB::table('category_transaction')->where('transaction_id', $manual->id)->count())->toBe(0);
 });
 
+it('deleteTransaction deletes a manually-added transaction', function (): void {
+    $account = makeAccountForBulkTest();
+    $manual = Transaction::factory()->for($account)->create([
+        'name' => 'Manual Entry', 'amount' => -10, 'currency' => 'USD', 'original' => ['manual' => true],
+    ]);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $test->call('deleteTransaction', $manual->id);
+
+    expect(Transaction::find($manual->id))->toBeNull();
+});
+
+it('deleteTransaction silently skips a synced (non-manual) transaction', function (): void {
+    $account = makeAccountForBulkTest();
+    $synced = Transaction::factory()->for($account)->create([
+        'name' => 'Synced From Plaid', 'amount' => -20, 'currency' => 'USD', 'original' => ['manual' => false],
+    ]);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $test->call('deleteTransaction', $synced->id);
+
+    expect(Transaction::find($synced->id))->not->toBeNull();
+});
+
 it('bulkDeleteTransactions refuses to delete a transaction belonging to another user', function (): void {
     $ownAccount = makeAccountForBulkTest();
     $ownTxn = Transaction::factory()->for($ownAccount)->create([
