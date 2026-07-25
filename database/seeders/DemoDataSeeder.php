@@ -41,10 +41,18 @@ class DemoDataSeeder extends Seeder
 
     public function run(): void
     {
+        // email_verified_at is deliberately not mass-assignable on User (a real user should never
+        // be able to self-verify via a crafted request) — set directly instead for this trusted,
+        // backend-only seeder.
         $user = User::firstOrCreate(
             ['email' => 'test@example.com'],
-            ['name' => 'Test User', 'password' => Hash::make('password'), 'email_verified_at' => now()]
+            ['name' => 'Test User', 'password' => Hash::make('password')]
         );
+
+        if (! $user->email_verified_at) {
+            $user->email_verified_at = now();
+            $user->save();
+        }
 
         if (LinkedAccount::where('user_id', $user->id)->where('is_demo', true)->exists()) {
             $this->command?->info('Demo data already exists for test@example.com — skipping.');

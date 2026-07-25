@@ -19,6 +19,24 @@ class LinkedAccount extends Model
         'access_token',
     ];
 
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'user_id',
+        'item_id',
+        'provider_name',
+        'access_token',
+        'closed_at',
+        'is_demo',
+        'auto_pull_enabled',
+        'auto_pull_interval_value',
+        'auto_pull_interval_unit',
+        'last_pulled_at',
+        'last_sync_failed_at',
+        'last_sync_error',
+    ];
+
     public $casts = [
         'access_token' => 'encrypted',
         'closed_at' => 'datetime',

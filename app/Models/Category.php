@@ -28,6 +28,15 @@ class Category extends Model
     use HasFactory;
 
     /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'parent_id',
+        'name',
+        'description',
+    ];
+
+    /**
      * @return BelongsTo<Category, $this>
      */
     public function parent(): BelongsTo

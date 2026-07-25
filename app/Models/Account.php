@@ -18,6 +18,25 @@ class Account extends Model
     use HasFactory;
 
     /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'linked_account_id',
+        'plaid_account_id',
+        'mask',
+        'name',
+        'official_name',
+        'type',
+        'subtype',
+        'currency',
+        'nickname',
+        'available_balance',
+        'current_balance',
+        'limit',
+        'tracking_mode',
+    ];
+
+    /**
      * @return HasMany<Transaction, $this>
      */
     public function transactions(): HasMany

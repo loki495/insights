@@ -137,9 +137,7 @@ new class extends Component
             'manual' => true,
         ];
 
-        $transaction = Transaction::updateOrCreate([
-            'id' => $this->transaction_id,
-        ], [
+        $attributes = [
             'account_id' => $this->account_id,
             'created_at' => $this->date,
             'name' => $this->name,
@@ -148,7 +146,16 @@ new class extends Component
             'currency' => $this->currency,
             'original' => $original,
             'type' => $this->type,
-        ]);
+        ];
+
+        // Not updateOrCreate(['id' => $this->transaction_id], ...) — with no transaction_id yet
+        // (creating), that mass-assigns 'id' => null into the model constructor, which primary
+        // keys should never be, guard or no guard.
+        if (isset($transaction)) {
+            $transaction->update($attributes);
+        } else {
+            $transaction = Transaction::create($attributes);
+        }
 
         $transaction->categories()->sync($this->categories);
 
