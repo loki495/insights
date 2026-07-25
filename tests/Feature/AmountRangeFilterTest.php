@@ -94,3 +94,24 @@ it('applies only a maximum when no minimum is set', function (): void {
     expect($results)->toHaveCount(1);
     expect($results->first()->name)->toBe('Small');
 });
+
+it('correctly matches a cents-precision amount against a tight dollar-range boundary', function (): void {
+    // `amount` is stored in integer cents (App\Casts\MoneyCast) while amount_min/amount_max are
+    // dollar-scale filter inputs — the raw SQL filter has to convert its bound values to cents
+    // before comparing. Without that conversion, this transaction's true cents value (7550) would
+    // be compared against the raw, unconverted bounds (75/76) and be wrongly excluded by the
+    // upper bound (7550 is not <= 76), even though $75.50 is genuinely inside $75-$76.
+    $account = makeAccountForAmountRangeFilterTest();
+    Transaction::factory()->for($account)->create(['name' => 'In range', 'amount' => -75.50, 'currency' => 'USD']);
+    Transaction::factory()->for($account)->create(['name' => 'Just under', 'amount' => -74.99, 'currency' => 'USD']);
+    Transaction::factory()->for($account)->create(['name' => 'Just over', 'amount' => -76.01, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account])
+        ->set('amount_min', '75')
+        ->set('amount_max', '76');
+
+    $results = $test->instance()->getTransactionsQuery()->get();
+
+    expect($results)->toHaveCount(1);
+    expect($results->first()->name)->toBe('In range');
+});

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -54,6 +55,8 @@ class Transaction extends Model
 
     public $casts = [
         'original' => 'json',
+        'amount' => MoneyCast::class,
+        'running_balance' => MoneyCast::class,
     ];
 
     /**

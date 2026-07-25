@@ -31,12 +31,14 @@ trait FiltersBySearchAndAmount
             // against a function-call expression like ABS(amount) (no column affinity of its
             // own) makes SQLite fall back to lexicographic string comparison — "1000" < "500"
             // alphabetically. Forcing both sides numeric avoids that (same pattern used in the
-            // Transaction Search query).
-            $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $amountMin]);
+            // Transaction Search query). `amount` is stored in integer cents (App\Casts\MoneyCast)
+            // but $amountMin/$amountMax are dollar values from the filter input, so the bound
+            // value needs converting — this raw SQL bypasses the model's cast entirely.
+            $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [round(((float) $amountMin) * 100)]);
         }
 
         if ($amountMax !== '') {
-            $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [(float) $amountMax]);
+            $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [round(((float) $amountMax) * 100)]);
         }
     }
 }

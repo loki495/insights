@@ -63,9 +63,12 @@ final class BuildTransactionsQueryAction
             // that against a function-call expression like ABS(amount) (which carries no column
             // affinity of its own) makes SQLite fall back to a lexicographic string comparison —
             // "1000" < "500" alphabetically — silently corrupting the filter for any value with a
-            // different digit count. Forcing both sides numeric avoids that.
-            ->when($filters->amountMin !== '', fn ($query) => $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [(float) $filters->amountMin]))
-            ->when($filters->amountMax !== '', fn ($query) => $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [(float) $filters->amountMax]))
+            // different digit count. Forcing both sides numeric avoids that. `amount` is stored in
+            // integer cents (App\Casts\MoneyCast) but $filters->amountMin/Max are dollar values
+            // from the filter input, so the bound value needs converting — this raw SQL bypasses
+            // the model's cast entirely.
+            ->when($filters->amountMin !== '', fn ($query) => $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [round(((float) $filters->amountMin) * 100)]))
+            ->when($filters->amountMax !== '', fn ($query) => $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [round(((float) $filters->amountMax) * 100)]))
             ->with('categories')
             ->with('originalCategory')
             ->whereBetween('transactions.created_at', [$filters->dateFrom, $filters->dateTo]);

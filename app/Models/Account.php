@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -34,6 +35,12 @@ class Account extends Model
         'current_balance',
         'limit',
         'tracking_mode',
+    ];
+
+    public $casts = [
+        'available_balance' => MoneyCast::class,
+        'current_balance' => MoneyCast::class,
+        'limit' => MoneyCast::class,
     ];
 
     /**
