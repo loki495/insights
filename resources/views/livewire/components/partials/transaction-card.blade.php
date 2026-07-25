@@ -8,10 +8,12 @@
                 <div class="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                     <span>{{ \Carbon\Carbon::parse($item['created_at'])->format('m/d/Y') }}</span>
                     @include('livewire.components.partials.transaction-type-pill', ['transaction' => $item])
-                    @if ($allow_accounts)
-                    <span>&middot; {{ $item['account']['display_name'] }} ({{ $item['account']['linked_account']['provider_name'] }})</span>
-                    @endif
                 </div>
+                @if ($allow_accounts)
+                <div class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                    {{ $item['account']['display_name'] }} ({{ $item['account']['linked_account']['provider_name'] }})
+                </div>
+                @endif
             </div>
         </div>
         <div class="text-right shrink-0">
