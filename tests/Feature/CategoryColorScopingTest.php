@@ -40,7 +40,7 @@ it('surfaces a user\'s own color through the categoryPickerOptions computed', fu
     categoryFor($userA, 'Groceries', color: '#111111');
     categoryFor($userB, 'Groceries', color: '#222222');
 
-    $makeComponent = fn () => new class extends Component
+    $makeComponent = fn (): Component => new class extends Component
     {
         use HasCategoryAssignment;
 

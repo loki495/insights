@@ -150,7 +150,7 @@ it('skips category ids that do not exist', function (): void {
 
 it('falls back to a default color when the category has none set', function (): void {
     [$user, $account] = makeAccountForCategoryBreakdownTrendTest();
-    $category = categoryFor($user, 'Misc', color: null);
+    $category = categoryFor($user, 'Misc');
 
     $result = BuildCategoryBreakdownTrendAction::run(
         $user,

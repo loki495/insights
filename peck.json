@@ -23,7 +23,13 @@
             "idor",
             "uncategorized",
             "dockerfile",
-            "entrypoint"
+            "entrypoint",
+            "repoints",
+            "dedup",
+            "unscoped",
+            "deduplicated",
+            "discoverable",
+            "browsable"
         ],
         "paths": []
     }
