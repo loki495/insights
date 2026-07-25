@@ -18,7 +18,8 @@ class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'parent_id' => 0,
+            'name' => fake()->unique()->words(2, true),
         ];
     }
 }

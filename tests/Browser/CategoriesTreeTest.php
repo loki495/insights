@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Category;
 use App\Models\User;
 
 /**
@@ -19,9 +18,9 @@ it('expands and collapses a category tree, cascade-closing descendants on collap
     $user = User::factory()->create();
     test()->actingAs($user);
 
-    $root = Category::create(['name' => 'Expenses']);
-    $child = Category::create(['name' => 'Groceries', 'parent_id' => $root->id]);
-    $grandchild = Category::create(['name' => 'Organic', 'parent_id' => $child->id]);
+    $root = categoryFor($user, 'Expenses');
+    $child = categoryFor($user, 'Groceries', $root->id);
+    $grandchild = categoryFor($user, 'Organic', $child->id);
 
     $page = visit('/categories')
         ->assertSee('Expenses')

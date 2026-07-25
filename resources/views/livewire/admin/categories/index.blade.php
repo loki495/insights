@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\DecorateCategoryColorsForUserAction;
+use App\Actions\RemoveCategoryForUserAction;
 use App\Models\Category;
 use Livewire\Attributes\Session;
 use Livewire\Volt\Component;
@@ -16,7 +18,18 @@ new class extends Component
         $this->authorize('viewAny', Category::class);
     }
 
-    private function flatTree(int $parent_id, int|float $depth = 0): array
+    /**
+     * Still recurses through the *entire* shared tree (needed to reach an adopted grandchild
+     * under a parent this user hasn't adopted) but only includes a node in the result if the user
+     * has actually adopted it. Known quirk (see tests/Feature/CategoriesIndexTest.php): an adopted
+     * grandchild under an unadopted parent gets its own row with no parent row above it, and in a
+     * real browser the client-side expand/collapse only reveals a row once its parent's row has
+     * been clicked open — so this specific case stays hidden in the default tree view until
+     * searched for. Not fixed here.
+     *
+     * @param  array<int, int>  $adoptedIds
+     */
+    private function flatTree(int $parent_id, array $adoptedIds, int|float $depth = 0): array
     {
         $result = [];
 
@@ -31,8 +44,11 @@ new class extends Component
             $category->depth = $depth;
             $category->has_children = count($category->children) > 0;
 
-            $result[] = $category;
-            $result = array_merge($result, $this->flatTree($category->id, $depth + 1));
+            if (in_array($category->id, $adoptedIds, true)) {
+                $result[] = $category;
+            }
+
+            $result = array_merge($result, $this->flatTree($category->id, $adoptedIds, $depth + 1));
         }
 
         return $result;
@@ -41,15 +57,18 @@ new class extends Component
     public function delete(Category $category): void
     {
         $this->authorize('delete', $category);
-        $category->delete();
+        RemoveCategoryForUserAction::run(auth()->user(), $category);
     }
 
     public function with(): array
     {
+        $adoptedIds = auth()->user()->categories()->pluck('categories.id')->all();
+
         if ($this->search !== '' && $this->search !== '0') {
             $categories = Category::query()
                 ->with('children')
                 ->with('parent')
+                ->whereIn('id', $adoptedIds)
                 ->where(function ($query): void {
                     $query
                         ->where('id', 'like', '%'.$this->search.'%')
@@ -59,8 +78,11 @@ new class extends Component
                 ->orderBy('name')
                 ->get();
         } else {
-            $categories = collect($this->flatTree(0));
+            $categories = collect($this->flatTree(0, $adoptedIds));
         }
+
+        DecorateCategoryColorsForUserAction::run(auth()->user(), $categories);
+        DecorateCategoryColorsForUserAction::run(auth()->user(), $categories->pluck('parent')->filter());
 
         return [
             'categories' => $categories,

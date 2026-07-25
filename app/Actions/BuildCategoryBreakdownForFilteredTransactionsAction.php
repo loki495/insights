@@ -6,6 +6,7 @@ namespace App\Actions;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -24,12 +25,12 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
      * @param  Builder<Transaction>  $query
      * @return array{ids: array<int, int>, labels: array<int, string>, values: array<int, float>, colors: array<int, string>, tooltipLabels: array<int, string>}
      */
-    public static function run(Builder $query, ?int $categoryId): array
+    public static function run(User $user, Builder $query, ?int $categoryId): array
     {
         $transactions = $query
             ->clone()
             ->with(['categories' => function ($q): void {
-                $q->select('categories.id', 'categories.name', 'categories.color', 'categories.parent_id');
+                $q->select('categories.id', 'categories.name', 'categories.parent_id');
             }])
             ->get();
 
@@ -38,6 +39,7 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
 
         // Pre-fetch categories into a map for fast parent lookup
         $all_categories = Category::all()->keyBy('id');
+        DecorateCategoryColorsForUserAction::run($user, $all_categories);
 
         foreach ($transactions as $transaction) {
             $categories = $transaction->categories;
@@ -62,7 +64,7 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
 
                 if ($current_filtered_id === 0) {
                     // Find top level ancestor
-                    $target = $category;
+                    $target = $all_categories->get($category->id) ?: $category;
                     while ($target && $target->parent_id != 0) {
                         $target = $all_categories->get($target->parent_id);
                     }
@@ -84,7 +86,7 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
 
                     // Find the child of current_filtered_id in this path
                     if ($category->id == $current_filtered_id) {
-                        $target = $category;
+                        $target = $all_categories->get($category->id) ?: $category;
                     } else {
                         // The path is [leaf, ..., child_of_filter, filter]
                         // We want child_of_filter

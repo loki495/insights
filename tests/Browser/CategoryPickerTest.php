@@ -29,14 +29,15 @@ function makeAccountForCategoryPickerTest(): Account
 
 it('opens the category picker and assigns a top-level category', function (): void {
     $account = makeAccountForCategoryPickerTest();
-    Category::create(['name' => 'Income']);
+    $user = $account->linked_account->user;
+    categoryFor($user, 'Income');
     $transaction = Transaction::factory()->for($account)->create([
         'name' => 'Paycheck',
         'amount' => 1500,
         'currency' => 'USD',
     ]);
 
-    test()->actingAs($account->linked_account->user);
+    test()->actingAs($user);
 
     visit('/reports/category')
         ->click('Set category')
@@ -50,16 +51,17 @@ it('opens the category picker and assigns a top-level category', function (): vo
 
 it('drills into a category with children and back out', function (): void {
     $account = makeAccountForCategoryPickerTest();
-    $expenses = Category::create(['name' => 'Expenses']);
-    Category::create(['name' => 'Groceries', 'parent_id' => $expenses->id]);
-    Category::create(['name' => 'Income']);
+    $user = $account->linked_account->user;
+    $expenses = categoryFor($user, 'Expenses');
+    categoryFor($user, 'Groceries', $expenses->id);
+    categoryFor($user, 'Income');
     Transaction::factory()->for($account)->create([
         'name' => 'Whole Foods',
         'amount' => -60,
         'currency' => 'USD',
     ]);
 
-    test()->actingAs($account->linked_account->user);
+    test()->actingAs($user);
 
     // Drilling in: click either chevron on the "Expenses" row (both trigger the same
     // drillInto()) — nth=0 just picks the first of the two.
@@ -79,16 +81,17 @@ it('drills into a category with children and back out', function (): void {
 
 it('filters categories via search', function (): void {
     $account = makeAccountForCategoryPickerTest();
-    $expenses = Category::create(['name' => 'Expenses']);
-    Category::create(['name' => 'Groceries', 'parent_id' => $expenses->id]);
-    Category::create(['name' => 'Income']);
+    $user = $account->linked_account->user;
+    $expenses = categoryFor($user, 'Expenses');
+    categoryFor($user, 'Groceries', $expenses->id);
+    categoryFor($user, 'Income');
     Transaction::factory()->for($account)->create([
         'name' => 'Whole Foods',
         'amount' => -60,
         'currency' => 'USD',
     ]);
 
-    test()->actingAs($account->linked_account->user);
+    test()->actingAs($user);
 
     visit('/reports/category')
         ->click('Set category')
@@ -124,11 +127,12 @@ it('creates a new category inline and assigns it', function (): void {
 
 it('bulk-assigns a category to multiple selected transactions', function (): void {
     $account = makeAccountForCategoryPickerTest();
-    Category::create(['name' => 'Groceries']);
+    $user = $account->linked_account->user;
+    categoryFor($user, 'Groceries');
     $first = Transaction::factory()->for($account)->create(['name' => 'Trader Joes', 'amount' => -40, 'currency' => 'USD']);
     $second = Transaction::factory()->for($account)->create(['name' => 'Safeway', 'amount' => -35, 'currency' => 'USD']);
 
-    test()->actingAs($account->linked_account->user);
+    test()->actingAs($user);
 
     // The checkbox clicks and the "Assign Category" click are pure client-side Alpine state (no
     // wire:model on the checkboxes, no server call to open the modal) — verified this by

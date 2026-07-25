@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Concerns;
 
-use App\Models\Category;
+use App\Actions\CreateOrAdoptCategoryAction;
 use App\Models\Transaction;
 use Closure;
 use InvalidArgumentException;
@@ -19,10 +19,18 @@ use Livewire\Attributes\Computed;
  */
 trait HasCategoryAssignment
 {
+    /**
+     * Adopted-only — a category the acting user hasn't adopted (see User::categories()) never
+     * shows up in the picker/suggestions/chips. Decorates each with its per-user pivot color so
+     * every existing `$category->color` read elsewhere keeps working unchanged.
+     */
     #[Computed]
     public function categories()
     {
-        return Category::all()->sortBy('fullName')->values();
+        return auth()->user()->categories()->get()
+            ->each(fn ($category) => $category->setAttribute('color', $category->pivot->color ?: '#3b82f6'))
+            ->sortBy('fullName')
+            ->values();
     }
 
     #[Computed]
@@ -73,7 +81,12 @@ trait HasCategoryAssignment
             return [];
         }
 
+        // Scoped to the acting user's own accounts — without this, suggestions were being
+        // computed from every user's transaction history system-wide, a cross-tenant leak.
+        $ownedAccountIds = auth()->user()->accounts()->pluck('accounts.id');
+
         return Transaction::query()
+            ->whereIn('account_id', $ownedAccountIds)
             ->whereIn('merchant_name', $merchants)
             ->whereHas('categories')
             ->with('categories')
@@ -146,7 +159,10 @@ trait HasCategoryAssignment
             return null;
         }
 
-        $query = Transaction::query()->where('id', '!=', $transaction->id);
+        // Scoped to the acting user's own accounts — same cross-tenant fix as merchantSuggestions().
+        $ownedAccountIds = auth()->user()->accounts()->pluck('accounts.id');
+
+        $query = Transaction::query()->whereIn('account_id', $ownedAccountIds)->where('id', '!=', $transaction->id);
         $scope($query);
 
         $topCategoryId = $query
@@ -180,18 +196,15 @@ trait HasCategoryAssignment
             throw new InvalidArgumentException('Category name is required.');
         }
 
-        $category = Category::create([
-            'name' => $name,
-            'parent_id' => $parent_id ?: 0,
-            'color' => $color ?: '#3b82f6',
-        ]);
+        $color = $color ?: '#3b82f6';
+        $category = CreateOrAdoptCategoryAction::run(auth()->user(), $parent_id ?: null, $name, $color);
 
         return [
             'id' => $category->id,
             'name' => $category->name,
             'full_name' => $category->fullName,
             'parent_id' => $category->parent_id ?: 0,
-            'color' => $category->color,
+            'color' => $color,
         ];
     }
 

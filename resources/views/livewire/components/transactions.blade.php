@@ -2,6 +2,7 @@
 
 use App\Actions\BuildCategoryBreakdownForFilteredTransactionsAction;
 use App\Actions\BuildTransactionsQueryAction;
+use App\Actions\DecorateCategoryColorsForUserAction;
 use App\Actions\TransactionFilters;
 use App\Livewire\Concerns\HasCategoryAssignment;
 use App\Livewire\Concerns\HasDisplayTimezoneDateRange;
@@ -175,6 +176,8 @@ new class extends Component
             // ->ddRawSql()
             ->paginate(25);
 
+        DecorateCategoryColorsForUserAction::run(auth()->user(), $transactions->getCollection()->flatMap->categories);
+
         return [
             'transactions' => $transactions,
             'count' => $query->count(),
@@ -202,6 +205,7 @@ new class extends Component
     public function updateChartData(): void
     {
         $breakdown = BuildCategoryBreakdownForFilteredTransactionsAction::run(
+            auth()->user(),
             $this->getTransactionsQuery(),
             $this->category_id,
         );

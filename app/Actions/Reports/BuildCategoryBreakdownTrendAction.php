@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Actions\Reports;
 
+use App\Actions\DecorateCategoryColorsForUserAction;
 use App\Actions\Reports\Concerns\BucketsIntoPeriods;
 use App\Actions\Reports\Concerns\FiltersBySearchAndAmount;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -27,13 +29,14 @@ final class BuildCategoryBreakdownTrendAction
      * @param  array<int, int>  $categoryIds
      * @return array{periods: array<int, string>, series: array<int, array{category_id: int, label: string, color: string, values: array<int, float>}>}
      */
-    public static function run(Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity, array $categoryIds, string $search = '', string $amountMin = '', string $amountMax = ''): array
+    public static function run(User $user, Collection $accounts, CarbonInterface $from, CarbonInterface $to, string $granularity, array $categoryIds, string $search = '', string $amountMin = '', string $amountMax = ''): array
     {
         self::assertValidGranularity($granularity);
 
         $periods = self::periodBoundaries($from, $to, $granularity);
         $accountIds = $accounts->pluck('id');
         $categories = Category::whereIn('id', $categoryIds)->get()->keyBy('id');
+        DecorateCategoryColorsForUserAction::run($user, $categories);
 
         $series = [];
 
