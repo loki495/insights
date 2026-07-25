@@ -1,5 +1,8 @@
 # Insights
 
+[![CI](https://github.com/loki495/insights/actions/workflows/ci.yml/badge.svg)](https://github.com/loki495/insights/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+
 A Laravel + Livewire application for aggregating and tracking personal financial data across
 multiple bank accounts and credit cards using [Plaid](https://plaid.com/).
 
