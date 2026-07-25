@@ -5,7 +5,7 @@
 
 <x-table.tr
     class="row-category-{{ $item->id }} border-b border-zinc-300 dark:border-zinc-700 transition-opacity duration-300 ease-in"
-    x-bind:class="{ 'hover:bg-zinc-100/10 dark:hover:bg-zinc-900/20 bg-zinc-400 dark:bg-zinc-400/10 cursor-pointer': {{ !$search && $item->has_children ? 'true' : 'false' }} }"
+    x-bind:class="{ 'hover:bg-zinc-100/10 dark:hover:bg-zinc-900/20 hover:bg-zinc-400 dark:hover:bg-zinc-400/10 cursor-pointer': {{ !$search && $item->has_children ? 'true' : 'false' }} }"
     x-ref="cat-{{ $item->id }}"
     x-data="{
         children: {{ json_encode($childIds) }},
