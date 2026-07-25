@@ -7,6 +7,7 @@ namespace App\Livewire\Concerns;
 use App\Actions\CreateOrAdoptCategoryAction;
 use App\Models\Transaction;
 use Closure;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 
@@ -220,10 +221,12 @@ trait HasCategoryAssignment
     {
         $transactions = Transaction::whereIn('id', $transaction_ids)->get();
 
-        foreach ($transactions as $transaction) {
-            $this->authorize('update', $transaction);
-            $transaction->categories()->sync([$category_id]);
-        }
+        DB::transaction(function () use ($transactions, $category_id): void {
+            foreach ($transactions as $transaction) {
+                $this->authorize('update', $transaction);
+                $transaction->categories()->sync([$category_id]);
+            }
+        });
 
         $this->chartNeedsRefresh = true;
     }

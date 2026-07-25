@@ -78,6 +78,12 @@ it('bulkAssignCategory refuses to categorize a transaction belonging to another 
     $test->call('bulkAssignCategory', $category->id, [$ownTxn->id, $otherTxn->id]);
 
     $test->assertForbidden();
+
+    // The whole bulk action is wrapped in DB::transaction() — $ownTxn is processed first and
+    // would otherwise have been categorized before hitting the authorization failure on
+    // $otherTxn; confirming it wasn't is what actually proves the transaction rolled back
+    // rather than leaving a partial mutation.
+    expect($ownTxn->categories()->pluck('categories.id')->all())->toBe([]);
 });
 
 it('bulkAssignType sets the given type onto every selected transaction', function (): void {
@@ -115,10 +121,16 @@ it('bulkAssignType refuses to change the type of a transaction belonging to anot
 
     test()->actingAs($ownAccount->linked_account->user);
 
+    $originalType = $ownTxn->type;
+
     $test = Livewire::test('components.transactions', ['account' => $ownAccount]);
     $test->call('bulkAssignType', 'transfer', [$ownTxn->id, $otherTxn->id]);
 
     $test->assertForbidden();
+
+    // Wrapped in DB::transaction() — confirms $ownTxn (processed first) was rolled back rather
+    // than left with a partial mutation once $otherTxn's authorization failed.
+    expect($ownTxn->fresh()->type)->toBe($originalType);
 });
 
 it('bulkDeleteTransactions deletes only manually-added transactions among the selection', function (): void {
@@ -204,4 +216,8 @@ it('bulkDeleteTransactions refuses to delete a transaction belonging to another 
     $test->call('bulkDeleteTransactions', [$ownTxn->id, $otherTxn->id]);
 
     $test->assertForbidden();
+
+    // Wrapped in DB::transaction() — confirms $ownTxn (processed first) was rolled back rather
+    // than actually deleted before $otherTxn's authorization failure aborted the rest.
+    expect(Transaction::find($ownTxn->id))->not->toBeNull();
 });

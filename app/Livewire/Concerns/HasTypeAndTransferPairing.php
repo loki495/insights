@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Concerns;
 
 use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
@@ -22,10 +23,12 @@ trait HasTypeAndTransferPairing
 
         $transactions = Transaction::whereIn('id', $transaction_ids)->get();
 
-        foreach ($transactions as $transaction) {
-            $this->authorize('update', $transaction);
-            $transaction->update(['type' => $type]);
-        }
+        DB::transaction(function () use ($transactions, $type): void {
+            foreach ($transactions as $transaction) {
+                $this->authorize('update', $transaction);
+                $transaction->update(['type' => $type]);
+            }
+        });
 
         $this->chartNeedsRefresh = true;
     }
