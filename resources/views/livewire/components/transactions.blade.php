@@ -12,6 +12,7 @@ use App\Models\Category;
 use App\Models\OriginalCategory;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -277,11 +278,13 @@ new class extends Component
             ->get()
             ->filter(fn (Transaction $transaction) => $transaction->original['manual'] ?? false);
 
-        foreach ($transactions as $transaction) {
-            $this->authorize('delete', $transaction);
-            $transaction->categories()->detach();
-            $transaction->delete();
-        }
+        DB::transaction(function () use ($transactions): void {
+            foreach ($transactions as $transaction) {
+                $this->authorize('delete', $transaction);
+                $transaction->categories()->detach();
+                $transaction->delete();
+            }
+        });
 
         $this->chartNeedsRefresh = true;
     }
