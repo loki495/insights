@@ -56,3 +56,29 @@ it('keeps the same available/current mapping when updating an existing account',
     expect($account->available_balance)->toEqual(100);
     expect($account->current_balance)->toEqual(150);
 });
+
+it('does not match an identical-looking account belonging to a different linked account/item', function (): void {
+    $user = User::factory()->create();
+    $otherLinkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_other', 'access_token' => 'access_other',
+    ]);
+    $otherAccount = Account::factory()->for($otherLinkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'other_plaid_id', 'mask' => '0000', 'name' => 'Checking',
+        'official_name' => 'Checking Official', 'type' => 'depository', 'subtype' => 'checking',
+        'available_balance' => 0, 'current_balance' => 0,
+    ]);
+
+    $thisLinkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_this', 'access_token' => 'access_this',
+    ]);
+
+    UpdateAccountAction::run(plaidAccountInfo(['account_id' => 'this_plaid_id']), $thisLinkedAccount);
+
+    // A new account was created for this linked account, not merged into the other item's.
+    expect(Account::where('plaid_account_id', 'this_plaid_id')->exists())->toBeTrue();
+    $otherAccount->refresh();
+    expect($otherAccount->plaid_account_id)->toBe('other_plaid_id');
+    expect($otherAccount->available_balance)->toEqual(0);
+    expect($otherAccount->current_balance)->toEqual(0);
+    expect(Account::count())->toBe(2);
+});
