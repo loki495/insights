@@ -53,3 +53,16 @@ it('shows a validation error instead of crashing when no account is selected', f
 
     expect(Transaction::where('name', 'No Account Transaction')->exists())->toBeFalse();
 });
+
+it('shows a validation error instead of crashing when the name is left blank', function (): void {
+    $account = makeAccountForTransactionEditFormTest();
+
+    Livewire::test('admin.transactions.edit', ['account' => $account])
+        ->set('name', '')
+        ->set('amount', -10)
+        ->set('date', now()->format('Y-m-d\TH:i'))
+        ->call('save')
+        ->assertHasErrors(['name']);
+
+    expect(Transaction::where('account_id', $account->id)->exists())->toBeFalse();
+});
