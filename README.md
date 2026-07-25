@@ -12,6 +12,19 @@ Work in progress. Core functionality — account linking, transaction sync, cate
 classification, and reporting — is implemented. Autocategorization rules and budgeting tools are
 not built yet.
 
+## Screenshots
+
+| Dashboard | Transaction Search |
+| --- | --- |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Transaction Search with chart and filters expanded](docs/screenshots/report.png) |
+
+| Dark mode | Mobile |
+| --- | --- |
+| ![Dark mode](docs/screenshots/dark-mode.png) | ![Mobile view](docs/screenshots/mobile.png) |
+
+All captured against the seeded demo dataset — see [Exploring without a Plaid
+account](#exploring-without-a-plaid-account).
+
 ## Features
 
 - **Plaid integration** — link bank/credit accounts via Plaid Link, sync transactions, and mirror

@@ -16,6 +16,16 @@ Plaid-integration code and need to exercise the real Link flow, a free
 real bank data) is enough — see [Linking a bank account](README.md#linking-a-bank-account) for the
 sandbox-vs-production distinction. You do not need Plaid production access to contribute.
 
+## Dev-only tooling
+
+Local dev shows two debug overlays you won't see in production: [Livewire
+Blaze](https://github.com/livewire/blaze)'s floating toast (per-request compile/render timings)
+and [Laravel Debugbar](https://github.com/barryvdh/laravel-debugbar)'s bottom bar (queries, models,
+views). Both are dev-only and gated off `APP_DEBUG`/their own env vars — Blaze's toolbar via
+`BLAZE_DEBUG` (`.env`, default `false`), Debugbar via `DEBUGBAR_ENABLED` (defaults to
+`APP_DEBUG`'s value if unset). Toggle either to `false` in `.env` if they get in the way of what
+you're working on (e.g. taking a clean screenshot).
+
 ## Before opening a PR
 
 Run the full check suite:
