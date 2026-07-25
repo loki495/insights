@@ -11,7 +11,7 @@ services:
     ports:
       - "${APP_PORT:-8000}:80"
     volumes:
-      - insights-database:/var/www/html/database
+      - insights-database:/var/www/html/storage/app
     healthcheck:
       # Only turns healthy once entrypoint-prod.sh has created the sqlite file and run
       # `migrate --force` and Apache is actually serving requests — see the scheduler service's
@@ -41,7 +41,7 @@ services:
       app:
         condition: service_healthy
     volumes:
-      - insights-database:/var/www/html/database
+      - insights-database:/var/www/html/storage/app
 
 volumes:
   insights-database: {}

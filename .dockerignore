@@ -9,6 +9,7 @@ storage/framework/testing/*
 storage/framework/views/*
 bootstrap/cache/*.php
 database/*.sqlite
+storage/app/*.sqlite*
 .env
 .env.*
 !.env.example
