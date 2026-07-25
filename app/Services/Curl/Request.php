@@ -81,7 +81,7 @@ class Request
         $response = curl_exec($ch);
         $curlErrno = curl_errno($ch);
         $curlError = curl_error($ch);
-        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         if ($response === false || $curlErrno !== 0) {
