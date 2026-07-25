@@ -59,6 +59,81 @@ jobs:
       - name: Run test suite
         run: composer test
 
+  test-mysql:
+    runs-on: ubuntu-latest
+
+    # Experimental: the `test` job above only ever exercises SQLite. README claims
+    # `DB_CONNECTION` is configurable to MySQL/Postgres, but that path has never actually been run
+    # against — this confirms migrations and the Unit/Feature suite actually work against a real
+    # MySQL instance rather than just assuming SQLite's type-affinity leniency generalizes.
+    # Browser tests are skipped here (they exercise the UI, not the DB driver, and would double
+    # runtime for no real signal).
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: insights
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          extensions: intl, sockets, pcntl, pdo_mysql
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Build Assets
+        run: npm run build
+
+      - name: Run migrations against MySQL
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: insights
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate --force
+
+      - name: Run Unit/Feature suite against MySQL
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: insights
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: vendor/bin/pest --colors=always --parallel --testsuite=Feature,Unit
+
   docker-prod-smoke:
     runs-on: ubuntu-latest
 
