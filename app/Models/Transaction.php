@@ -57,6 +57,13 @@ class Transaction extends Model
         'original' => 'json',
         'amount' => MoneyCast::class,
         'running_balance' => MoneyCast::class,
+        // Declared `datetime` in the schema (2025_03_26_215817_create_transactions_table.php) but
+        // never cast here — Plaid syncs a raw ISO 8601 string with a `T`/`Z` separator
+        // (`authorized_datetime`) straight into this column via mass assignment, which SQLite
+        // accepted uncast (no real datetime type to violate), but MySQL's DATETIME column rejects
+        // outright. Casting it lets Eloquent normalize any date-like input the same way it already
+        // does for created_at/updated_at.
+        'authorized_at' => 'datetime',
     ];
 
     /**
