@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Category;
-use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
@@ -17,12 +16,6 @@ new class extends Component
     {
         $this->category = $category;
         $this->category_id = $category?->id;
-    }
-
-    #[On('clicked')]
-    public function clicked($category): never
-    {
-        dd($category);
     }
 }
 
