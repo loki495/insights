@@ -14,10 +14,12 @@
         <div class="font-semibold">{!! currency($item['current_balance']) !!}</div>
     </div>
 
+    @if($item['available_balance'] !== null)
     <div class="flex items-center justify-between gap-2">
         <div class="text-xs text-zinc-500 dark:text-zinc-400">Available Balance</div>
         <div class="font-semibold">{!! currency($item['available_balance']) !!}</div>
     </div>
+    @endif
 
     <div class="flex items-center justify-between gap-2">
         <div class="text-xs text-zinc-500 dark:text-zinc-400">Tracking</div>
