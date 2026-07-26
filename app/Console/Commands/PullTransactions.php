@@ -50,7 +50,7 @@ class PullTransactions extends Command
             ->filter(fn (LinkedAccount $linkedAccount): bool => $linked_account_id || $linkedAccount->isAutoPullDue())
             ->each(function (LinkedAccount $linkedAccount) use ($force, &$failures): void {
                 try {
-                    PullLinkedAccountTransactionsAction::run($linkedAccount, null, $force);
+                    PullLinkedAccountTransactionsAction::run($linkedAccount, $force);
                 } catch (\Throwable $e) {
                     $failures++;
                     Log::error('transactions:pull failed for linked account', [

@@ -9,24 +9,18 @@ use App\Models\Transaction;
 
 final class PullLinkedAccountTransactionsAction
 {
-    public static function run(LinkedAccount $linkedAccount, ?string $cursor = null, bool $force = false): void
+    public static function run(LinkedAccount $linkedAccount, bool $force = false): void
     {
-        // Only the outermost call (as opposed to a paginated continuation) should record
-        // success/failure — a later page failing shouldn't erase an earlier page's success, and
-        // "succeeded" should only mean the whole pull (all pages) finished.
-        if ($cursor === null) {
-            try {
-                self::pull($linkedAccount, null, $force);
-                $linkedAccount->update(['last_sync_failed_at' => null, 'last_sync_error' => null]);
-            } catch (\Throwable $e) {
-                $linkedAccount->update(['last_sync_failed_at' => now(), 'last_sync_error' => $e->getMessage()]);
-                throw $e;
-            }
-
-            return;
+        // Pagination continuations are entirely pull()'s own concern (it recurses on
+        // has_more/next_cursor internally) — run() is always the outermost call, so
+        // success/failure is recorded exactly once per call, covering every page.
+        try {
+            self::pull($linkedAccount, null, $force);
+            $linkedAccount->update(['last_sync_failed_at' => null, 'last_sync_error' => null]);
+        } catch (\Throwable $e) {
+            $linkedAccount->update(['last_sync_failed_at' => now(), 'last_sync_error' => $e->getMessage()]);
+            throw $e;
         }
-
-        self::pull($linkedAccount, $cursor, $force);
     }
 
     private static function pull(LinkedAccount $linkedAccount, ?string $cursor, bool $force): void
