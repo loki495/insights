@@ -38,10 +38,6 @@
                     </flux:navlist.group>
                 </div>
 
-                <flux:navlist.item icon="list-bullet" :href="route('original-categories.index')" :current="request()->routeIs('original-categories.*')" wire:navigate>
-                    <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Original Categories') }}</span>
-                </flux:navlist.item>
-
                 <flux:navlist.item icon="list-bullet" :href="route('categories.index')" :current="request()->routeIs('categories.*')" wire:navigate>
                     <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Categories') }}</span>
                 </flux:navlist.item>
