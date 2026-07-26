@@ -23,7 +23,7 @@ account](docs/SETUP.md#exploring-without-a-plaid-account).
 
 Work in progress. Core functionality — account linking, transaction sync, categorization, type
 classification, and reporting — is implemented. Autocategorization rules and budgeting tools are
-not built yet.
+not built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
 
 ## Features
 
