@@ -48,6 +48,9 @@ new class extends Component
     #[Session]
     public string $amount_max = '';
 
+    #[Session]
+    public int $per_page = 25;
+
     public ?Account $account = null;
 
     #[Session]
@@ -150,6 +153,16 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage($value): void
+    {
+        // Only options actually offered in the dropdown are trusted — clamps a tampered
+        // Livewire request (or a stale session value) back to the default instead of letting
+        // an arbitrary page size through to paginate().
+        if (! in_array((int) $value, [10, 25, 50, 100], true)) {
+            $this->per_page = 25;
+        }
+    }
+
     /**
      * The chart aggregates the full (unpaginated) date-range query, so it
      * doesn't need recomputing on a page-only navigation (nextPage/
@@ -175,7 +188,7 @@ new class extends Component
             ->with('account.linked_account')
             ->orderByRaw('relevance desc, transactions.created_at desc, transactions.transaction_type desc, transactions.id asc')
             // ->ddRawSql()
-            ->paginate(25);
+            ->paginate($this->per_page);
 
         DecorateCategoryColorsForUserAction::run(auth()->user(), $transactions->getCollection()->flatMap->categories);
 
@@ -410,11 +423,23 @@ new class extends Component
         <flux:separator variant="subtle"></flux:separator>
 
         <div class="flex flex-col-reverse sm:flex-row w-full justify-between items-stretch sm:items-center gap-3">
-            @if($transactions->hasPages())
-                {{ $transactions->links(data: ['scrollTo' => false]) }}
-            @else
-                <div></div>
-            @endif
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                @if($transactions->hasPages())
+                    {{ $transactions->links(data: ['scrollTo' => false]) }}
+                @else
+                    <div></div>
+                @endif
+
+                <div class="flex items-center gap-2 text-sm shrink-0">
+                    <label for="per_page" class="text-zinc-500 dark:text-zinc-400">Per page</label>
+                    <flux:select wire:model.live="per_page" id="per_page" class="w-20">
+                        <flux:select.option value="10">10</flux:select.option>
+                        <flux:select.option value="25">25</flux:select.option>
+                        <flux:select.option value="50">50</flux:select.option>
+                        <flux:select.option value="100">100</flux:select.option>
+                    </flux:select>
+                </div>
+            </div>
 
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <flux:button x-show="!selectMode" variant="subtle" icon="check-circle" class="w-full sm:w-auto cursor-pointer" @click="toggleSelectMode()">Select</flux:button>
