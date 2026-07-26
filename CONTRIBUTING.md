@@ -46,8 +46,8 @@ what "passing" means here:
 
 - **PHPStan** runs at level 6 with a type-coverage floor (not the default 99%) — see the comments
   in `phpstan.neon.dist` for why. Raising these thresholds is welcome; lowering them isn't.
-- **Pest coverage** has a `--min=70` floor for the same reason — it's today's real number, not an
-  aspirational one. Adding tests that raise it is welcome.
+- **Pest coverage** has a `--min=95` floor for the same reason — it's close to today's real number
+  (95.9% as of this writing), not an aspirational one. Adding tests that raise it is welcome.
 - **Tests must never be deleted, weakened, or skipped to force a pass.** If a test fails, either
   the code or the test's expectations need to change deliberately — not the assertions being
   loosened to make red go green.
