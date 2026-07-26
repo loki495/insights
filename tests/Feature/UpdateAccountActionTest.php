@@ -82,3 +82,45 @@ it('does not match an identical-looking account belonging to a different linked 
     expect($otherAccount->current_balance)->toEqual(0);
     expect(Account::count())->toBe(2);
 });
+
+it('cleans stray U+FFFD replacement characters out of the account name/official_name on create', function (): void {
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_'.uniqid(), 'access_token' => 'access_'.uniqid(),
+    ]);
+
+    UpdateAccountAction::run(plaidAccountInfo([
+        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+    ]), $linkedAccount);
+
+    $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
+    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
+});
+
+it('cleans stray U+FFFD replacement characters out of the account name/official_name on update', function (): void {
+    // The match query looks the existing row up by exact name/official_name equality against
+    // the incoming Plaid payload, so the pre-existing row here has to already carry the
+    // (pre-fix) corrupted name — exactly what a real previously-synced, not-yet-backfilled
+    // account would look like — for the match to succeed and exercise the update path at all.
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_'.uniqid(), 'access_token' => 'access_'.uniqid(),
+    ]);
+    Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_account_1', 'mask' => '0000',
+        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'type' => 'depository', 'subtype' => 'checking',
+    ]);
+
+    UpdateAccountAction::run(plaidAccountInfo([
+        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+    ]), $linkedAccount);
+
+    $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
+    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
+});
