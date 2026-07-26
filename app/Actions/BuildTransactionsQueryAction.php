@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * The core transaction-list query: IDOR-safe account scoping (aggregate views only ever pull from
- * accounts the given user actually owns), category/type/amount/date filtering, and an optional
- * relevance-scored search (see parseSearch()) supporting `required`, `-excluded`, and optional
- * terms.
+ * accounts the given user actually owns), category/type/amount/date filtering, and a
+ * relevance-scored search (see parseSearch()) where every bare (or redundantly `+`-prefixed) term
+ * is required — all of them must match — and `-excluded` terms must not match anywhere.
  */
 final class BuildTransactionsQueryAction
 {
@@ -76,11 +76,13 @@ final class BuildTransactionsQueryAction
         if ($filters->search !== '' && $filters->search !== '0') {
             $terms = self::parseSearch($filters->search);
 
-            // Dynamically build the relevance selectRaw
+            // Dynamically build the relevance selectRaw — scores which field(s) each required
+            // term matched in, purely to order already-qualifying results; it never affects which
+            // rows are included (that's the where() below).
             $bindings = [];
             $scoreParts = [];
 
-            foreach ($terms['optional'] as $term) {
+            foreach ($terms['required'] as $term) {
                 foreach (['transactions.name', 'transactions.merchant_name', 'original_categories.name', 'original_categories.pf_detailed'] as $field) {
                     $scoreParts[] = "CASE WHEN LOWER($field) LIKE ? THEN 1 ELSE 0 END";
                     $bindings[] = '%'.strtolower((string) $term).'%';
@@ -98,29 +100,17 @@ final class BuildTransactionsQueryAction
             }
 
             $query->where(function ($q) use ($terms): void {
-                $q->where(function ($q1) use ($terms): void {
-                    // Required terms
-                    foreach ($terms['required'] as $term) {
-                        $q1->where(function ($q2) use ($term): void {
-                            $q2->where('transactions.name', 'like', '%'.$term.'%')
-                                ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
-                        });
-                    }
+                // Every required term must match somewhere (name, merchant, or original category).
+                foreach ($terms['required'] as $term) {
+                    $q->where(function ($q1) use ($term): void {
+                        $q1->where('transactions.name', 'like', '%'.$term.'%')
+                            ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
+                            ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
+                            ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
+                    });
+                }
 
-                    // Optional terms
-                    foreach ($terms['optional'] as $term) {
-                        $q1->orWhere(function ($q2) use ($term): void {
-                            $q2->where('transactions.name', 'like', '%'.$term.'%')
-                                ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
-                                ->orWhereRelation('originalCategory', 'pf_detailed', 'like', '%'.$term.'%');
-                        });
-                    }
-                });
-
-                // Excluded terms
+                // No excluded term may match anywhere.
                 foreach ($terms['excluded'] as $term) {
                     $q->where(function ($q1) use ($term): void {
                         $q1->where('transactions.name', 'not like', '%'.$term.'%')
@@ -136,7 +126,6 @@ final class BuildTransactionsQueryAction
                             });
                     });
                 }
-
             });
         } else {
             $query
@@ -147,7 +136,11 @@ final class BuildTransactionsQueryAction
     }
 
     /**
-     * @return array{required: array<int, string>, excluded: array<int, string>, optional: array<int, string>}
+     * Bare words and `+`-prefixed words are both required (the `+` is accepted but redundant —
+     * kept so anyone already in the habit of typing it isn't surprised); `-`-prefixed words are
+     * excluded.
+     *
+     * @return array{required: array<int, string>, excluded: array<int, string>}
      */
     private static function parseSearch(string $query): array
     {
@@ -156,24 +149,13 @@ final class BuildTransactionsQueryAction
         $parsed = [
             'required' => [],
             'excluded' => [],
-            'optional' => [],
         ];
 
         foreach ($matches as $match) {
             $prefix = $match[1] ?: $match[3];
             $term = $match[2] ?: $match[4];
 
-            switch ($prefix) {
-                case '+':
-                    $parsed['required'][] = $term;
-                    break;
-                case '-':
-                    $parsed['excluded'][] = $term;
-                    break;
-                default:
-                    $parsed['optional'][] = $term;
-                    break;
-            }
+            $parsed[$prefix === '-' ? 'excluded' : 'required'][] = $term;
         }
 
         return $parsed;
