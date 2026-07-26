@@ -52,3 +52,23 @@ it('trims whitespace before matching an existing category', function (): void {
 
     expect($matched->id)->toBe($category->id);
 });
+
+it('updates the shared category description when one is explicitly passed', function (): void {
+    $user = User::factory()->create();
+    $category = CreateOrAdoptCategoryAction::run($user, null, 'Groceries', null);
+    expect($category->description)->toBeNull();
+
+    $updated = CreateOrAdoptCategoryAction::run($user, null, 'Groceries', null, 'Food and household supplies');
+
+    expect($updated->id)->toBe($category->id);
+    expect($updated->description)->toBe('Food and household supplies');
+});
+
+it('does not touch the description when none is passed (quick-picker create flow)', function (): void {
+    $user = User::factory()->create();
+    $category = CreateOrAdoptCategoryAction::run($user, null, 'Groceries', null, 'Original description');
+
+    CreateOrAdoptCategoryAction::run($user, null, 'Groceries', null);
+
+    expect($category->fresh()->description)->toBe('Original description');
+});
