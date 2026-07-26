@@ -7,14 +7,14 @@ Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting set up
 
-See the README's [Getting Started](README.md#getting-started) section for Docker/bare-metal setup
+See [docs/SETUP.md](docs/SETUP.md#getting-started-local-development) for Docker/bare-metal setup
 instructions. You don't need real Plaid credentials to start contributing — see
-[Exploring without a Plaid account](README.md#exploring-without-a-plaid-account) for a seeded demo
-dataset (`php artisan db:seed --class=DemoDataSeeder`). If you're specifically working on
+[Exploring without a Plaid account](docs/SETUP.md#exploring-without-a-plaid-account) for a seeded
+demo dataset (`php artisan db:seed --class=DemoDataSeeder`). If you're specifically working on
 Plaid-integration code and need to exercise the real Link flow, a free
 [Plaid sandbox account](https://dashboard.plaid.com/signup) (fake institutions/transactions, not
-real bank data) is enough — see [Linking a bank account](README.md#linking-a-bank-account) for the
-sandbox-vs-production distinction. You do not need Plaid production access to contribute.
+real bank data) is enough — see [Linking a bank account](docs/SETUP.md#linking-a-bank-account) for
+the sandbox-vs-production distinction. You do not need Plaid production access to contribute.
 
 ## Dev-only tooling
 
