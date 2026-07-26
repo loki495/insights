@@ -15,8 +15,9 @@
     @foreach($transaction['categories'] as $category)
     <button
         type="button"
+        title="{{ $category['fullName'] }}"
         @click="$dispatch('edit-category', { transaction_id: {{ $transaction['id'] }}, transaction_name: '{{ htmlQuotes($transaction['name']) }}', transaction_amount: '{{ currency($transaction['amount'], $transaction['currency'], true) }}', category_id: {{ $category['id'] }} })"
-        class="cursor-pointer text-xs p-1 h-auto rounded-lg shadow-lg text-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]"
+        class="cursor-pointer text-xs p-1 h-auto max-w-40 truncate rounded-lg shadow-lg text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]"
         style="background-color: {{ $category['color'] }}"
     >{{ $category['fullName'] }}</button>
     @endforeach
@@ -24,9 +25,9 @@
     @if($suggestion)
     <button
         type="button"
-        title="Apply suggested category"
+        title="Apply suggested category: {{ $suggestion['name'] }}"
         @click="applyCategory({{ $transaction['id'] }}, {{ $suggestion['id'] }})"
-        class="cursor-pointer text-xs p-1 h-auto rounded-lg border border-dashed text-nowrap"
+        class="cursor-pointer text-xs p-1 h-auto max-w-40 truncate rounded-lg border border-dashed"
         style="border-color: {{ $suggestion['color'] }}; color: {{ $suggestion['color'] }}"
     >+ {{ $suggestion['name'] }}?</button>
     @endif
@@ -41,7 +42,7 @@
 </div>
 
 <div class="flex gap-2 items-center flex-wrap" x-show="optimisticCategories[{{ $transaction['id'] }}]" x-cloak>
-    <div class="text-xs p-1 h-auto rounded-lg shadow-lg opacity-60 animate-pulse text-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]" :style="`background-color: ${optimisticCategories[{{ $transaction['id'] }}]?.color}`">
+    <div class="text-xs p-1 h-auto max-w-40 truncate rounded-lg shadow-lg opacity-60 animate-pulse text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]" :style="`background-color: ${optimisticCategories[{{ $transaction['id'] }}]?.color}`" :title="optimisticCategories[{{ $transaction['id'] }}]?.full_name">
         <span x-text="optimisticCategories[{{ $transaction['id'] }}]?.full_name"></span>
     </div>
 </div>
