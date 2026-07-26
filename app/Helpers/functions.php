@@ -41,6 +41,26 @@ if (! function_exists('plaid')) {
     }
 
     /**
+     * Plaid (or the underlying bank data feed) occasionally already contains the literal U+FFFD
+     * replacement character in a free-text field like an account/card product name — the
+     * original character was lost to a lossy encoding conversion upstream, before it ever reached
+     * us, so by the time we see it there's nothing to recover. This only cleans up the resulting
+     * visual artifact (stray glyphs plus the double space they tend to leave behind), e.g. turning
+     * "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD" into "WELLS FARGO REFLECT VISA CARD".
+     */
+    function cleanPlaidText(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $cleaned = str_replace("\u{FFFD}", '', $value);
+        $cleaned = preg_replace('/\s{2,}/', ' ', $cleaned);
+
+        return trim((string) $cleaned);
+    }
+
+    /**
      * @param  array<int, mixed>  $path
      * @param  array<string, mixed>  $pf
      */

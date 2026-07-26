@@ -89,6 +89,28 @@ it('throws when the transaction references an account that has not been synced y
     UpdateAccountTransactionsAction::run(plaidTransactionInfo(['account_id' => 'no_such_plaid_account']), 'added');
 })->throws(Exception::class, 'Account not found - no_such_plaid_account');
 
+it('cleans stray U+FFFD replacement characters out of the transaction name/merchant_name', function (): void {
+    makeAccountForTransactionsTest();
+
+    UpdateAccountTransactionsAction::run(plaidTransactionInfo([
+        'name' => "SOME STORE\u{FFFD}\u{FFFD} NAME",
+        'merchant_name' => "SOME STORE\u{FFFD}\u{FFFD} NAME",
+    ]), 'added');
+
+    $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
+    expect($transaction->name)->toBe('SOME STORE NAME');
+    expect($transaction->merchant_name)->toBe('SOME STORE NAME');
+});
+
+it('leaves merchant_name null when Plaid sends no merchant name', function (): void {
+    makeAccountForTransactionsTest();
+
+    UpdateAccountTransactionsAction::run(plaidTransactionInfo(['merchant_name' => null]), 'added');
+
+    $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
+    expect($transaction->merchant_name)->toBeNull();
+});
+
 it('falls back to the date-only fields when datetime fields are absent', function (): void {
     makeAccountForTransactionsTest();
 
