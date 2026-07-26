@@ -54,9 +54,18 @@ class AppServiceProvider extends ServiceProvider
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
     }
 
+    /**
+     * Force https for every generated URL when APP_URL itself is https — not simply whenever
+     * APP_ENV isn't local. A blanket "any non-local env forces https" check breaks asset loading
+     * entirely (Vite build output, Livewire, Flux — all requested over https then, regardless of
+     * how the page itself was served) for anyone testing a real production build locally over
+     * plain http, e.g. following this app's own README quick start (`APP_ENV=production` with the
+     * default `APP_URL=http://localhost`). A real deployment with a real https APP_URL is
+     * unaffected — this still forces https everywhere for it.
+     */
     public function configureUrl(): void
     {
-        if (! $this->app->isLocal()) {
+        if (! $this->app->isLocal() && str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
     }

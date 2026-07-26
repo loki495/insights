@@ -30,7 +30,8 @@
             "deduplicated",
             "discoverable",
             "browsable",
-            "ints"
+            "ints",
+            "localhost"
         ],
         "paths": []
     }
