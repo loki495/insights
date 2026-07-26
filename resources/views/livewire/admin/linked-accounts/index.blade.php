@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Services\Plaid\PlaidService;
 use Livewire\Attributes\Computed;
@@ -105,7 +106,7 @@ new class extends Component
 
     public function updateLinkedAccount(): void
     {
-        $this->linkedAccounts = auth()->user()->linkedAccounts->map(fn (LinkedAccount $linkedAccount): array => [
+        $this->linkedAccounts = auth()->user()->linkedAccounts()->with('accounts')->get()->map(fn (LinkedAccount $linkedAccount): array => [
             'id' => $linkedAccount->id,
             'provider_name' => $linkedAccount->provider_name,
             'closed_at' => $linkedAccount->closed_at,
@@ -115,6 +116,13 @@ new class extends Component
             'last_pulled_at' => $linkedAccount->last_pulled_at,
             'last_sync_failed_at' => $linkedAccount->last_sync_failed_at,
             'last_sync_error' => $linkedAccount->last_sync_error,
+            'accounts' => $linkedAccount->accounts->map(fn (Account $account): array => [
+                'id' => $account->id,
+                'display_name' => $account->display_name,
+                'type' => $account->type,
+                'current_balance' => $account->current_balance,
+                'available_balance' => $account->available_balance,
+            ])->toArray(),
         ])->toArray();
     }
 
@@ -151,8 +159,12 @@ new class extends Component
 
 ?>
     <x-page-wrapper heading="Linked Institutions" subheading="Manage your linked institutions.">
-        <div class="w-full overflow-x-auto">
-        <x-table>
+        <x-responsive-table
+            :items="$linkedAccounts"
+            row-view="livewire.admin.linked-accounts.partials.linked-account-table-row"
+            card-view="livewire.admin.linked-accounts.partials.linked-account-card"
+            empty-message="No linked institutions found"
+        >
             <x-slot name="head">
                 <x-table.tr>
                     <x-table.th>Name</x-table.th>
@@ -160,65 +172,7 @@ new class extends Component
                     <x-table.th></x-table.th>
                 </x-table.tr>
             </x-slot>
-            <x-slot name="body">
-                @foreach($linkedAccounts as $linkedAccount)
-                    <x-table.tr class="{{ $linkedAccount['closed_at'] ? 'opacity-50' : '' }}">
-                        <x-table.td>
-                            <flux:link :href="route('linked-accounts.accounts.index', $linkedAccount['id'])" wire:navigate>{{ $linkedAccount['provider_name'] }}</flux:link>
-                            @if($linkedAccount['closed_at'])
-                            <span class="text-xs text-zinc-500 dark:text-zinc-400">(closed {{ \Illuminate\Support\Carbon::parse($linkedAccount['closed_at'])->format('M j, Y') }})</span>
-                            @endif
-                        </x-table.td>
-                        <x-table.td>
-                            @unless($linkedAccount['closed_at'])
-                            <div
-                                class="flex flex-col gap-1"
-                                x-data="{
-                                    enabled: {{ $linkedAccount['auto_pull_enabled'] ? 'true' : 'false' }},
-                                    value: {{ $linkedAccount['auto_pull_interval_value'] }},
-                                    unit: '{{ $linkedAccount['auto_pull_interval_unit'] }}',
-                                    save() {
-                                        $wire.updateAutoPull({{ $linkedAccount['id'] }}, this.enabled, this.value, this.unit);
-                                    },
-                                }"
-                            >
-                                <flux:field variant="inline">
-                                    <flux:checkbox x-model="enabled" @change="save()" />
-                                    <flux:label>Enabled</flux:label>
-                                </flux:field>
-                                <div class="flex items-center gap-1 text-sm" x-show="enabled" x-cloak>
-                                    <span class="text-zinc-500 dark:text-zinc-400">every</span>
-                                    <x-input type="number" min="1" x-model.number="value" @change="save()" class="w-16"></x-input>
-                                    <flux:select x-model="unit" @change="save()" class="w-24">
-                                        <flux:select.option value="hours">hours</flux:select.option>
-                                        <flux:select.option value="days">days</flux:select.option>
-                                    </flux:select>
-                                </div>
-                                @if($linkedAccount['last_pulled_at'])
-                                <span class="text-xs text-zinc-500 dark:text-zinc-400">Last pulled {{ \Illuminate\Support\Carbon::parse($linkedAccount['last_pulled_at'])->diffForHumans() }}</span>
-                                @endif
-                                @if($linkedAccount['last_sync_failed_at'])
-                                <span class="text-xs text-red-600 dark:text-red-400" title="{{ $linkedAccount['last_sync_error'] }}">Last sync failed {{ \Illuminate\Support\Carbon::parse($linkedAccount['last_sync_failed_at'])->diffForHumans() }}</span>
-                                @endif
-                            </div>
-                            @endunless
-                        </x-table.td>
-                        <x-table.td>
-                            <div class="flex gap-2">
-                                <x-button icon="list-bullet" title="View Accounts" class="cursor-pointer hover:bg-zinc-200" href="{{ route('linked-accounts.accounts.index', $linkedAccount['id']) }}" wire:navigate></x-button>
-                                <x-button icon="arrow-path" title="Update Access Token" class="cursor-pointer !bg-orange-600 hover:!bg-orange-500 dark:!bg-orange-700 dark:!border-orange-700 dark:hover:!bg-orange-600" wire:click="linkAccount({{ $linkedAccount['id'] }})"></x-button>
-                                @if($linkedAccount['closed_at'])
-                                <x-button icon="arrow-uturn-left" title="Reopen" class="cursor-pointer !bg-green-600 hover:!bg-green-500 dark:!bg-green-700 dark:!border-green-700 dark:hover:!bg-green-600" wire:click="reopen({{ $linkedAccount['id'] }})"></x-button>
-                                @else
-                                <x-button icon="x-circle" title="Close" class="cursor-pointer !bg-red-600 hover:!bg-red-500 dark:!bg-red-700 dark:!border-red-700 dark:hover:!bg-red-600" wire:click="close({{ $linkedAccount['id'] }})"></x-button>
-                                @endif
-                            </div>
-                        </x-table.td>
-                    </x-table.tr>
-                @endforeach
-            </x-slot>
-        </x-table>
-        </div>
+        </x-responsive-table>
 
         <div class="w-full sm:w-48">
             <x-button type="primary" wire:click="linkAccount" class="w-full">Link Institution</x-button>
