@@ -313,7 +313,8 @@ new class extends Component
                                 <div class="flex gap-1 flex-wrap">
                                     @foreach($transaction->categories as $category)
                                         <span
-                                            class="text-xs px-1.5 py-0.5 rounded-md text-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]"
+                                            title="{{ $category->name }}"
+                                            class="text-xs px-1.5 py-0.5 inline-block max-w-32 truncate rounded-md text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_70%)]"
                                             style="background-color: {{ $category->color ?: '#3b82f6' }}"
                                         >{{ $category->name }}</span>
                                     @endforeach
