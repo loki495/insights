@@ -99,6 +99,35 @@ it('cleans stray U+FFFD replacement characters out of the account name/official_
     expect($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
 });
 
+it('matches an existing account by plaid_account_id even when the incoming name no longer matches the cleaned stored name', function (): void {
+    // Real bug: after cleanPlaidText() normalizes a stored name, Plaid keeps sending the raw
+    // (still-corrupted) name on every subsequent sync. A name-based match would never find the
+    // existing row again and would create a duplicate Account sharing the same plaid_account_id.
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_'.uniqid(), 'access_token' => 'access_'.uniqid(),
+    ]);
+    Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_account_1', 'mask' => '0000',
+        'name' => 'WELLS FARGO REFLECT VISA CARD',
+        'official_name' => 'WELLS FARGO REFLECT VISA CARD',
+        'type' => 'depository', 'subtype' => 'checking',
+        'available_balance' => 0, 'current_balance' => 0,
+    ]);
+
+    UpdateAccountAction::run(plaidAccountInfo([
+        'account_id' => 'plaid_account_1',
+        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+    ]), $linkedAccount);
+
+    expect(Account::count())->toBe(1);
+    $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
+    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->available_balance)->toEqual(100);
+    expect($account->current_balance)->toEqual(150);
+});
+
 it('cleans stray U+FFFD replacement characters out of the account name/official_name on update', function (): void {
     // The match query looks the existing row up by exact name/official_name equality against
     // the incoming Plaid payload, so the pre-existing row here has to already carry the

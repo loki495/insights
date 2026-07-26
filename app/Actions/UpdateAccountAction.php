@@ -14,16 +14,31 @@ final class UpdateAccountAction
      */
     public static function run(array $account_info, LinkedAccount $linked_account): void
     {
+        // Plaid's own account_id is the stable identity to match on — it doesn't change just
+        // because our stored name/official_name diverges from what Plaid is currently sending
+        // (e.g. our own cleanPlaidText() normalization, or Plaid renaming a product). Matching
+        // by name first caused a real duplicate: Plaid kept sending a corrupted account name
+        // after we'd already cleaned the stored one, so the name-based lookup stopped finding
+        // the existing row and a second Account was created for the same Plaid account_id.
+        // Falling back to the old descriptive-field match only when the id lookup misses still
+        // covers the (separately real) case of Plaid reissuing a new account_id for what is
+        // otherwise clearly the same account (see the "keeps the same available/current
+        // mapping" test below, which changes account_id on purpose).
         $account = Account::query()
-            ->where('name', $account_info['name'])
-            ->where('official_name', $account_info['official_name'])
-            ->where('type', $account_info['type'])
-            ->where('subtype', $account_info['subtype'])
-            ->where('mask', $account_info['mask'])
-            ->whereHas('linked_account', function ($q) use ($linked_account): void {
-                $q->where('item_id', $linked_account->item_id);
-            })
+            ->where('linked_account_id', $linked_account->id)
+            ->where('plaid_account_id', $account_info['account_id'])
             ->first();
+
+        if (! $account) {
+            $account = Account::query()
+                ->where('linked_account_id', $linked_account->id)
+                ->where('name', $account_info['name'])
+                ->where('official_name', $account_info['official_name'])
+                ->where('type', $account_info['type'])
+                ->where('subtype', $account_info['subtype'])
+                ->where('mask', $account_info['mask'])
+                ->first();
+        }
 
         if ($account) {
             // Deliberately a model instance's update(), not a query builder's — the latter
