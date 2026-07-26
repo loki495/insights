@@ -164,7 +164,7 @@ new class extends Component
                 @foreach($linkedAccounts as $linkedAccount)
                     <x-table.tr class="{{ $linkedAccount['closed_at'] ? 'opacity-50' : '' }}">
                         <x-table.td>
-                            {{ $linkedAccount['provider_name'] }}
+                            <flux:link :href="route('linked-accounts.accounts.index', $linkedAccount['id'])" wire:navigate>{{ $linkedAccount['provider_name'] }}</flux:link>
                             @if($linkedAccount['closed_at'])
                             <span class="text-xs text-zinc-500 dark:text-zinc-400">(closed {{ \Illuminate\Support\Carbon::parse($linkedAccount['closed_at'])->format('M j, Y') }})</span>
                             @endif
