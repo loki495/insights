@@ -114,7 +114,7 @@ new class extends Component
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">
-                <div class="flex flex-col gap-2">
+                <div class="flex min-w-0 flex-col gap-2">
                     <flux:heading size="lg" weight="semibold">Spending This Month</flux:heading>
                     @if(count($chart_labels) > 0)
                         <div wire:key="dashboard-spending-snapshot">
@@ -127,7 +127,7 @@ new class extends Component
                     @endif
                 </div>
 
-                <div class="flex flex-col gap-2">
+                <div class="flex min-w-0 flex-col gap-2">
                     <flux:heading size="lg" weight="semibold">Recent Transactions</flux:heading>
                     <div class="flex h-64 flex-col gap-1 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
                         @forelse($recentTransactions as $transaction)
