@@ -18,13 +18,6 @@ use Carbon\Carbon;
  */
 trait HasDisplayTimezoneDateRange
 {
-    private function toDisplayTimezone(string $value): string
-    {
-        return Carbon::parse($value)
-            ->setTimezone(config('app.display_timezone'))
-            ->format('Y-m-d\TH:i');
-    }
-
     private function fromDisplayTimezone(string $value): string
     {
         return Carbon::parse($value, config('app.display_timezone'))
