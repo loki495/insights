@@ -200,7 +200,10 @@ test('the transaction list narrows to the selected category, matching the chart'
     $test->assertDontSee('Paycheck');
 });
 
-test('the search filter narrows the totals and the transaction list together', function (): void {
+test('the search filter narrows the transaction list but not the totals/chart', function (): void {
+    // Deliberate design decision (changed 2026-07-26, per Andres): Search/Amount are for finding
+    // a specific transaction in the list, not for re-scoping the whole report — typing a merchant
+    // name shouldn't also collapse the summary cards and chart down to just that merchant.
     $user = User::factory()->create();
     $account = makeAccountForIncomeExpenseReportTest($user);
     Transaction::factory()->for($account)->create(['name' => 'Whole Foods Market', 'amount' => -50, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
@@ -211,13 +214,13 @@ test('the search filter narrows the totals and the transaction list together', f
     $test = Livewire::test('admin.reports.income-expense.index');
     $test->set('search', 'whole foods');
 
-    $test->assertViewHas('expenseTotal', 50.0);
+    $test->assertViewHas('expenseTotal', 850.0);
     $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 1);
     $test->assertSee('Whole Foods Market');
     $test->assertDontSee('Rent Payment');
 });
 
-test('the amount range filter narrows the totals and the transaction list together', function (): void {
+test('the amount range filter narrows the transaction list but not the totals/chart', function (): void {
     $user = User::factory()->create();
     $account = makeAccountForIncomeExpenseReportTest($user);
     Transaction::factory()->for($account)->create(['name' => 'Small', 'amount' => -10, 'currency' => 'USD', 'created_at' => now(), 'type' => 'expense']);
@@ -228,7 +231,7 @@ test('the amount range filter narrows the totals and the transaction list togeth
     $test = Livewire::test('admin.reports.income-expense.index');
     $test->set('amount_min', '500');
 
-    $test->assertViewHas('expenseTotal', 1000.0);
+    $test->assertViewHas('expenseTotal', 1010.0);
     $test->assertViewHas('transactionsList', fn ($list): bool => $list->total() === 1);
     $test->assertSee('Big');
     $test->assertDontSee('Small');
