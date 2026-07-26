@@ -40,6 +40,8 @@ account](#exploring-without-a-plaid-account).
 - **Account tracking modes** — mark an account `tracked` (included in aggregate reports),
   `reference` (visible but excluded from totals), or `excluded`. Unlinking an institution soft-closes
   it (reversible) instead of deleting its accounts/transaction history.
+- **Dashboard** — a trailing-90-day net cash trend, a "Spending This Month" category breakdown,
+  and a recent-transactions feed, alongside per-account balance cards grouped by institution.
 - **Reports**, both with configurable date range and granularity (daily/monthly/quarterly/yearly):
   - **Balance / Net Cash** — asset vs. liability snapshot and a net-cash trend chart.
   - **Income / Expense** — income/expense/net snapshot, a trend chart (grouped bars, or a stacked
