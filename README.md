@@ -49,7 +49,7 @@ not built yet.
     transactions. Filterable by category (multi-select), a simple text search, and an amount range.
 - **Transaction Search** — the full transaction list/search view (also embedded per-account),
   filterable by account, category, type, amount range, and date range, with a richer search syntax
-  (`required`, `-excluded`, optional terms) and a category-breakdown chart.
+  (every word must match — prefix with `-` to exclude instead) and a category-breakdown chart.
 - **Bulk actions** — select multiple transactions to assign a category/type or delete at once.
 - **Optimistic UI** — category/type edits show instantly and reconcile with the server response.
 - Mobile-responsive layout and dark mode throughout.
