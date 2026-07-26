@@ -69,32 +69,35 @@ not built yet.
 
 ## Quick Start
 
-Full setup instructions — all install options, production deployment, and Plaid credential setup —
-live in **[docs/SETUP.md](docs/SETUP.md)**. The short version, via Docker (no Plaid account
-needed to look around, see below):
+These steps build the real production image (`docker/Dockerfile.prod`) — the same setup you'd
+actually run this for real personal use with, not a dev/hot-reload build. No Plaid account needed
+to try it out (see below); you'll only need one once you're ready to link a real bank account —
+see [Linking a bank account](docs/SETUP.md#linking-a-bank-account).
 
 ```bash
 git clone <this-repo> insights && cd insights
 cp .env.example .env
-cp docker-compose.override.yml.example docker-compose.override.yml
-docker compose up -d
-docker exec -u www-data -e HOME=/tmp insights-app composer install
-docker exec -u www-data insights-app php artisan key:generate
-docker exec -u www-data insights-app touch storage/app/database.sqlite
-docker exec -u www-data insights-app php artisan migrate
 ```
 
-The app is now at **http://localhost:8000**. No Plaid account needed to explore it — seed the demo
-dataset instead:
+Edit `.env` and set `APP_ENV=production` and `APP_DEBUG=false`. Everything else can stay at its
+default for a local trial (`APP_URL` only matters once you're deploying somewhere real — see
+[Production deployment](docs/SETUP.md#production-deployment) for that, and for Plaid credentials).
 
 ```bash
-docker exec -u www-data insights-app php artisan db:seed --class=DemoDataSeeder
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --show
+# paste the output into .env's APP_KEY=, then:
+docker compose -f docker-compose.prod.yml up -d --wait  # waits for migrations to finish
+docker compose -f docker-compose.prod.yml exec app php artisan db:seed --class=DemoDataSeeder --force
 ```
 
-That creates a `test@example.com` / `password` login with realistic sample data — see [Exploring
-without a Plaid account](docs/SETUP.md#exploring-without-a-plaid-account) for details, or
-[docs/SETUP.md](docs/SETUP.md) generally for bare-metal setup, running behind your own reverse
-proxy, and **production deployment** (a different, hardened setup from the above).
+The app is now at **http://localhost:8000**, seeded with a `test@example.com` / `password` login
+and realistic sample data — see [Exploring without a Plaid
+account](docs/SETUP.md#exploring-without-a-plaid-account) for details.
+
+Want to develop/contribute instead? See [docs/SETUP.md](docs/SETUP.md) for the local-development
+setup (hot-reloading, debug output) as well as bare-metal install options and running behind your
+own reverse proxy.
 
 ## Contributing
 
