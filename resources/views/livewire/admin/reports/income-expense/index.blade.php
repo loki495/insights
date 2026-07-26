@@ -129,9 +129,12 @@ new class extends Component
         $from = Carbon::parse($this->date_from);
         $to = Carbon::parse($this->date_to);
 
-        // Narrowed to the selected categories/search/amount range (if any) — the summary cards
-        // reflect exactly what the chart and list below are showing, not the account-wide picture.
-        $trend = BuildIncomeExpenseTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids, $this->search, $this->amount_min, $this->amount_max);
+        // Narrowed to the selected categories/date range only — Search/Amount are deliberately
+        // *not* passed here. Those two filter the transaction list below (see
+        // transactionsQuery()); the summary cards and chart always reflect the full
+        // period/category picture, so typing a merchant name to find one transaction doesn't
+        // also collapse the chart down to just that merchant.
+        $trend = BuildIncomeExpenseTrendAction::run($accounts, $from, $to, $this->granularity, $this->category_ids);
         $incomeTotal = array_sum($trend['income']);
         $expenseTotal = array_sum($trend['expense']);
 
@@ -145,7 +148,7 @@ new class extends Component
             $this->chart_stacked = false;
             $hasData = count(array_filter($trend['income'])) > 0 || count(array_filter($trend['expense'])) > 0;
         } else {
-            $breakdown = BuildCategoryBreakdownTrendAction::run(auth()->user(), $accounts, $from, $to, $this->granularity, $this->category_ids, $this->search, $this->amount_min, $this->amount_max);
+            $breakdown = BuildCategoryBreakdownTrendAction::run(auth()->user(), $accounts, $from, $to, $this->granularity, $this->category_ids);
             $this->chart_periods = $breakdown['periods'];
             $this->chart_series = $breakdown['series'];
             $this->chart_type = 'area';
