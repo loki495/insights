@@ -31,7 +31,8 @@
             "discoverable",
             "browsable",
             "ints",
-            "localhost"
+            "localhost",
+            "roadmap"
         ],
         "paths": []
     }
