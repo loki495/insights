@@ -199,9 +199,21 @@ parameters:
 			path: tests/Feature/CategorizationPipelineTest.php
 
 		-
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<int\>\:\:and\(\)$#'
+			identifier: argument.templateType
+			count: 2
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<mixed\>\:\:and\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
 			message: '#^Unable to resolve the template type TValue in call to function expect$#'
 			identifier: argument.templateType
-			count: 8
+			count: 5
 			path: tests/Feature/CategorizationPipelineTest.php
 
 		-
@@ -211,9 +223,21 @@ parameters:
 			path: tests/Feature/CategoryAdoptionTest.php
 
 		-
-			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<int\<0, max\>\>\:\:and\(\)$#'
 			identifier: argument.templateType
-			count: 3
+			count: 1
+			path: tests/Feature/CategoryAdoptionTest.php
+
+		-
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<int\>\:\:and\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/CategoryAdoptionTest.php
+
+		-
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<mixed\>\:\:and\(\)$#'
+			identifier: argument.templateType
+			count: 1
 			path: tests/Feature/CategoryAdoptionTest.php
 
 		-
@@ -355,9 +379,21 @@ parameters:
 			path: tests/Feature/EditUserCategoryActionTest.php
 
 		-
-			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<array\<mixed\>\>\:\:and\(\)$#'
 			identifier: argument.templateType
-			count: 3
+			count: 1
+			path: tests/Feature/EditUserCategoryActionTest.php
+
+		-
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<int\<0, max\>\>\:\:and\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/EditUserCategoryActionTest.php
+
+		-
+			message: '#^Unable to resolve the template type TAndValue in call to method Pest\\Expectation\<mixed\>\:\:and\(\)$#'
+			identifier: argument.templateType
+			count: 1
 			path: tests/Feature/EditUserCategoryActionTest.php
 
 		-
