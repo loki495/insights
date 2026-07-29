@@ -39,7 +39,7 @@
         "pestphp/pest-plugin-phpstan": "^5.0",
         "pestphp/pest-plugin-type-coverage": "^5.0",
         "phpstan/extension-installer": "^1.4.3",
-        "rector/rector": "^2.0.10",
+        "rector/rector": "^2.5.8",
         "tomasvotruba/bladestan": "^0.11.2"
     },
     "autoload": {
