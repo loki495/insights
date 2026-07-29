@@ -34,19 +34,6 @@ pest()->tia()->locally();
 |
 */
 
-expect()->extend('toBeOne', fn () => $this->toBe(1));
-
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
-
 /**
  * Several category/type names (e.g. "Income") are reused verbatim elsewhere on transaction-list
  * pages — the bulk type-assign dropdown, the type-editor modal, other rows' pills — as hidden
