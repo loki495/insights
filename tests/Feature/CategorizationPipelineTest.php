@@ -189,12 +189,12 @@ it('createCategory creates a top-level category with a default color', function 
     expect($newCategory->parent_id)->toBe(0)
         ->and($pivotColor)->toBe('#3b82f6')
         ->and($created)->toBe([
-        'id' => $newCategory->id,
-        'name' => $newCategory->name,
-        'full_name' => $newCategory->fullName,
-        'parent_id' => 0,
-        'color' => $pivotColor,
-    ]);
+            'id' => $newCategory->id,
+            'name' => $newCategory->name,
+            'full_name' => $newCategory->fullName,
+            'parent_id' => 0,
+            'color' => $pivotColor,
+        ]);
 });
 
 it('createCategory nests under the given parent with the given color', function (): void {
