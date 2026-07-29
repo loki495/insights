@@ -20,9 +20,7 @@ it('does not fatal on an account with zero transactions', function (): void {
         'type' => 'depository', 'subtype' => 'checking', 'current_balance' => 100,
     ]);
 
-    ReconcileLinkedAccountTransactions::run($linkedAccount->fresh());
-
-    expect(true)->toBeTrue();
+    expect(fn () => ReconcileLinkedAccountTransactions::run($linkedAccount->fresh()))->not->toThrow(Throwable::class);
 });
 
 it('sets each transaction\'s running_balance by walking backwards from the current balance', function (): void {

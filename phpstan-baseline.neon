@@ -1,0 +1,595 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 2
+			path: app/Actions/BuildCategoryBreakdownForFilteredTransactionsAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 13
+			path: app/Actions/BuildTransactionsQueryAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Actions/EditUserCategoryAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Actions/PullLinkedAccountTransactionsAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Actions/RemoveCategoryForUserAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 2
+			path: app/Actions/Reports/BuildBalanceTrendAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Actions/Reports/BuildCategoryBreakdownTrendAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 3
+			path: app/Actions/Reports/BuildIncomeExpenseTrendAction.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 2
+			path: app/Actions/Reports/Concerns/FiltersBySearchAndAmount.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Console/Commands/BackfillTransactionTypes.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 13
+			path: app/Livewire/Concerns/HasCategoryAssignment.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Models/Category.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Models/OriginalCategory.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: app/Models/Transaction.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Browser/PlaidLinkPopupTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Account\:\:\$display_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/AccountTrackingModeTest.php
+
+		-
+			message: '#^Access to an undefined property Livewire\\Component\:\:\$accounts\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/AccountTrackingModeTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getTransactionsQuery\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/AccountTrackingModeTest.php
+
+		-
+			message: '#^Function makeAccountForTrackingTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/AccountTrackingModeTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			identifier: argument.templateType
+			count: 2
+			path: tests/Feature/AccountTrackingModeTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getTransactionsQuery\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/AccountsFilterTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getTransactionsQuery\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: tests/Feature/AmountRangeFilterTest.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 2
+			path: tests/Feature/Auth/PasswordResetTest.php
+
+		-
+			message: '#^Function makeLinkedAccountForAutoPullTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/AutoPullSettingsTest.php
+
+		-
+			message: '#^Function makeAccountForBalanceReportTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/BalanceReportTest.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 1
+			path: tests/Feature/BalanceReportTest.php
+
+		-
+			message: '#^Function runSearchQuery\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: tests/Feature/BuildTransactionsQueryActionTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:createCategory\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getTransactionsQuery\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:suggestCategoriesForTransaction\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function expect contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Return type of call to function expect contains unresolvable type\.$#'
+			identifier: function.unresolvableReturnType
+			count: 1
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			identifier: argument.templateType
+			count: 8
+			path: tests/Feature/CategorizationPipelineTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Feature/CategoryAdoptionTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			identifier: argument.templateType
+			count: 3
+			path: tests/Feature/CategoryAdoptionTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Category\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:bulkAssignCategory\(\) has parameter \$category_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:bulkAssignCategory\(\) has parameter \$transaction_ids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:categories\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:categoryPickerLookup\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:categoryPickerOptions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:clearCategory\(\) has parameter \$transaction_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:createCategory\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:merchantSuggestions\(\) has parameter \$transactions with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:merchantSuggestions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:saveCategory\(\) has parameter \$category_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:saveCategory\(\) has parameter \$transaction_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:suggestCategoriesForTransaction\(\) has parameter \$transaction_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:suggestCategoriesForTransaction\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:topCategoryFor\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/CategoryColorScopingTest.php
+
+		-
+			message: '#^Access to an undefined property Livewire\\Component\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/CategoryFilterDisplayTest.php
+
+		-
+			message: '#^Access to an undefined property Livewire\\Component\:\:\$original_category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/CategoryFilterDisplayTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/CategoryFilterDisplayTest.php
+
+		-
+			message: '#^Function dashboardAccount\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/DashboardWidgetsTest.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: tests/Feature/DemoDataSeederTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Feature/EditUserCategoryActionTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function expect$#'
+			identifier: argument.templateType
+			count: 3
+			path: tests/Feature/EditUserCategoryActionTest.php
+
+		-
+			message: '#^Function makeAccountForIncomeExpenseReportTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/IncomeExpenseReportTest.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 7
+			path: tests/Feature/IncomeExpenseReportTest.php
+
+		-
+			message: '#^Calling toBeTrue\(\) on Expectation\<true\>; assertion is redundant\.$#'
+			identifier: pest.expectation.redundant
+			count: 2
+			path: tests/Feature/LinkedAccountSoftCloseTest.php
+
+		-
+			message: '#^Function makeLinkedAccountWithData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/LinkedAccountSoftCloseTest.php
+
+		-
+			message: '#^Function makeMatchTestAccount\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/MatchTransferPairsActionTest.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 3
+			path: tests/Feature/PlaidLinkFlowTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturnUsing\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
+
+		-
+			message: '#^Function plaidAccountPayload\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
+
+		-
+			message: '#^Function plaidAccountPayload\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
+
+		-
+			message: '#^Function plaidPullTransactionPayload\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
+
+		-
+			message: '#^Function plaidPullTransactionPayload\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 4
+			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andThrow\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/PullSyncFailureTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/PullSyncFailureTest.php
+
+		-
+			message: '#^Access to an undefined property Livewire\\Component\:\:\$pairCandidates\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/TransactionEditPairingTest.php
+
+		-
+			message: '#^Function makeAccountsForPairingTest\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/TransactionEditPairingTest.php
+
+		-
+			message: '#^Called ''Model\:\:make\(\)'' which performs unnecessary work, use ''new Model\(\)''\.$#'
+			identifier: larastan.noModelMake
+			count: 5
+			path: tests/Feature/TransactionTypeClassificationTest.php
+
+		-
+			message: '#^Function makeAccountForTypeTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/TransactionTypeClassificationTest.php
+
+		-
+			message: '#^Function plaidTransactionPayload\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/TransactionTypeClassificationTest.php
+
+		-
+			message: '#^Function plaidTransactionPayload\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/TransactionTypeClassificationTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:pairTransaction\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:saveType\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:searchTransferPairCandidates\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:typeEditorData\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:unpairTransaction\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Function makeAccountForTypeEditorTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function expect contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 3
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Return type of call to function expect contains unresolvable type\.$#'
+			identifier: function.unresolvableReturnType
+			count: 3
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/TransactionTypeEditorTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getTransactionsQuery\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/TransactionTypeFilterTest.php
+
+		-
+			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
+			identifier: typeCoverage.paramTypeCoverage
+			count: 3
+			path: tests/Feature/TransactionsPerPageTest.php
+
+		-
+			message: '#^Function makeAccountForTransferPairIndicatorTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/TransferPairIndicatorTest.php
+
+		-
+			message: '#^Function plaidAccountInfo\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/UpdateAccountActionTest.php
+
+		-
+			message: '#^Function plaidAccountInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/UpdateAccountActionTest.php
+
+		-
+			message: '#^Function makeAccountForTransactionsTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/UpdateAccountTransactionsActionTest.php
+
+		-
+			message: '#^Function plaidTransactionInfo\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/UpdateAccountTransactionsActionTest.php
+
+		-
+			message: '#^Function plaidTransactionInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/UpdateAccountTransactionsActionTest.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Plaid\\PlaidService\:\:getNonExistentEndpoint\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Unit/ServicesTest.php
