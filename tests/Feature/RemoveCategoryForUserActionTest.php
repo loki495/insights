@@ -35,9 +35,9 @@ it('detaches the category from the user\'s own transactions and drops their pivo
 
     RemoveCategoryForUserAction::run($user, $category);
 
-    expect($transaction->categories()->pluck('categories.id')->all())->toBe([]);
-    expect($user->categories()->pluck('categories.id')->all())->toBe([]);
-    expect(Category::find($category->id))->not->toBeNull();
+    expect($transaction->categories()->pluck('categories.id')->all())->toBeEmpty()
+        ->and($user->categories()->pluck('categories.id')->all())->toBeEmpty()
+        ->and(Category::find($category->id))->not->toBeNull();
 });
 
 it('never touches another user\'s transactions or adoption of the same shared category', function (): void {
@@ -56,6 +56,6 @@ it('never touches another user\'s transactions or adoption of the same shared ca
 
     RemoveCategoryForUserAction::run($userA, $shared);
 
-    expect($txnB->fresh()->categories()->pluck('categories.id')->all())->toBe([$shared->id]);
-    expect($userB->categories()->pluck('categories.id')->all())->toBe([$shared->id]);
+    expect($txnB->fresh()->categories()->pluck('categories.id')->all())->toBe([$shared->id])
+        ->and($userB->categories()->pluck('categories.id')->all())->toBe([$shared->id]);
 });

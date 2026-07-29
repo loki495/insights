@@ -80,13 +80,13 @@ it('classifies pf_primary INCOME as income', function (): void {
 it('falls back to amount sign when there is no useful pf_primary signal', function (): void {
     $category = OriginalCategory::make(['pf_primary' => 'FOOD_AND_DRINK', 'pf_detailed' => 'FOOD_AND_DRINK_RESTAURANT']);
 
-    expect(Transaction::classifyType($category, -20))->toBe('expense');
-    expect(Transaction::classifyType($category, 20))->toBe('income');
+    expect(Transaction::classifyType($category, -20))->toBe('expense')
+        ->and(Transaction::classifyType($category, 20))->toBe('income');
 });
 
 it('falls back to amount sign when there is no original category at all', function (): void {
-    expect(Transaction::classifyType(null, -20))->toBe('expense');
-    expect(Transaction::classifyType(null, 20))->toBe('income');
+    expect(Transaction::classifyType(null, -20))->toBe('expense')
+        ->and(Transaction::classifyType(null, 20))->toBe('income');
 });
 
 // --- Transaction::refreshType() ---
@@ -152,8 +152,8 @@ it('sets type=expense at ingest for an ordinary purchase', function (): void {
     ]), 'added');
 
     $transaction = Transaction::where('account_id', $account->id)->firstOrFail();
-    expect($transaction->type)->toBe('expense');
-    expect((float) $transaction->amount)->toBeLessThan(0);
+    expect($transaction->type)->toBe('expense')
+        ->and((float) $transaction->amount)->toBeLessThan(0);
 });
 
 it('sets type=transfer at ingest for a credit-card payment even though Plaid buckets it under LOAN_PAYMENTS', function (): void {
@@ -180,8 +180,8 @@ it('reportable() excludes transfers and adjustments but includes income and expe
     Transaction::factory()->for($account)->create(['name' => 'To Savings', 'amount' => -200, 'currency' => 'USD', 'type' => 'transfer']);
     Transaction::factory()->for($account)->create(['name' => 'Opening Balance', 'amount' => 500, 'currency' => 'USD', 'type' => 'adjustment']);
 
-    expect(Transaction::reportable()->count())->toBe(2);
-    expect(Transaction::reportable()->pluck('name')->sort()->values()->all())->toBe(['Groceries', 'Paycheck']);
+    expect(Transaction::reportable()->count())->toBe(2)
+        ->and(Transaction::reportable()->pluck('name')->sort()->values()->all())->toBe(['Groceries', 'Paycheck']);
 });
 
 // --- 'removed' transactions (Plaid /transactions/sync) ---

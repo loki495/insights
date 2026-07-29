@@ -21,8 +21,8 @@ it('gives two users adopting the same shared category their own independent colo
     DecorateCategoryColorsForUserAction::run($userA, [$decoratedForA]);
     DecorateCategoryColorsForUserAction::run($userB, [$decoratedForB]);
 
-    expect($decoratedForA->color)->toBe('#111111');
-    expect($decoratedForB->color)->toBe('#222222');
+    expect($decoratedForA->color)->toBe('#111111')
+        ->and($decoratedForB->color)->toBe('#222222');
 });
 
 it('falls back to the default color for a category the user has not adopted', function (): void {

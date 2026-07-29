@@ -121,8 +121,8 @@ it('creates a new category inline and assigns it', function (): void {
         ->assertSee('Coffee')
         ->assertNoSmoke();
 
-    expect($transaction->fresh()->categories->pluck('name')->all())->toBe(['Coffee']);
-    expect(Category::where('name', 'Coffee')->exists())->toBeTrue();
+    expect($transaction->fresh()->categories->pluck('name')->all())->toBe(['Coffee'])
+        ->and(Category::where('name', 'Coffee')->exists())->toBeTrue();
 });
 
 it('bulk-assigns a category to multiple selected transactions', function (): void {
@@ -158,6 +158,6 @@ it('bulk-assigns a category to multiple selected transactions', function (): voi
         ->wait(0.1)
         ->assertNoSmoke();
 
-    expect($first->fresh()->categories->pluck('name')->all())->toBe(['Groceries']);
-    expect($second->fresh()->categories->pluck('name')->all())->toBe(['Groceries']);
+    expect($first->fresh()->categories->pluck('name')->all())->toBe(['Groceries'])
+        ->and($second->fresh()->categories->pluck('name')->all())->toBe(['Groceries']);
 });

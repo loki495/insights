@@ -42,7 +42,7 @@ it('exposes the HTTP status and raw response on the exception', function (): voi
         Request::parseResponse(json_encode(['error_type' => 'INVALID_REQUEST', 'error_code' => 'MISSING_FIELDS']), 400);
         $this->fail('Expected CurlRequestException to be thrown.');
     } catch (CurlRequestException $e) {
-        expect($e->httpStatus)->toBe(400);
-        expect($e->response)->toHaveKey('error_code', 'MISSING_FIELDS');
+        expect($e->httpStatus)->toBe(400)
+            ->and($e->response)->toHaveKey('error_code', 'MISSING_FIELDS');
     }
 });

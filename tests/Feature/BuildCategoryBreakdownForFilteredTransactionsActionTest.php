@@ -36,10 +36,7 @@ it('rolls a transaction categorized 3 levels deep up to its top-level ancestor w
     $txn->categories()->sync([$restaurants->id]);
 
     $result = BuildCategoryBreakdownForFilteredTransactionsAction::run($user, Transaction::query(), null);
-
-    expect($result['ids'])->toBe([$expenses->id]);
-    expect($result['labels'])->toBe(['Expenses']);
-    expect($result['values'])->toBe([40.0]);
+    expect($result)->toMatchArray(['ids' => [$expenses->id], 'labels' => ['Expenses'], 'values' => [40.0]]);
 });
 
 it('buckets uncategorized transactions separately as "Uncategorized"', function (): void {
@@ -49,10 +46,7 @@ it('buckets uncategorized transactions separately as "Uncategorized"', function 
     Transaction::factory()->for($account)->create(['name' => 'Mystery charge', 'amount' => -15, 'currency' => 'USD']);
 
     $result = BuildCategoryBreakdownForFilteredTransactionsAction::run($user, Transaction::query(), null);
-
-    expect($result['ids'])->toBe([0]);
-    expect($result['labels'])->toBe(['Uncategorized']);
-    expect($result['values'])->toBe([15.0]);
+    expect($result)->toMatchArray(['ids' => [0], 'labels' => ['Uncategorized'], 'values' => [15.0]]);
 });
 
 it('aggregates multiple top-level categories into separate buckets', function (): void {
@@ -112,10 +106,7 @@ it('buckets a transaction categorized directly as the drilled-down category unde
     $txn->categories()->sync([$expenses->id]);
 
     $result = BuildCategoryBreakdownForFilteredTransactionsAction::run($user, Transaction::query(), $expenses->id);
-
-    expect($result['ids'])->toBe([$expenses->id]);
-    expect($result['labels'])->toBe(['Expenses']);
-    expect($result['values'])->toBe([25.0]);
+    expect($result)->toMatchArray(['ids' => [$expenses->id], 'labels' => ['Expenses'], 'values' => [25.0]]);
 });
 
 it('decorates each bucket with the acting user\'s own adopted color, not another user\'s', function (): void {

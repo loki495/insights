@@ -34,8 +34,8 @@ it('does not swap available/current balance when creating a brand new account', 
     UpdateAccountAction::run(plaidAccountInfo(), $linkedAccount);
 
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->available_balance)->toEqual(100);
-    expect($account->current_balance)->toEqual(150);
+    expect($account->available_balance)->toEqual(100)
+        ->and($account->current_balance)->toEqual(150);
 });
 
 it('keeps the same available/current mapping when updating an existing account', function (): void {
@@ -52,9 +52,9 @@ it('keeps the same available/current mapping when updating an existing account',
     UpdateAccountAction::run(plaidAccountInfo(['account_id' => 'new_plaid_id']), $linkedAccount);
 
     $account = Account::where('mask', '0000')->firstOrFail();
-    expect($account->plaid_account_id)->toBe('new_plaid_id');
-    expect($account->available_balance)->toEqual(100);
-    expect($account->current_balance)->toEqual(150);
+    expect($account->plaid_account_id)->toBe('new_plaid_id')
+        ->and($account->available_balance)->toEqual(100)
+        ->and($account->current_balance)->toEqual(150);
 });
 
 it('does not match an identical-looking account belonging to a different linked account/item', function (): void {
@@ -77,10 +77,10 @@ it('does not match an identical-looking account belonging to a different linked 
     // A new account was created for this linked account, not merged into the other item's.
     expect(Account::where('plaid_account_id', 'this_plaid_id')->exists())->toBeTrue();
     $otherAccount->refresh();
-    expect($otherAccount->plaid_account_id)->toBe('other_plaid_id');
-    expect($otherAccount->available_balance)->toEqual(0);
-    expect($otherAccount->current_balance)->toEqual(0);
-    expect(Account::count())->toBe(2);
+    expect($otherAccount->plaid_account_id)->toBe('other_plaid_id')
+        ->and($otherAccount->available_balance)->toEqual(0)
+        ->and($otherAccount->current_balance)->toEqual(0)
+        ->and(Account::count())->toBe(2);
 });
 
 it('cleans stray U+FFFD replacement characters out of the account name/official_name on create', function (): void {
@@ -95,8 +95,8 @@ it('cleans stray U+FFFD replacement characters out of the account name/official_
     ]), $linkedAccount);
 
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD');
-    expect($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD')
+        ->and($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
 });
 
 it('matches an existing account by plaid_account_id even when the incoming name no longer matches the cleaned stored name', function (): void {
@@ -123,9 +123,9 @@ it('matches an existing account by plaid_account_id even when the incoming name 
 
     expect(Account::count())->toBe(1);
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD');
-    expect($account->available_balance)->toEqual(100);
-    expect($account->current_balance)->toEqual(150);
+    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD')
+        ->and($account->available_balance)->toEqual(100)
+        ->and($account->current_balance)->toEqual(150);
 });
 
 it('cleans stray U+FFFD replacement characters out of the account name/official_name on update', function (): void {
@@ -150,6 +150,6 @@ it('cleans stray U+FFFD replacement characters out of the account name/official_
     ]), $linkedAccount);
 
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD');
-    expect($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD')
+        ->and($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
 });

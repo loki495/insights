@@ -47,8 +47,8 @@ it('shows a search-to-pair control for an unpaired transfer and pairs it on sele
 
     $test->call('pairWith', $other->id);
 
-    expect($transaction->fresh()->transfer_pair_id)->toBe($other->id);
-    expect($other->fresh()->transfer_pair_id)->toBe($transaction->id);
+    expect($transaction->fresh()->transfer_pair_id)->toBe($other->id)
+        ->and($other->fresh()->transfer_pair_id)->toBe($transaction->id);
 });
 
 it('refuses to pair two transactions from the same account', function (): void {
@@ -82,6 +82,6 @@ it('unpairs both legs of a matched transfer', function (): void {
     $test = Livewire::test('admin.transactions.edit', ['transaction' => $transaction]);
     $test->call('unpair');
 
-    expect($transaction->fresh()->transfer_pair_id)->toBeNull();
-    expect($other->fresh()->transfer_pair_id)->toBeNull();
+    expect($transaction->fresh()->transfer_pair_id)->toBeNull()
+        ->and($other->fresh()->transfer_pair_id)->toBeNull();
 });

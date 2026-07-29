@@ -48,8 +48,8 @@ it('filters down to just the selected types', function (): void {
     $test = Livewire::test('components.transactions', ['account' => $account])
         ->set('type_filters', ['transfer']);
 
-    expect($test->instance()->getTransactionsQuery()->count())->toBe(1);
-    expect($test->instance()->getTransactionsQuery()->first()->name)->toBe('To Savings');
+    expect($test->instance()->getTransactionsQuery()->count())->toBe(1)
+        ->and($test->instance()->getTransactionsQuery()->first()->name)->toBe('To Savings');
 });
 
 it('renders a type pill for each transaction, and an "Unclassified" pill when type is unset', function (): void {

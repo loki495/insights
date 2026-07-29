@@ -33,9 +33,9 @@ it('records the failure on the LinkedAccount and rethrows when a Plaid pull fail
         ->toThrow(CurlRequestException::class);
 
     $linkedAccount->refresh();
-    expect($linkedAccount->last_sync_failed_at)->not->toBeNull();
-    expect($linkedAccount->last_sync_error)->toBe('ITEM_LOGIN_REQUIRED');
-    expect($linkedAccount->last_pulled_at)->toBeNull();
+    expect($linkedAccount->last_sync_failed_at)->not->toBeNull()
+        ->and($linkedAccount->last_sync_error)->toBe('ITEM_LOGIN_REQUIRED')
+        ->and($linkedAccount->last_pulled_at)->toBeNull();
 });
 
 it('clears a previously recorded failure once a pull succeeds', function (): void {
@@ -55,9 +55,9 @@ it('clears a previously recorded failure once a pull succeeds', function (): voi
     PullLinkedAccountTransactionsAction::run($linkedAccount);
 
     $linkedAccount->refresh();
-    expect($linkedAccount->last_sync_failed_at)->toBeNull();
-    expect($linkedAccount->last_sync_error)->toBeNull();
-    expect($linkedAccount->last_pulled_at)->not->toBeNull();
+    expect($linkedAccount->last_sync_failed_at)->toBeNull()
+        ->and($linkedAccount->last_sync_error)->toBeNull()
+        ->and($linkedAccount->last_pulled_at)->not->toBeNull();
 });
 
 it('does not let one failing institution block the others in the scheduled command', function (): void {
@@ -81,6 +81,6 @@ it('does not let one failing institution block the others in the scheduled comma
 
     $this->artisan('transactions:pull')->assertExitCode(1);
 
-    expect($failing->fresh()->last_sync_failed_at)->not->toBeNull();
-    expect($succeeding->fresh()->last_pulled_at)->not->toBeNull();
+    expect($failing->fresh()->last_sync_failed_at)->not->toBeNull()
+        ->and($succeeding->fresh()->last_pulled_at)->not->toBeNull();
 });

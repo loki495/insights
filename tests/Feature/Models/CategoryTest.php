@@ -24,6 +24,6 @@ it('resolves the transactions relation, matching the transaction_edit page\'s ea
 
     $loaded = Category::with('transactions')->find($category->id);
 
-    expect($loaded->transactions)->toHaveCount(1);
-    expect($loaded->transactions->first()->is($txn))->toBeTrue();
+    expect($loaded->transactions)->toHaveCount(1)
+        ->and($loaded->transactions->first()->is($txn))->toBeTrue();
 });

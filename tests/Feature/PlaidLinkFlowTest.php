@@ -50,8 +50,8 @@ it('completing a brand new Link flow creates a new LinkedAccount', function (): 
         ->call('linkAccount')
         ->call('exchangePublicToken', 'fake-public-token');
 
-    expect(LinkedAccount::where('user_id', $user->id)->count())->toBe(1);
-    expect(LinkedAccount::where('user_id', $user->id)->first()->item_id)->toBe('new-item');
+    expect(LinkedAccount::where('user_id', $user->id)->count())->toBe(1)
+        ->and(LinkedAccount::where('user_id', $user->id)->first()->item_id)->toBe('new-item');
 });
 
 it('completing an "Update Access Token" flow updates the existing LinkedAccount instead of creating a duplicate', function (): void {
@@ -73,8 +73,8 @@ it('completing an "Update Access Token" flow updates the existing LinkedAccount 
 
     expect(LinkedAccount::where('user_id', $user->id)->count())->toBe(1);
     $linkedAccount->refresh();
-    expect($linkedAccount->item_id)->toBe('refreshed-item');
-    expect($linkedAccount->access_token)->toBe('refreshed-token');
+    expect($linkedAccount->item_id)->toBe('refreshed-item')
+        ->and($linkedAccount->access_token)->toBe('refreshed-token');
 });
 
 it('does not let a tampered client payload overwrite updating_linked_account_id', function (): void {

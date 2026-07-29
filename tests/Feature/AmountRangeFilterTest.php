@@ -51,8 +51,8 @@ it('filters to transactions within the given min/max amount', function (): void 
 
     $results = $test->instance()->getTransactionsQuery()->get();
 
-    expect($results)->toHaveCount(1);
-    expect($results->first()->name)->toBe('In range');
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->name)->toBe('In range');
 });
 
 it('filters by magnitude regardless of sign, so income and expense of the same size both match', function (): void {
@@ -77,8 +77,8 @@ it('applies only a minimum when no maximum is set', function (): void {
 
     $results = $test->instance()->getTransactionsQuery()->get();
 
-    expect($results)->toHaveCount(1);
-    expect($results->first()->name)->toBe('Big');
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->name)->toBe('Big');
 });
 
 it('applies only a maximum when no minimum is set', function (): void {
@@ -91,8 +91,8 @@ it('applies only a maximum when no minimum is set', function (): void {
 
     $results = $test->instance()->getTransactionsQuery()->get();
 
-    expect($results)->toHaveCount(1);
-    expect($results->first()->name)->toBe('Small');
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->name)->toBe('Small');
 });
 
 it('correctly matches a cents-precision amount against a tight dollar-range boundary', function (): void {
@@ -112,6 +112,6 @@ it('correctly matches a cents-precision amount against a tight dollar-range boun
 
     $results = $test->instance()->getTransactionsQuery()->get();
 
-    expect($results)->toHaveCount(1);
-    expect($results->first()->name)->toBe('In range');
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->name)->toBe('In range');
 });

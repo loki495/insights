@@ -14,11 +14,10 @@ it('dedupes case-insensitively by (parent_id, name) when two users create the "s
     $categoryA = CreateOrAdoptCategoryAction::run($userA, null, 'Coffee', '#111111');
     $categoryB = CreateOrAdoptCategoryAction::run($userB, null, 'coffee', '#222222');
 
-    expect($categoryA->id)->toBe($categoryB->id);
-    expect(Category::count())->toBe(1);
-
-    expect($userA->categories()->find($categoryA->id)->pivot->color)->toBe('#111111');
-    expect($userB->categories()->find($categoryB->id)->pivot->color)->toBe('#222222');
+    expect($categoryA->id)->toBe($categoryB->id)
+        ->and(Category::count())->toBe(1)
+        ->and($userA->categories()->find($categoryA->id)->pivot->color)->toBe('#111111')
+        ->and($userB->categories()->find($categoryB->id)->pivot->color)->toBe('#222222');
 });
 
 it('does not create a duplicate row for the same (parent_id, name) under different parents', function (): void {
@@ -29,8 +28,8 @@ it('does not create a duplicate row for the same (parent_id, name) under differe
     $under1 = FindOrCreateCategoryAction::run($expenses->id, 'Fees');
     $under2 = FindOrCreateCategoryAction::run($income->id, 'Fees');
 
-    expect($under1->id)->not->toBe($under2->id);
-    expect(Category::where('name', 'Fees')->count())->toBe(2);
+    expect($under1->id)->not->toBe($under2->id)
+        ->and(Category::where('name', 'Fees')->count())->toBe(2);
 });
 
 it('re-creating an already-adopted category updates its color rather than erroring', function (): void {
@@ -39,9 +38,9 @@ it('re-creating an already-adopted category updates its color rather than errori
 
     $again = CreateOrAdoptCategoryAction::run($user, null, 'Groceries', '#999999');
 
-    expect($again->id)->toBe($category->id);
-    expect($user->categories()->find($category->id)->pivot->color)->toBe('#999999');
-    expect($user->categories()->count())->toBe(1);
+    expect($again->id)->toBe($category->id)
+        ->and($user->categories()->find($category->id)->pivot->color)->toBe('#999999')
+        ->and($user->categories()->count())->toBe(1);
 });
 
 it('trims whitespace before matching an existing category', function (): void {
@@ -60,8 +59,8 @@ it('updates the shared category description when one is explicitly passed', func
 
     $updated = CreateOrAdoptCategoryAction::run($user, null, 'Groceries', null, 'Food and household supplies');
 
-    expect($updated->id)->toBe($category->id);
-    expect($updated->description)->toBe('Food and household supplies');
+    expect($updated->id)->toBe($category->id)
+        ->and($updated->description)->toBe('Food and household supplies');
 });
 
 it('does not touch the description when none is passed (quick-picker create flow)', function (): void {

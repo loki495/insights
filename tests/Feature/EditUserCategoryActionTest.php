@@ -35,11 +35,11 @@ it('renames a category by finding-or-creating the new name and reassigning the u
 
     $new = EditUserCategoryAction::run($user, $old, null, 'Food', null, '#111111');
 
-    expect($new->id)->not->toBe($old->id);
-    expect($new->name)->toBe('Food');
-    expect($transaction->categories()->pluck('categories.id')->all())->toBe([$new->id]);
-    expect($user->categories()->pluck('categories.id')->all())->toBe([$new->id]);
-    expect($user->categories()->find($new->id)->pivot->color)->toBe('#111111');
+    expect($new->id)->not->toBe($old->id)
+        ->and($new->name)->toBe('Food')
+        ->and($transaction->categories()->pluck('categories.id')->all())->toBe([$new->id])
+        ->and($user->categories()->pluck('categories.id')->all())->toBe([$new->id])
+        ->and($user->categories()->find($new->id)->pivot->color)->toBe('#111111');
 });
 
 it('does not touch another user\'s transactions or adoption of the same shared category', function (): void {
@@ -74,8 +74,8 @@ it('merging onto an existing category does not create a duplicate pivot row for 
 
     $new = EditUserCategoryAction::run($user, $old, null, 'Food', null, null);
 
-    expect($new->id)->toBe($existing->id);
-    expect($transaction->categories()->pluck('categories.id')->all())->toBe([$existing->id]);
+    expect($new->id)->toBe($existing->id)
+        ->and($transaction->categories()->pluck('categories.id')->all())->toBe([$existing->id]);
 });
 
 it('a color-only edit (same name/parent) only updates the pivot, never touches other users', function (): void {
@@ -86,10 +86,10 @@ it('a color-only edit (same name/parent) only updates the pivot, never touches o
 
     $result = EditUserCategoryAction::run($userA, $category, null, 'Groceries', null, '#999999');
 
-    expect($result->id)->toBe($category->id);
-    expect(Category::count())->toBe(1);
-    expect($userA->categories()->find($category->id)->pivot->color)->toBe('#999999');
-    expect($userB->categories()->find($category->id)->pivot->color)->toBe('#222222');
+    expect($result->id)->toBe($category->id)
+        ->and(Category::count())->toBe(1)
+        ->and($userA->categories()->find($category->id)->pivot->color)->toBe('#999999')
+        ->and($userB->categories()->find($category->id)->pivot->color)->toBe('#222222');
 });
 
 it('updates the shared description when it differs, regardless of rename', function (): void {

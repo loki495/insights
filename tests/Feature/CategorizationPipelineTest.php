@@ -66,9 +66,9 @@ it('descendants() returns a flat array of ids including self and all nested chil
     $bars = Category::create(['name' => 'Bars', 'parent_id' => $expenses->id]);
     $leaf = Category::create(['name' => 'Bars - Alex', 'parent_id' => $bars->id]);
 
-    expect($expenses->descendants)->toEqualCanonicalizing([$expenses->id, $bars->id, $leaf->id]);
-    expect($bars->descendants)->toEqualCanonicalizing([$bars->id, $leaf->id]);
-    expect($leaf->descendants)->toBe([$leaf->id]);
+    expect($expenses->descendants)->toEqualCanonicalizing([$expenses->id, $bars->id, $leaf->id])
+        ->and($bars->descendants)->toEqualCanonicalizing([$bars->id, $leaf->id])
+        ->and($leaf->descendants)->toBe([$leaf->id]);
 });
 
 it('filters transactions by a parent category to include all its descendants', function (): void {
@@ -100,15 +100,15 @@ it('drills one level deeper into the chart on each click, matching the categoriz
 
     // Click into "Expenses": should show its child "Bars", not go empty.
     $test->call('handleChartClick', $expenses->id);
-    expect($test->get('category_id'))->toBe($expenses->id);
-    expect($test->get('chart_labels'))->toBe(['Bars']);
-    expect($test->instance()->getTransactionsQuery()->count())->toBe(1);
+    expect($test->get('category_id'))->toBe($expenses->id)
+        ->and($test->get('chart_labels'))->toBe(['Bars'])
+        ->and($test->instance()->getTransactionsQuery()->count())->toBe(1);
 
     // Click into "Bars": should show the leaf "Bars - Alex".
     $test->call('handleChartClick', $bars->id);
-    expect($test->get('category_id'))->toBe($bars->id);
-    expect($test->get('chart_labels'))->toBe(['Bars - Alex']);
-    expect($test->instance()->getTransactionsQuery()->count())->toBe(1);
+    expect($test->get('category_id'))->toBe($bars->id)
+        ->and($test->get('chart_labels'))->toBe(['Bars - Alex'])
+        ->and($test->instance()->getTransactionsQuery()->count())->toBe(1);
 });
 
 it('goBack steps back up one level at a time', function (): void {
@@ -186,9 +186,9 @@ it('createCategory creates a top-level category with a default color', function 
     $newCategory = Category::where('name', 'Brand New Category')->firstOrFail();
     $pivotColor = $user->categories()->find($newCategory->id)->pivot->color;
 
-    expect($newCategory->parent_id)->toBe(0);
-    expect($pivotColor)->toBe('#3b82f6');
-    expect($created)->toBe([
+    expect($newCategory->parent_id)->toBe(0)
+        ->and($pivotColor)->toBe('#3b82f6')
+        ->and($created)->toBe([
         'id' => $newCategory->id,
         'name' => $newCategory->name,
         'full_name' => $newCategory->fullName,
@@ -208,9 +208,9 @@ it('createCategory nests under the given parent with the given color', function 
     $category = Category::where('name', 'Subcategory')->firstOrFail();
     $pivotColor = $user->categories()->find($category->id)->pivot->color;
 
-    expect($category->parent_id)->toBe($parent->id);
-    expect($pivotColor)->toBe('#ef4444');
-    expect($category->parent->name)->toBe('Expenses');
+    expect($category->parent_id)->toBe($parent->id)
+        ->and($pivotColor)->toBe('#ef4444')
+        ->and($category->parent->name)->toBe('Expenses');
 });
 
 it('createCategory rejects a blank name', function (): void {
@@ -237,8 +237,8 @@ it('suggestCategoriesForTransaction suggests the category most used by other tra
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $suggestions = $test->instance()->suggestCategoriesForTransaction($newTxn->id);
 
-    expect($suggestions)->toHaveCount(1);
-    expect($suggestions[0]['id'])->toBe($category->id);
+    expect($suggestions)->toHaveCount(1)
+        ->and($suggestions[0]['id'])->toBe($category->id);
 });
 
 it('suggestCategoriesForTransaction falls back to original-category correlation when the merchant differs', function (): void {
@@ -269,8 +269,8 @@ it('suggestCategoriesForTransaction falls back to original-category correlation 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $suggestions = $test->instance()->suggestCategoriesForTransaction($newTxn->id);
 
-    expect($suggestions)->toHaveCount(1);
-    expect($suggestions[0]['id'])->toBe($target->id);
+    expect($suggestions)->toHaveCount(1)
+        ->and($suggestions[0]['id'])->toBe($target->id);
 });
 
 it('suggestCategoriesForTransaction excludes categories already assigned to the transaction', function (): void {
@@ -322,9 +322,9 @@ it('suggestCategoriesForTransaction returns at most two suggestions with the mer
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $suggestions = $test->instance()->suggestCategoriesForTransaction($target->id);
 
-    expect($suggestions)->toHaveCount(2);
-    expect($suggestions[0]['id'])->toBe($merchantCategory->id);
-    expect($suggestions[1]['id'])->toBe($originalCategoryCategory->id);
+    expect($suggestions)->toHaveCount(2)
+        ->and($suggestions[0]['id'])->toBe($merchantCategory->id)
+        ->and($suggestions[1]['id'])->toBe($originalCategoryCategory->id);
 });
 
 /**

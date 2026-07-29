@@ -62,12 +62,8 @@ it('sums each selected category as a magnitude, per period', function (): void {
 
     $groceriesSeries = collect($result['series'])->firstWhere('category_id', $groceries->id);
     $eatingOutSeries = collect($result['series'])->firstWhere('category_id', $eatingOut->id);
-
-    expect($groceriesSeries['label'])->toBe('Groceries');
-    expect($groceriesSeries['color'])->toBe('#10b981');
-    expect($groceriesSeries['values'])->toBe([100.0, 120.0]);
-
-    expect($eatingOutSeries['values'])->toBe([50.0, 0.0]);
+    expect($groceriesSeries)->toMatchArray(['label' => 'Groceries', 'color' => '#10b981', 'values' => [100.0, 120.0]])
+        ->and($eatingOutSeries['values'])->toBe([50.0, 0.0]);
 });
 
 it('includes descendants of a selected parent category', function (): void {
@@ -145,7 +141,7 @@ it('skips category ids that do not exist', function (): void {
         [999999],
     );
 
-    expect($result['series'])->toBe([]);
+    expect($result['series'])->toBeEmpty();
 });
 
 it('falls back to a default color when the category has none set', function (): void {
@@ -183,8 +179,8 @@ it('groups into daily periods', function (): void {
         [$groceries->id],
     );
 
-    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026']);
-    expect($result['series'][0]['values'])->toBe([50.0, 30.0]);
+    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026'])
+        ->and($result['series'][0]['values'])->toBe([50.0, 30.0]);
 });
 
 it('filters by a simple search term against name or merchant_name', function (): void {

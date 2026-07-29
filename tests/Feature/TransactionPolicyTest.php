@@ -25,9 +25,9 @@ it('lets a user view/update/delete a transaction on their own account', function
     $user = User::factory()->create();
     $transaction = transactionFor($user);
 
-    expect($user->can('view', $transaction))->toBeTrue();
-    expect($user->can('update', $transaction))->toBeTrue();
-    expect($user->can('delete', $transaction))->toBeTrue();
+    expect($user->can('view', $transaction))->toBeTrue()
+        ->and($user->can('update', $transaction))->toBeTrue()
+        ->and($user->can('delete', $transaction))->toBeTrue();
 });
 
 it('prevents a user from viewing/updating/deleting a transaction on another user\'s account', function (): void {
@@ -36,14 +36,14 @@ it('prevents a user from viewing/updating/deleting a transaction on another user
 
     $stranger = User::factory()->create();
 
-    expect($stranger->can('view', $transaction))->toBeFalse();
-    expect($stranger->can('update', $transaction))->toBeFalse();
-    expect($stranger->can('delete', $transaction))->toBeFalse();
+    expect($stranger->can('view', $transaction))->toBeFalse()
+        ->and($stranger->can('update', $transaction))->toBeFalse()
+        ->and($stranger->can('delete', $transaction))->toBeFalse();
 });
 
 it('lets any authenticated user create or view-any transactions', function (): void {
     $user = User::factory()->create();
 
-    expect($user->can('create', Transaction::class))->toBeTrue();
-    expect($user->can('viewAny', Transaction::class))->toBeTrue();
+    expect($user->can('create', Transaction::class))->toBeTrue()
+        ->and($user->can('viewAny', Transaction::class))->toBeTrue();
 });

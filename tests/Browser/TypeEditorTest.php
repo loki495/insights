@@ -82,8 +82,8 @@ it('sets a transaction to transfer and pairs it with a candidate from another ac
         ->assertSee('Payment Received Xyz')
         ->assertNoSmoke();
 
-    expect($transaction->fresh()->transfer_pair_id)->toBe($other->id);
-    expect($other->fresh()->transfer_pair_id)->toBe($transaction->id);
+    expect($transaction->fresh()->transfer_pair_id)->toBe($other->id)
+        ->and($other->fresh()->transfer_pair_id)->toBe($transaction->id);
 });
 
 it('unpairs an existing transfer pair from the editor', function (): void {
@@ -99,8 +99,8 @@ it('unpairs an existing transfer pair from the editor', function (): void {
         ->wait(0.1)
         ->assertNoSmoke();
 
-    expect($transaction->fresh()->transfer_pair_id)->toBeNull();
-    expect($other->fresh()->transfer_pair_id)->toBeNull();
+    expect($transaction->fresh()->transfer_pair_id)->toBeNull()
+        ->and($other->fresh()->transfer_pair_id)->toBeNull();
 });
 
 it('bulk-assigns a type to multiple selected transactions', function (): void {
@@ -120,6 +120,6 @@ it('bulk-assigns a type to multiple selected transactions', function (): void {
         ->wait(0.1)
         ->assertNoSmoke();
 
-    expect($first->fresh()->type)->toBe('adjustment');
-    expect($second->fresh()->type)->toBe('adjustment');
+    expect($first->fresh()->type)->toBe('adjustment')
+        ->and($second->fresh()->type)->toBe('adjustment');
 });

@@ -14,15 +14,15 @@ it('lets any authenticated user view OriginalCategory records', function (): voi
     $user = User::factory()->create();
     $category = OriginalCategory::create(['name' => 'Restaurants', 'plaid_id' => '13005000']);
 
-    expect($user->can('viewAny', OriginalCategory::class))->toBeTrue();
-    expect($user->can('view', $category))->toBeTrue();
+    expect($user->can('viewAny', OriginalCategory::class))->toBeTrue()
+        ->and($user->can('view', $category))->toBeTrue();
 });
 
 it('never lets any user create/update/delete an OriginalCategory record', function (): void {
     $user = User::factory()->create();
     $category = OriginalCategory::create(['name' => 'Restaurants', 'plaid_id' => '13005000']);
 
-    expect($user->can('create', OriginalCategory::class))->toBeFalse();
-    expect($user->can('update', $category))->toBeFalse();
-    expect($user->can('delete', $category))->toBeFalse();
+    expect($user->can('create', OriginalCategory::class))->toBeFalse()
+        ->and($user->can('update', $category))->toBeFalse()
+        ->and($user->can('delete', $category))->toBeFalse();
 });

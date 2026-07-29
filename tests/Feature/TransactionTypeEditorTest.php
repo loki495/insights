@@ -35,10 +35,10 @@ it('typeEditorData returns the current type and no pair for an unpaired transact
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $data = $test->instance()->typeEditorData($transaction->id);
 
-    expect($data['type'])->toBe('expense');
-    expect($data['pair'])->toBeNull();
-    expect($data['transaction']['name'])->toBe('Groceries');
-    expect($data['transaction']['amount'])->toContain('50');
+    expect($data['type'])->toBe('expense')
+        ->and($data['pair'])->toBeNull()
+        ->and($data['transaction']['name'])->toBe('Groceries')
+        ->and($data['transaction']['amount'])->toContain('50');
 });
 
 it('typeEditorData returns the paired transaction\'s info when one exists', function (): void {
@@ -52,9 +52,9 @@ it('typeEditorData returns the paired transaction\'s info when one exists', func
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $data = $test->instance()->typeEditorData($transaction->id);
 
-    expect($data['pair']['id'])->toBe($pair->id);
-    expect($data['pair']['label'])->toContain('Payment Received');
-    expect($data['pair']['amount'])->toContain('100');
+    expect($data['pair']['id'])->toBe($pair->id)
+        ->and($data['pair']['label'])->toContain('Payment Received')
+        ->and($data['pair']['amount'])->toContain('100');
 });
 
 it('saveType updates the transaction\'s type', function (): void {
@@ -64,8 +64,8 @@ it('saveType updates the transaction\'s type', function (): void {
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $data = $test->instance()->saveType($transaction->id, 'transfer');
 
-    expect($transaction->fresh()->type)->toBe('transfer');
-    expect($data['type'])->toBe('transfer');
+    expect($transaction->fresh()->type)->toBe('transfer')
+        ->and($data['type'])->toBe('transfer');
 });
 
 it('saveType clears an existing pair when switching a transaction away from transfer', function (): void {
@@ -79,9 +79,9 @@ it('saveType clears an existing pair when switching a transaction away from tran
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $data = $test->instance()->saveType($transaction->id, 'expense');
 
-    expect($transaction->fresh()->transfer_pair_id)->toBeNull();
-    expect($pair->fresh()->transfer_pair_id)->toBeNull();
-    expect($data['pair'])->toBeNull();
+    expect($transaction->fresh()->transfer_pair_id)->toBeNull()
+        ->and($pair->fresh()->transfer_pair_id)->toBeNull()
+        ->and($data['pair'])->toBeNull();
 });
 
 it('saveType rejects an invalid type', function (): void {
@@ -120,8 +120,8 @@ it('searchTransferPairCandidates finds unpaired transfers from a different accou
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $results = $test->instance()->searchTransferPairCandidates($transaction->id, 'Special');
 
-    expect(collect($results)->pluck('id')->all())->toBe([$goodCandidate->id]);
-    expect($results[0]['amount'])->toContain('100');
+    expect(collect($results)->pluck('id')->all())->toBe([$goodCandidate->id])
+        ->and($results[0]['amount'])->toContain('100');
 });
 
 it('pairTransaction pairs two transactions and returns the pair info', function (): void {
@@ -134,9 +134,9 @@ it('pairTransaction pairs two transactions and returns the pair info', function 
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $result = $test->instance()->pairTransaction($transaction->id, $other->id);
 
-    expect($transaction->fresh()->transfer_pair_id)->toBe($other->id);
-    expect($other->fresh()->transfer_pair_id)->toBe($transaction->id);
-    expect($result['id'])->toBe($other->id);
+    expect($transaction->fresh()->transfer_pair_id)->toBe($other->id)
+        ->and($other->fresh()->transfer_pair_id)->toBe($transaction->id)
+        ->and($result['id'])->toBe($other->id);
 });
 
 it('pairTransaction refuses to pair two transactions from the same account', function (): void {
@@ -161,8 +161,8 @@ it('unpairTransaction clears the pairing on both legs', function (): void {
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->instance()->unpairTransaction($transaction->id);
 
-    expect($transaction->fresh()->transfer_pair_id)->toBeNull();
-    expect($other->fresh()->transfer_pair_id)->toBeNull();
+    expect($transaction->fresh()->transfer_pair_id)->toBeNull()
+        ->and($other->fresh()->transfer_pair_id)->toBeNull();
 });
 
 it('the type pill dispatches edit-type with the transaction id when clicked', function (): void {

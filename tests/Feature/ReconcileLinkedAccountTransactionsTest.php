@@ -40,8 +40,8 @@ it('sets each transaction\'s running_balance by walking backwards from the curre
 
     ReconcileLinkedAccountTransactions::run($linkedAccount->fresh());
 
-    expect($newer->fresh()->running_balance)->toBe(80);
-    expect($older->fresh()->running_balance)->toBe(90);
+    expect($newer->fresh()->running_balance)->toBe(80)
+        ->and($older->fresh()->running_balance)->toBe(90);
 });
 
 it('reconciles each account under the same linked account independently', function (): void {
@@ -66,8 +66,8 @@ it('reconciles each account under the same linked account independently', functi
 
     ReconcileLinkedAccountTransactions::run($linkedAccount->fresh());
 
-    expect($checkingTxn->fresh()->running_balance)->toBe(50);
-    expect($savingsTxn->fresh()->running_balance)->toBe(1000);
+    expect($checkingTxn->fresh()->running_balance)->toBe(50)
+        ->and($savingsTxn->fresh()->running_balance)->toBe(1000);
 });
 
 it('stops walking once a transaction\'s running_balance already matches, leaving older ones untouched', function (): void {
@@ -94,8 +94,8 @@ it('stops walking once a transaction\'s running_balance already matches, leaving
 
     ReconcileLinkedAccountTransactions::run($linkedAccount->fresh());
 
-    expect($newer->fresh()->running_balance)->toBe(80);
-    expect($older->fresh()->running_balance)->toBe(999);
+    expect($newer->fresh()->running_balance)->toBe(80)
+        ->and($older->fresh()->running_balance)->toBe(999);
 });
 
 it('with force=true, re-walks and recomputes every transaction even when the newest already matches', function (): void {
@@ -120,6 +120,6 @@ it('with force=true, re-walks and recomputes every transaction even when the new
 
     ReconcileLinkedAccountTransactions::run($linkedAccount->fresh(), force: true);
 
-    expect($newer->fresh()->running_balance)->toBe(80);
-    expect($older->fresh()->running_balance)->toBe(90);
+    expect($newer->fresh()->running_balance)->toBe(80)
+        ->and($older->fresh()->running_balance)->toBe(90);
 });
