@@ -23,9 +23,9 @@ it('lets a user view/update/delete their own account', function (): void {
     $user = User::factory()->create();
     $account = accountFor($user);
 
-    expect($user->can('view', $account))->toBeTrue();
-    expect($user->can('update', $account))->toBeTrue();
-    expect($user->can('delete', $account))->toBeTrue();
+    expect($user->can('view', $account))->toBeTrue()
+        ->and($user->can('update', $account))->toBeTrue()
+        ->and($user->can('delete', $account))->toBeTrue();
 });
 
 it('prevents a user from viewing/updating/deleting another user\'s account', function (): void {
@@ -34,14 +34,14 @@ it('prevents a user from viewing/updating/deleting another user\'s account', fun
 
     $stranger = User::factory()->create();
 
-    expect($stranger->can('view', $account))->toBeFalse();
-    expect($stranger->can('update', $account))->toBeFalse();
-    expect($stranger->can('delete', $account))->toBeFalse();
+    expect($stranger->can('view', $account))->toBeFalse()
+        ->and($stranger->can('update', $account))->toBeFalse()
+        ->and($stranger->can('delete', $account))->toBeFalse();
 });
 
 it('lets any authenticated user create or view-any accounts', function (): void {
     $user = User::factory()->create();
 
-    expect($user->can('create', Account::class))->toBeTrue();
-    expect($user->can('viewAny', Account::class))->toBeTrue();
+    expect($user->can('create', Account::class))->toBeTrue()
+        ->and($user->can('viewAny', Account::class))->toBeTrue();
 });

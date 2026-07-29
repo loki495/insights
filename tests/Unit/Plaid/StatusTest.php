@@ -11,8 +11,6 @@ it('gets plaid status', function (): void {
         ->toHaveKeys([
             'status.description',
             'page.name',
-        ]);
-
-    expect($response['page']['name'])
-        ->toBe('Plaid');
+        ])
+        ->and($response['page']['name'])->toBe('Plaid');
 });

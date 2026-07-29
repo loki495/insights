@@ -15,9 +15,9 @@ it('lets a user view/update/delete a category they have adopted', function (): v
     $user = User::factory()->create();
     $category = categoryFor($user, 'Groceries');
 
-    expect($user->can('view', $category))->toBeTrue();
-    expect($user->can('update', $category))->toBeTrue();
-    expect($user->can('delete', $category))->toBeTrue();
+    expect($user->can('view', $category))->toBeTrue()
+        ->and($user->can('update', $category))->toBeTrue()
+        ->and($user->can('delete', $category))->toBeTrue();
 });
 
 it('prevents a user from viewing/updating/deleting a category adopted only by another user', function (): void {
@@ -26,14 +26,14 @@ it('prevents a user from viewing/updating/deleting a category adopted only by an
 
     $stranger = User::factory()->create();
 
-    expect($stranger->can('view', $category))->toBeFalse();
-    expect($stranger->can('update', $category))->toBeFalse();
-    expect($stranger->can('delete', $category))->toBeFalse();
+    expect($stranger->can('view', $category))->toBeFalse()
+        ->and($stranger->can('update', $category))->toBeFalse()
+        ->and($stranger->can('delete', $category))->toBeFalse();
 });
 
 it('lets any authenticated user create or view-any categories, since they are a shared vocabulary', function (): void {
     $user = User::factory()->create();
 
-    expect($user->can('create', Category::class))->toBeTrue();
-    expect($user->can('viewAny', Category::class))->toBeTrue();
+    expect($user->can('create', Category::class))->toBeTrue()
+        ->and($user->can('viewAny', Category::class))->toBeTrue();
 });

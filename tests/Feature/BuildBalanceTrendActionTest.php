@@ -41,11 +41,7 @@ it('buckets a single account\'s balance into monthly periods', function (): void
         Carbon::parse('2026-03-31'),
         'monthly',
     );
-
-    expect($result['periods'])->toBe(['Jan 2026', 'Feb 2026', 'Mar 2026']);
-    expect($result['assets'])->toBe([990.0, 980.0, 970.0]);
-    expect($result['liabilities'])->toBe([0.0, 0.0, 0.0]);
-    expect($result['net'])->toBe([990.0, 980.0, 970.0]);
+    expect($result)->toMatchArray(['periods' => ['Jan 2026', 'Feb 2026', 'Mar 2026'], 'assets' => [990.0, 980.0, 970.0], 'liabilities' => [0.0, 0.0, 0.0], 'net' => [990.0, 980.0, 970.0]]);
 });
 
 it('carries the last known balance forward into periods with no activity', function (): void {
@@ -96,10 +92,7 @@ it('classifies credit accounts as liabilities and subtracts them from net', func
         Carbon::parse('2026-01-31'),
         'monthly',
     );
-
-    expect($result['assets'])->toBe([1000.0]);
-    expect($result['liabilities'])->toBe([300.0]);
-    expect($result['net'])->toBe([700.0]);
+    expect($result)->toMatchArray(['assets' => [1000.0], 'liabilities' => [300.0], 'net' => [700.0]]);
 });
 
 it('groups into quarterly periods with the expected labels', function (): void {
@@ -114,9 +107,7 @@ it('groups into quarterly periods with the expected labels', function (): void {
         Carbon::parse('2026-06-30'),
         'quarterly',
     );
-
-    expect($result['periods'])->toBe(['Q1 2026', 'Q2 2026']);
-    expect($result['assets'])->toBe([100.0, 200.0]);
+    expect($result)->toMatchArray(['periods' => ['Q1 2026', 'Q2 2026'], 'assets' => [100.0, 200.0]]);
 });
 
 it('groups into yearly periods with the expected labels', function (): void {
@@ -131,9 +122,7 @@ it('groups into yearly periods with the expected labels', function (): void {
         Carbon::parse('2026-12-31'),
         'yearly',
     );
-
-    expect($result['periods'])->toBe(['2025', '2026']);
-    expect($result['assets'])->toBe([100.0, 150.0]);
+    expect($result)->toMatchArray(['periods' => ['2025', '2026'], 'assets' => [100.0, 150.0]]);
 });
 
 it('groups into daily periods with the expected labels', function (): void {
@@ -148,9 +137,7 @@ it('groups into daily periods with the expected labels', function (): void {
         Carbon::parse('2026-01-06'),
         'daily',
     );
-
-    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026']);
-    expect($result['assets'])->toBe([100.0, 90.0]);
+    expect($result)->toMatchArray(['periods' => ['Jan 5, 2026', 'Jan 6, 2026'], 'assets' => [100.0, 90.0]]);
 });
 
 it('rejects an invalid granularity', function (): void {

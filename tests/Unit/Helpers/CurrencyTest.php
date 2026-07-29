@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 it('returns an empty string for a null amount', function (): void {
-    expect(currency())->toBe('');
+    expect(currency())->toBeEmpty();
 });
 
 it('formats a positive USD amount', function (): void {

@@ -43,9 +43,9 @@ it('bulkAssignCategory syncs the given category onto every selected transaction'
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->call('bulkAssignCategory', $category->id, [$txn1->id, $txn2->id]);
 
-    expect($txn1->refresh()->categories()->pluck('categories.id')->all())->toBe([$category->id]);
-    expect($txn2->refresh()->categories()->pluck('categories.id')->all())->toBe([$category->id]);
-    expect($untouched->refresh()->categories()->pluck('categories.id')->all())->toBe([]);
+    expect($txn1->refresh()->categories()->pluck('categories.id')->all())->toBe([$category->id])
+        ->and($txn2->refresh()->categories()->pluck('categories.id')->all())->toBe([$category->id])
+        ->and($untouched->refresh()->categories()->pluck('categories.id')->all())->toBeEmpty();
 });
 
 it('bulkAssignCategory replaces (not appends to) each transaction\'s existing categories', function (): void {
@@ -83,7 +83,7 @@ it('bulkAssignCategory refuses to categorize a transaction belonging to another 
     // would otherwise have been categorized before hitting the authorization failure on
     // $otherTxn; confirming it wasn't is what actually proves the transaction rolled back
     // rather than leaving a partial mutation.
-    expect($ownTxn->categories()->pluck('categories.id')->all())->toBe([]);
+    expect($ownTxn->categories()->pluck('categories.id')->all())->toBeEmpty();
 });
 
 it('bulkAssignType sets the given type onto every selected transaction', function (): void {
@@ -96,9 +96,9 @@ it('bulkAssignType sets the given type onto every selected transaction', functio
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->call('bulkAssignType', 'transfer', [$txn1->id, $txn2->id]);
 
-    expect($txn1->refresh()->type)->toBe('transfer');
-    expect($txn2->refresh()->type)->toBe('transfer');
-    expect($untouched->refresh()->type)->toBe('expense');
+    expect($txn1->refresh()->type)->toBe('transfer')
+        ->and($txn2->refresh()->type)->toBe('transfer')
+        ->and($untouched->refresh()->type)->toBe('expense');
 });
 
 it('bulkAssignType rejects an invalid type', function (): void {
@@ -152,8 +152,8 @@ it('bulkDeleteTransactions deletes only manually-added transactions among the se
     $test = Livewire::test('components.transactions', ['account' => $account]);
     $test->call('bulkDeleteTransactions', [$manual->id, $synced->id]);
 
-    expect(Transaction::find($manual->id))->toBeNull();
-    expect(Transaction::find($synced->id))->not->toBeNull();
+    expect(Transaction::find($manual->id))->toBeNull()
+        ->and(Transaction::find($synced->id))->not->toBeNull();
 });
 
 it('bulkDeleteTransactions detaches categories from deleted transactions', function (): void {

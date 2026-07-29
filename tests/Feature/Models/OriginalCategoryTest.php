@@ -13,25 +13,25 @@ it('builds path_array from root to leaf', function (): void {
     $child = OriginalCategory::create(['name' => 'Restaurants', 'parent_id' => $root->id]);
     $leaf = OriginalCategory::create(['name' => 'Fast Food', 'parent_id' => $child->id]);
 
-    expect($leaf->path_array)->toBe(['Food and Drink', 'Restaurants', 'Fast Food']);
-    expect($root->path_array)->toBe(['Food and Drink']);
+    expect($leaf->path_array)->toBe(['Food and Drink', 'Restaurants', 'Fast Food'])
+        ->and($root->path_array)->toBe(['Food and Drink']);
 });
 
 it('builds full_path as a > separated string', function (): void {
     $root = OriginalCategory::create(['name' => 'Food and Drink']);
     $leaf = OriginalCategory::create(['name' => 'Restaurants', 'parent_id' => $root->id]);
 
-    expect($leaf->full_path)->toBe('Food and Drink > Restaurants');
-    expect($root->full_path)->toBe('Food and Drink');
+    expect($leaf->full_path)->toBe('Food and Drink > Restaurants')
+        ->and($root->full_path)->toBe('Food and Drink');
 });
 
 it('resolves parent and children relationships', function (): void {
     $root = OriginalCategory::create(['name' => 'Food and Drink']);
     $child = OriginalCategory::create(['name' => 'Restaurants', 'parent_id' => $root->id]);
 
-    expect($child->parent->is($root))->toBeTrue();
-    expect($root->children)->toHaveCount(1);
-    expect($root->children->first()->is($child))->toBeTrue();
+    expect($child->parent->is($root))->toBeTrue()
+        ->and($root->children)->toHaveCount(1)
+        ->and($root->children->first()->is($child))->toBeTrue();
 });
 
 it('sums transaction amounts via the total accessor', function (): void {

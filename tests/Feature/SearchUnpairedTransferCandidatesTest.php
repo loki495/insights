@@ -30,7 +30,7 @@ it('returns an empty collection for a blank search term instead of every unpaire
 
     $results = Transaction::searchUnpairedTransferCandidates(0, $account->id, '   ');
 
-    expect($results)->toHaveCount(0);
+    expect($results)->toBeEmpty();
 });
 
 it('matches a candidate by name or merchant_name, excluding the given transaction/account and non-matches', function (): void {
@@ -60,10 +60,6 @@ it('matches a candidate by name or merchant_name, excluding the given transactio
 
     $results = Transaction::searchUnpairedTransferCandidates($current->id, $account->id, 'Card Payment');
 
-    expect($results->pluck('id'))->toContain($byName->id);
-    expect($results->pluck('id'))->toContain($byMerchant->id);
-    expect($results->pluck('id'))->not->toContain($current->id);
-    expect($results->pluck('id'))->not->toContain($sameAccount->id);
-    expect($results->pluck('id'))->not->toContain($notATransfer->id);
-    expect($results->pluck('id'))->not->toContain($alreadyPaired->id);
+    expect($results->pluck('id'))->toContain($byName->id)
+        ->toContain($byMerchant->id)->not->toContain($current->id)->not->toContain($sameAccount->id)->not->toContain($notATransfer->id)->not->toContain($alreadyPaired->id);
 });

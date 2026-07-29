@@ -48,9 +48,7 @@ it('requires every bare word to match (AND, not OR)', function (): void {
 
     $results = runSearchQuery($user, 'blue coffee');
 
-    expect($results->pluck('id'))->toContain($both->id);
-    expect($results->pluck('id'))->not->toContain($coffeeOnly->id);
-    expect($results->pluck('id'))->not->toContain($blueOnly->id);
+    expect($results->pluck('id'))->toContain($both->id)->not->toContain($coffeeOnly->id)->not->toContain($blueOnly->id);
 });
 
 it('treats a redundant +prefix the same as a bare word', function (): void {
@@ -61,8 +59,7 @@ it('treats a redundant +prefix the same as a bare word', function (): void {
 
     $results = runSearchQuery($user, '+blue +coffee');
 
-    expect($results->pluck('id'))->toContain($both->id);
-    expect($results->pluck('id'))->not->toContain($coffeeOnly->id);
+    expect($results->pluck('id'))->toContain($both->id)->not->toContain($coffeeOnly->id);
 });
 
 it('excludes a transaction matching a -prefixed term even if it matches the required terms', function (): void {
@@ -73,8 +70,7 @@ it('excludes a transaction matching a -prefixed term even if it matches the requ
 
     $results = runSearchQuery($user, 'coffee -refund');
 
-    expect($results->pluck('id'))->toContain($keep->id);
-    expect($results->pluck('id'))->not->toContain($excluded->id);
+    expect($results->pluck('id'))->toContain($keep->id)->not->toContain($excluded->id);
 });
 
 it('matches on merchant_name too, not just name', function (): void {
@@ -115,7 +111,5 @@ it('requires every term across a mix of bare, +prefixed, and -excluded terms, wi
 
     $results = runSearchQuery($user, '+amazon +prime -refund order');
 
-    expect($results->pluck('id'))->toContain($match->id);
-    expect($results->pluck('id'))->not->toContain($missingRequired->id);
-    expect($results->pluck('id'))->not->toContain($hasExcluded->id);
+    expect($results->pluck('id'))->toContain($match->id)->not->toContain($missingRequired->id)->not->toContain($hasExcluded->id);
 });

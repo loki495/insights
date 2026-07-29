@@ -42,9 +42,9 @@ it('pairs two opposite-sign transfer transactions across different accounts', fu
 
     $result = MatchTransferPairsAction::run();
 
-    expect($result['matched_pairs'])->toBe(1);
-    expect($out->fresh()->transfer_pair_id)->toBe($in->id);
-    expect($in->fresh()->transfer_pair_id)->toBe($out->id);
+    expect($result['matched_pairs'])->toBe(1)
+        ->and($out->fresh()->transfer_pair_id)->toBe($in->id)
+        ->and($in->fresh()->transfer_pair_id)->toBe($out->id);
 });
 
 it('never pairs two transactions from the same account, protecting refunds from being mistaken for transfers', function (): void {
@@ -61,9 +61,9 @@ it('never pairs two transactions from the same account, protecting refunds from 
 
     $result = MatchTransferPairsAction::run();
 
-    expect($result['matched_pairs'])->toBe(0);
-    expect($a->fresh()->transfer_pair_id)->toBeNull();
-    expect($b->fresh()->transfer_pair_id)->toBeNull();
+    expect($result['matched_pairs'])->toBe(0)
+        ->and($a->fresh()->transfer_pair_id)->toBeNull()
+        ->and($b->fresh()->transfer_pair_id)->toBeNull();
 });
 
 it('tolerates a small FX/fee spread between the two legs of a cross-currency transfer', function (): void {
@@ -81,8 +81,8 @@ it('tolerates a small FX/fee spread between the two legs of a cross-currency tra
 
     $result = MatchTransferPairsAction::run();
 
-    expect($result['matched_pairs'])->toBe(1);
-    expect($out->fresh()->transfer_pair_id)->toBe($in->id);
+    expect($result['matched_pairs'])->toBe(1)
+        ->and($out->fresh()->transfer_pair_id)->toBe($in->id);
 });
 
 it('does not pair legs whose amounts differ by more than the tolerance', function (): void {
@@ -100,9 +100,9 @@ it('does not pair legs whose amounts differ by more than the tolerance', functio
 
     $result = MatchTransferPairsAction::run();
 
-    expect($result['matched_pairs'])->toBe(0);
-    expect($out->fresh()->transfer_pair_id)->toBeNull();
-    expect($in->fresh()->transfer_pair_id)->toBeNull();
+    expect($result['matched_pairs'])->toBe(0)
+        ->and($out->fresh()->transfer_pair_id)->toBeNull()
+        ->and($in->fresh()->transfer_pair_id)->toBeNull();
 });
 
 it('does not pair legs outside the date window', function (): void {
@@ -120,9 +120,9 @@ it('does not pair legs outside the date window', function (): void {
 
     $result = MatchTransferPairsAction::run();
 
-    expect($result['matched_pairs'])->toBe(0);
-    expect($out->fresh()->transfer_pair_id)->toBeNull();
-    expect($in->fresh()->transfer_pair_id)->toBeNull();
+    expect($result['matched_pairs'])->toBe(0)
+        ->and($out->fresh()->transfer_pair_id)->toBeNull()
+        ->and($in->fresh()->transfer_pair_id)->toBeNull();
 });
 
 it('flags but does not auto-match pairs spanning an investment or loan account', function (): void {
@@ -139,11 +139,9 @@ it('flags but does not auto-match pairs spanning an investment or loan account',
     ]);
 
     $result = MatchTransferPairsAction::run();
-
-    expect($result['matched_pairs'])->toBe(0);
-    expect($result['flagged_investment_or_loan'])->toBe(1);
-    expect($out->fresh()->transfer_pair_id)->toBeNull();
-    expect($in->fresh()->transfer_pair_id)->toBeNull();
+    expect($result)->toMatchArray(['matched_pairs' => 0, 'flagged_investment_or_loan' => 1])
+        ->and($out->fresh()->transfer_pair_id)->toBeNull()
+        ->and($in->fresh()->transfer_pair_id)->toBeNull();
 });
 
 it('leaves an already-paired transaction untouched and only pairs the remaining unpaired ones', function (): void {
@@ -174,8 +172,8 @@ it('leaves an already-paired transaction untouched and only pairs the remaining 
 
     $result = MatchTransferPairsAction::run();
 
-    expect($result['matched_pairs'])->toBe(1);
-    expect($existingPairA->fresh()->transfer_pair_id)->toBe($existingPairB->id);
-    expect($existingPairB->fresh()->transfer_pair_id)->toBe($existingPairA->id);
-    expect($newOut->fresh()->transfer_pair_id)->toBe($newIn->id);
+    expect($result['matched_pairs'])->toBe(1)
+        ->and($existingPairA->fresh()->transfer_pair_id)->toBe($existingPairB->id)
+        ->and($existingPairB->fresh()->transfer_pair_id)->toBe($existingPairA->id)
+        ->and($newOut->fresh()->transfer_pair_id)->toBe($newIn->id);
 });

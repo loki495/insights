@@ -11,9 +11,9 @@ it('creates a full category hierarchy from a path array', function (): void {
         ['primary' => 'FOOD_AND_DRINK', 'detailed' => 'FOOD_AND_DRINK_FAST_FOOD', 'confidence_level' => 'VERY_HIGH'],
     );
 
-    expect(OriginalCategory::count())->toBe(3);
-    expect($leaf->name)->toBe('Fast Food');
-    expect($leaf->full_path)->toBe('Food and Drink > Restaurants > Fast Food');
+    expect(OriginalCategory::count())->toBe(3)
+        ->and($leaf->name)->toBe('Fast Food')
+        ->and($leaf->full_path)->toBe('Food and Drink > Restaurants > Fast Food');
 });
 
 it('only sets plaid/personal-finance data on the leaf node', function (): void {
@@ -25,13 +25,12 @@ it('only sets plaid/personal-finance data on the leaf node', function (): void {
 
     $root = OriginalCategory::where('name', 'Food and Drink')->firstOrFail();
 
-    expect($root->plaid_id)->toBeNull();
-    expect($root->pf_primary)->toBeNull();
-
-    expect($leaf->plaid_id)->toBe('13005000');
-    expect($leaf->pf_primary)->toBe('FOOD_AND_DRINK');
-    expect($leaf->pf_detailed)->toBe('FOOD_AND_DRINK_RESTAURANT');
-    expect($leaf->pf_confidence)->toBe('HIGH');
+    expect($root->plaid_id)->toBeNull()
+        ->and($root->pf_primary)->toBeNull()
+        ->and($leaf->plaid_id)->toBe('13005000')
+        ->and($leaf->pf_primary)->toBe('FOOD_AND_DRINK')
+        ->and($leaf->pf_detailed)->toBe('FOOD_AND_DRINK_RESTAURANT')
+        ->and($leaf->pf_confidence)->toBe('HIGH');
 });
 
 it('reuses existing categories instead of duplicating on repeated calls', function (): void {
@@ -57,6 +56,6 @@ it('skips non-string or empty path segments', function (): void {
         ['primary' => 'FOOD_AND_DRINK', 'detailed' => 'FOOD_AND_DRINK_RESTAURANT'],
     );
 
-    expect(OriginalCategory::count())->toBe(2);
-    expect($leaf->full_path)->toBe('Food and Drink > Restaurants');
+    expect(OriginalCategory::count())->toBe(2)
+        ->and($leaf->full_path)->toBe('Food and Drink > Restaurants');
 });

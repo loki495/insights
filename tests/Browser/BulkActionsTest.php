@@ -80,6 +80,6 @@ it('bulk-deletes only the manually-added transactions among the selection, after
         ->assertSee('Synced From Plaid')
         ->assertNoSmoke();
 
-    expect(Transaction::find($manual->id))->toBeNull();
-    expect(Transaction::find($synced->id))->not->toBeNull();
+    expect(Transaction::find($manual->id))->toBeNull()
+        ->and(Transaction::find($synced->id))->not->toBeNull();
 });

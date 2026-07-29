@@ -111,8 +111,8 @@ it('runs the full added/modified/removed happy path across a two-page pull, then
 
     // Account balances updated from page 1's accounts payload.
     $account->refresh();
-    expect($account->available_balance)->toEqual(150.0);
-    expect($account->current_balance)->toEqual(200.0);
+    expect($account->available_balance)->toEqual(150.0)
+        ->and($account->current_balance)->toEqual(200.0);
 
     // "added" from page 1 created a new transaction.
     expect(Transaction::where('transaction_id', 'txn_new')->exists())->toBeTrue();
@@ -179,13 +179,12 @@ it('matches transfer-pair transactions across accounts as part of the same pull'
     $out = Transaction::where('transaction_id', 'txn_transfer_out')->firstOrFail();
     $in = Transaction::where('transaction_id', 'txn_transfer_in')->firstOrFail();
 
-    expect($out->type)->toBe('transfer');
-    expect($in->type)->toBe('transfer');
-    expect($out->transfer_pair_id)->toBe($in->id);
-    expect($in->transfer_pair_id)->toBe($out->id);
-
-    expect($checking->fresh())->not->toBeNull();
-    expect($card->fresh())->not->toBeNull();
+    expect($out->type)->toBe('transfer')
+        ->and($in->type)->toBe('transfer')
+        ->and($out->transfer_pair_id)->toBe($in->id)
+        ->and($in->transfer_pair_id)->toBe($out->id)
+        ->and($checking->fresh())->not->toBeNull()
+        ->and($card->fresh())->not->toBeNull();
 });
 
 it('does not call Plaid at all for a closed linked account', function (): void {

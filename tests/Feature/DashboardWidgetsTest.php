@@ -55,9 +55,9 @@ it('populates the net cash trend chart series for tracked accounts', function ()
     test()->actingAs($user);
     $test = Livewire::test('admin.dashboard');
 
-    expect($test->get('chart_series'))->not->toBeEmpty();
-    expect($test->get('chart_series')[0]['label'])->toBe('Net Cash');
-    expect($test->get('chart_periods'))->not->toBeEmpty();
+    expect($test->get('chart_series'))->not->toBeEmpty()
+        ->and($test->get('chart_series')[0]['label'])->toBe('Net Cash')
+        ->and($test->get('chart_periods'))->not->toBeEmpty();
 });
 
 it('excludes transfers and income from the "Spending This Month" snapshot', function (): void {
@@ -84,8 +84,8 @@ it('excludes transfers and income from the "Spending This Month" snapshot', func
     test()->actingAs($user);
     $test = Livewire::test('admin.dashboard');
 
-    expect($test->get('chart_labels'))->toBe(['Groceries']);
-    expect($test->get('chart_values'))->toBe([40.0]);
+    expect($test->get('chart_labels'))->toBe(['Groceries'])
+        ->and($test->get('chart_values'))->toBe([40.0]);
 });
 
 it('only counts this month\'s transactions in the spending snapshot, not last month\'s', function (): void {

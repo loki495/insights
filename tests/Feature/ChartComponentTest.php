@@ -98,6 +98,6 @@ it('includes transfer-type transactions in the chart, not just reportable ones',
 
     $test = Livewire::test('components.transactions', ['account' => $account]);
 
-    expect($test->get('chart_labels'))->toBe(['Credit Card Payment']);
-    expect($test->get('chart_values'))->toBe([200.0]);
+    expect($test->get('chart_labels'))->toBe(['Credit Card Payment'])
+        ->and($test->get('chart_values'))->toBe([200.0]);
 });

@@ -46,7 +46,7 @@ it('resolves and persists a category when given valid Plaid data', function (): 
         'personal_finance_category' => ['primary' => 'FOOD_AND_DRINK', 'detailed' => 'FOOD_AND_DRINK_RESTAURANT', 'confidence_level' => 'HIGH'],
     ]);
 
-    expect($result)->toBeInstanceOf(OriginalCategory::class);
-    expect($result->full_path)->toBe('Food and Drink > Restaurants');
-    expect($result->plaid_id)->toBe('13005000');
+    expect($result)->toBeInstanceOf(OriginalCategory::class)
+        ->and($result->full_path)->toBe('Food and Drink > Restaurants')
+        ->and($result->plaid_id)->toBe('13005000');
 });

@@ -32,9 +32,9 @@ it('closing a linked account sets closed_at without deleting accounts or transac
 
     Livewire::test('admin.linked-accounts.index')->call('close', $linkedAccount->id);
 
-    expect($linkedAccount->fresh()->closed_at)->not->toBeNull();
-    expect(Account::find($account->id))->not->toBeNull();
-    expect(Transaction::where('account_id', $account->id)->count())->toBe(1);
+    expect($linkedAccount->fresh()->closed_at)->not->toBeNull()
+        ->and(Account::find($account->id))->not->toBeNull()
+        ->and(Transaction::where('account_id', $account->id)->count())->toBe(1);
 });
 
 it('reopening a closed linked account clears closed_at', function (): void {

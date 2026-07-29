@@ -54,8 +54,8 @@ it('updates an existing transaction in place rather than creating a new one', fu
 
     expect(Transaction::count())->toBe(1);
     $transaction->refresh();
-    expect($transaction->name)->toBe('Updated Name');
-    expect($transaction->amount)->toBe(-99);
+    expect($transaction->name)->toBe('Updated Name')
+        ->and($transaction->amount)->toBe(-99);
 });
 
 it('shows a validation error instead of crashing when no account is selected', function (): void {

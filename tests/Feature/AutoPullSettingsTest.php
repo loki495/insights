@@ -64,9 +64,9 @@ it('isAutoPullDue is true once the interval has elapsed since the last pull, in 
         'last_pulled_at' => now()->subDays(3),
     ]);
 
-    expect($dueHours->isAutoPullDue())->toBeTrue();
-    expect($dueDays->isAutoPullDue())->toBeTrue();
-    expect($notYetDueDays->isAutoPullDue())->toBeFalse();
+    expect($dueHours->isAutoPullDue())->toBeTrue()
+        ->and($dueDays->isAutoPullDue())->toBeTrue()
+        ->and($notYetDueDays->isAutoPullDue())->toBeFalse();
 });
 
 it('updateAutoPull saves the enabled flag and interval via the Livewire component', function (): void {
@@ -78,9 +78,9 @@ it('updateAutoPull saves the enabled flag and interval via the Livewire componen
         ->call('updateAutoPull', $linkedAccount->id, true, 3, 'days');
 
     $linkedAccount->refresh();
-    expect($linkedAccount->auto_pull_enabled)->toBeTrue();
-    expect($linkedAccount->auto_pull_interval_value)->toBe(3);
-    expect($linkedAccount->auto_pull_interval_unit)->toBe('days');
+    expect($linkedAccount->auto_pull_enabled)->toBeTrue()
+        ->and($linkedAccount->auto_pull_interval_value)->toBe(3)
+        ->and($linkedAccount->auto_pull_interval_unit)->toBe('days');
 });
 
 it('updateAutoPull rejects an invalid interval unit', function (): void {

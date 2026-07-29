@@ -43,11 +43,7 @@ it('buckets income and expense into monthly periods', function (): void {
         Carbon::parse('2026-02-28'),
         'monthly',
     );
-
-    expect($result['periods'])->toBe(['Jan 2026', 'Feb 2026']);
-    expect($result['income'])->toBe([2000.0, 2000.0]);
-    expect($result['expense'])->toBe([100.0, 800.0]);
-    expect($result['net'])->toBe([1900.0, 1200.0]);
+    expect($result)->toMatchArray(['periods' => ['Jan 2026', 'Feb 2026'], 'income' => [2000.0, 2000.0], 'expense' => [100.0, 800.0], 'net' => [1900.0, 1200.0]]);
 });
 
 it('excludes transfers and adjustments from the totals', function (): void {
@@ -64,9 +60,7 @@ it('excludes transfers and adjustments from the totals', function (): void {
         Carbon::parse('2026-01-31'),
         'monthly',
     );
-
-    expect($result['income'])->toBe([2000.0]);
-    expect($result['expense'])->toBe([0.0]);
+    expect($result)->toMatchArray(['income' => [2000.0], 'expense' => [0.0]]);
 });
 
 it('only includes transactions from the given accounts', function (): void {
@@ -98,9 +92,7 @@ it('groups into quarterly and yearly periods', function (): void {
         Carbon::parse('2026-06-30'),
         'quarterly',
     );
-
-    expect($quarterly['periods'])->toBe(['Q1 2026', 'Q2 2026']);
-    expect($quarterly['income'])->toBe([100.0, 100.0]);
+    expect($quarterly)->toMatchArray(['periods' => ['Q1 2026', 'Q2 2026'], 'income' => [100.0, 100.0]]);
 
     $yearly = BuildIncomeExpenseTrendAction::run(
         collect([$account]),
@@ -108,9 +100,7 @@ it('groups into quarterly and yearly periods', function (): void {
         Carbon::parse('2026-12-31'),
         'yearly',
     );
-
-    expect($yearly['periods'])->toBe(['2026']);
-    expect($yearly['income'])->toBe([200.0]);
+    expect($yearly)->toMatchArray(['periods' => ['2026'], 'income' => [200.0]]);
 });
 
 it('groups into daily periods', function (): void {
@@ -125,10 +115,7 @@ it('groups into daily periods', function (): void {
         Carbon::parse('2026-01-06'),
         'daily',
     );
-
-    expect($result['periods'])->toBe(['Jan 5, 2026', 'Jan 6, 2026']);
-    expect($result['income'])->toBe([100.0, 0.0]);
-    expect($result['expense'])->toBe([0.0, 20.0]);
+    expect($result)->toMatchArray(['periods' => ['Jan 5, 2026', 'Jan 6, 2026'], 'income' => [100.0, 0.0], 'expense' => [0.0, 20.0]]);
 });
 
 it('filters to the given categories and their descendants', function (): void {
@@ -153,11 +140,9 @@ it('filters to the given categories and their descendants', function (): void {
         'monthly',
         [$parent->id],
     );
-
     // Only the Groceries-tagged expense (under $parent) counts; the untagged paycheck and the
     // Rent expense (a different, unselected category) both drop out.
-    expect($result['income'])->toBe([0.0]);
-    expect($result['expense'])->toBe([100.0]);
+    expect($result)->toMatchArray(['income' => [0.0], 'expense' => [100.0]]);
 });
 
 it('counts a transaction once even if it matches more than one selected category', function (): void {
@@ -227,7 +212,5 @@ it('filters by an amount range regardless of sign', function (): void {
         '50',
         '100',
     );
-
-    expect($result['income'])->toBe([75.0]);
-    expect($result['expense'])->toBe([75.0]);
+    expect($result)->toMatchArray(['income' => [75.0], 'expense' => [75.0]]);
 });

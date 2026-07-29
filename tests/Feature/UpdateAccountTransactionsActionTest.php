@@ -48,9 +48,9 @@ it('creates a new transaction from an "added" entry, flipping the sign so a debi
     UpdateAccountTransactionsAction::run(plaidTransactionInfo(['amount' => 25.0]), 'added');
 
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
-    expect($transaction->amount)->toEqual(-25.0);
-    expect($transaction->transaction_type)->toBe('Debit');
-    expect($transaction->account_id)->toBe($account->id);
+    expect($transaction->amount)->toEqual(-25.0)
+        ->and($transaction->transaction_type)->toBe('Debit')
+        ->and($transaction->account_id)->toBe($account->id);
 });
 
 it('flips a negative Plaid amount (a refund/credit) to a positive Credit transaction', function (): void {
@@ -59,8 +59,8 @@ it('flips a negative Plaid amount (a refund/credit) to a positive Credit transac
     UpdateAccountTransactionsAction::run(plaidTransactionInfo(['amount' => -25.0]), 'added');
 
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
-    expect($transaction->amount)->toEqual(25.0);
-    expect($transaction->transaction_type)->toBe('Credit');
+    expect($transaction->amount)->toEqual(25.0)
+        ->and($transaction->transaction_type)->toBe('Credit');
 });
 
 it('updates the existing transaction in place on a "modified" entry instead of duplicating it', function (): void {
@@ -71,8 +71,8 @@ it('updates the existing transaction in place on a "modified" entry instead of d
 
     expect(Transaction::where('transaction_id', 'txn_1')->count())->toBe(1);
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
-    expect($transaction->name)->toBe('Coffee Shop Purchase (corrected)');
-    expect($transaction->amount)->toEqual(-30.0);
+    expect($transaction->name)->toBe('Coffee Shop Purchase (corrected)')
+        ->and($transaction->amount)->toEqual(-30.0);
 });
 
 it('deletes the transaction on a "removed" entry', function (): void {
@@ -98,8 +98,8 @@ it('cleans stray U+FFFD replacement characters out of the transaction name/merch
     ]), 'added');
 
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
-    expect($transaction->name)->toBe('SOME STORE NAME');
-    expect($transaction->merchant_name)->toBe('SOME STORE NAME');
+    expect($transaction->name)->toBe('SOME STORE NAME')
+        ->and($transaction->merchant_name)->toBe('SOME STORE NAME');
 });
 
 it('leaves merchant_name null when Plaid sends no merchant name', function (): void {
@@ -120,8 +120,8 @@ it('falls back to the date-only fields when datetime fields are absent', functio
     ]), 'added');
 
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
-    expect($transaction->authorized_at->toDateString())->toBe('2026-06-10');
-    expect($transaction->created_at->toDateString())->toBe('2026-06-11');
+    expect($transaction->authorized_at->toDateString())->toBe('2026-06-10')
+        ->and($transaction->created_at->toDateString())->toBe('2026-06-11');
 });
 
 it('prefers the datetime fields over the date-only fields when both are present', function (): void {
@@ -148,8 +148,8 @@ it('resolves and persists the Plaid category onto the transaction', function ():
     ]), 'added');
 
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
-    expect($transaction->original_category_id)->not->toBeNull();
-    expect($transaction->originalCategory->full_path)->toBe('Food and Drink > Restaurants');
+    expect($transaction->original_category_id)->not->toBeNull()
+        ->and($transaction->originalCategory->full_path)->toBe('Food and Drink > Restaurants');
 });
 
 it('leaves original_category_id null when Plaid sends no category data', function (): void {

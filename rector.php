@@ -11,6 +11,9 @@ return RectorConfig::configure()
         __DIR__.'/resources/views',
         __DIR__.'/tests',
     ])
+    ->withSets([
+        __DIR__.'/vendor/pestphp/pest-plugin-rector/config/sets/coding-style.php',
+    ])
     ->withSkip([
         DeclareStrictTypesRector::class => [__DIR__.'/resources/views'],
     ])
