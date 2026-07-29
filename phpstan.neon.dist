@@ -1,8 +1,12 @@
+includes:
+    - phpstan-baseline.neon
+
 parameters:
     level: 6
     tmpDir: storage/phpstan-cache
     paths:
         - app
+        - tests
     reportUnmatchedIgnoredErrors: true
     noEnvCallsOutsideOfConfig: false
     # tomasvotruba/type-coverage (via pestphp/pest-plugin-type-coverage) defaults to requiring

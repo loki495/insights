@@ -52,9 +52,6 @@ it('PullLinkedAccountTransactionsAction is a no-op for a demo linked account, wi
     $user = User::factory()->create();
     $linkedAccount = makeLinkedAccountForPullDataTest($user, true);
 
-    // If this reached the real Plaid client with a fake access token, it would throw — reaching
-    // this assertion at all is the proof the demo guard short-circuited before that call.
-    PullLinkedAccountTransactionsAction::run($linkedAccount);
-
-    expect(true)->toBeTrue();
+    // A real access token would throw if it reached the Plaid client — not throwing proves the demo guard fired.
+    expect(fn () => PullLinkedAccountTransactionsAction::run($linkedAccount))->not->toThrow(Throwable::class);
 });

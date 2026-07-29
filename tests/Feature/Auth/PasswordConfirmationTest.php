@@ -3,10 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Volt\Volt;
-
-uses(RefreshDatabase::class);
 
 test('confirm password screen can be rendered', function (): void {
     $user = User::factory()->create();
