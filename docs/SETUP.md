@@ -181,6 +181,16 @@ automatically. Set `VITE_HMR_HOST` (and `VITE_HMR_CLIENT_PORT` if your proxy isn
 `.env` to your chosen hostname so Vite's hot-reload websocket connects correctly — see the comments
 in `.env.example`.
 
+### Remote access via Cloudflare Tunnel
+
+If you expose this app publicly through a tunnel (e.g. Cloudflare Tunnel) alongside its normal
+LAN/reverse-proxy setup, the public hostname can't reach the local Vite dev server. Set
+`STATIC_ASSET_HOSTS` in `.env` to that public hostname (comma-separated if there's more than one) —
+`App\Http\Middleware\UseStaticAssetsForRemoteHost` then forces the built manifest and `Secure`
+session cookies for requests to those hosts specifically, while the LAN hostname keeps live
+hot-reloading as usual. Run `npm run build` whenever frontend assets change, since the remote
+hostname always serves from `public/build`, never the dev server.
+
 ### Option C — Bare metal (no Docker)
 
 ```bash

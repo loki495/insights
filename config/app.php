@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
 
     /*
@@ -136,5 +138,21 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Static Asset Hosts
+    |--------------------------------------------------------------------------
+    |
+    | Hostnames (e.g. a Cloudflare Tunnel public hostname) that can't reach the local Vite
+    | dev server and must always get the built manifest instead. See
+    | App\Http\Middleware\UseStaticAssetsForRemoteHost.
+    |
+    */
+
+    'static_asset_hosts' => array_filter(array_map(
+        trim(...),
+        explode(',', (string) env('STATIC_ASSET_HOSTS', ''))
+    )),
 
 ];
