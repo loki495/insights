@@ -13,8 +13,6 @@ services:
       - ./storage/ssh:/var/www/html/storage/ssh:rw
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.insights.rule=Host(`insights.dev.local.test`)"
-      - "traefik.http.routers.insights.entrypoints=web"
       - "traefik.http.services.insights.loadbalancer.server.port=80"
     build:
       context: .
