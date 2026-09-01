@@ -10,7 +10,7 @@ multiple bank accounts and credit cards using [Plaid](https://plaid.com/).
 
 | Dashboard | Transaction Search |
 | --- | --- |
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Transaction Search with chart and filters expanded](docs/screenshots/report.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Transaction Search](docs/screenshots/report.png) |
 
 | Dark mode | Mobile |
 | --- | --- |
@@ -53,6 +53,28 @@ not built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
 - **Bulk actions** — select multiple transactions to assign a category/type or delete at once.
 - **Optimistic UI** — category/type edits show instantly and reconcile with the server response.
 - Mobile-responsive layout and dark mode throughout.
+
+## Major implementation decisions
+
+- **Transaction type is derived automatically at sync time, not left to the user.**
+  Every transaction is classified `income`/`expense`/`transfer`/`adjustment` straight from
+  Plaid's own category data — e.g. a credit card payment is a `transfer`, not an `expense`,
+  which avoids double-counting money that's just moving between your own accounts.
+  Transfers are then auto-paired across accounts (opposite sign, similar amount, close
+  dates), with manual override available from a quick-edit popup for the cases the
+  heuristic gets wrong.
+- **Hierarchical categories are independent of Plaid's own taxonomy**, not built on top
+  of it. Plaid's `OriginalCategory`/`personal_finance_category` is preserved alongside
+  your own nested categories rather than merged into them — the two systems can diverge
+  freely, e.g. renaming or restructuring your own categories never touches what Plaid
+  reported.
+- **Account tracking is three states, not a boolean.** `tracked` (in aggregate reports),
+  `reference` (visible, excluded from totals), or `excluded` — a plain "hide this account"
+  toggle can't distinguish "I want to see this account's balance but not have it skew my
+  net worth" from "I never want to see this again," so it isn't one.
+- **Unlinking an institution soft-closes it instead of deleting anything.** Accounts and
+  transaction history stay intact and reversible; only a hard delete (if ever added) would
+  actually remove data.
 
 ## Tech Stack
 
@@ -98,6 +120,25 @@ account](docs/SETUP.md#exploring-without-a-plaid-account) for details.
 Want to develop/contribute instead? See [docs/SETUP.md](docs/SETUP.md) for the local-development
 setup (hot-reloading, debug output) as well as bare-metal install options and running behind your
 own reverse proxy.
+
+## Testing
+
+```bash
+composer test   # Rector (dry-run) -> Pint -> peck -> PHPStan -> Pest (unit + browser)
+```
+
+Runs against both SQLite and MySQL in CI. Coverage floor is 95% (currently ~95.9%) — see
+[CONTRIBUTING.md](CONTRIBUTING.md#before-opening-a-pr) for the full breakdown, including
+the Pest browser-test setup.
+
+## Current limitations
+
+- No autocategorization rules or budgeting tools yet — see [docs/ROADMAP.md](docs/ROADMAP.md).
+- Postgres isn't CI-tested (SQLite and MySQL are) — it should work, since Laravel supports
+  it natively, but treat it as unverified until it's actually exercised in CI.
+- Single-user per install — there's no multi-tenant account model; each deployment is one
+  person's own finances.
+- Plaid-only — no manual/CSV-imported accounts yet for banks Plaid doesn't cover.
 
 ## Contributing
 
