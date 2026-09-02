@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property-read User $user
+ */
 class Transaction extends Model
 {
     /** @use HasFactory<TransactionFactory> */
@@ -91,11 +95,16 @@ class Transaction extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
+     * There's no direct user_id column on this table — ownership flows through
+     * account -> linked_account -> user, the same chain TransactionPolicy authorizes against.
+     *
+     * @return Attribute<User, never>
      */
-    public function user(): BelongsTo
+    public function user(): Attribute
     {
-        return $this->belongsTo(User::class);
+        return Attribute::make(
+            get: fn (): User => $this->account->linked_account->user,
+        );
     }
 
     /**
