@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Actions\MatchTransferPairsAction;
 use App\Models\Transaction;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
 
 class BackfillTransactionTypes extends Command
 {
@@ -31,7 +32,7 @@ class BackfillTransactionTypes extends Command
     {
         $counts = ['income' => 0, 'expense' => 0, 'transfer' => 0, 'adjustment' => 0];
 
-        Transaction::query()->chunkById(200, function ($transactions) use (&$counts): void {
+        Transaction::query()->chunkById(200, function (Collection $transactions) use (&$counts): void {
             foreach ($transactions as $transaction) {
                 $transaction->refreshType();
                 $counts[$transaction->type] = ($counts[$transaction->type] ?? 0) + 1;

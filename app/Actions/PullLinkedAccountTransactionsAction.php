@@ -6,6 +6,7 @@ namespace App\Actions;
 
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
+use Illuminate\Database\Eloquent\Builder;
 
 final class PullLinkedAccountTransactionsAction
 {
@@ -72,7 +73,7 @@ final class PullLinkedAccountTransactionsAction
             MatchTransferPairsAction::run(
                 Transaction::query()->whereHas(
                     'account.linked_account',
-                    fn ($query) => $query->where('user_id', $linkedAccount->user_id)
+                    fn (Builder $query): Builder => $query->where('user_id', $linkedAccount->user_id)
                 )
             );
 

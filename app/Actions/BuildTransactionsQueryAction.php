@@ -42,20 +42,20 @@ final class BuildTransactionsQueryAction
         }
 
         $query
-            ->when($filters->originalCategoryId ?? false, fn ($query) => $query->where('original_category_id', $filters->originalCategoryId))
-            ->when($filters->categoryId ?? false, function ($query) use ($filters) {
+            ->when($filters->originalCategoryId ?? false, fn (Builder $query): Builder => $query->where('original_category_id', $filters->originalCategoryId))
+            ->when($filters->categoryId ?? false, function (Builder $query) use ($filters): Builder {
                 $category = Category::find($filters->categoryId);
                 $categoryId = $category->id;
                 $descendants = $category->descendants;
 
-                return $query->whereHas('categories', function ($query) use ($categoryId, $descendants): void {
+                return $query->whereHas('categories', function (Builder $query) use ($categoryId, $descendants): void {
                     $query
                         ->where('categories.id', $categoryId)
                         ->orWhereIn('categories.id', $descendants);
                 });
             })
-            ->when($filters->onlyUncategorized, fn ($query) => $query->doesntHave('categories'))
-            ->when($filters->typeFilters !== [], fn ($query) => $query->whereIn('type', $filters->typeFilters))
+            ->when($filters->onlyUncategorized, fn (Builder $query): Builder => $query->doesntHave('categories'))
+            ->when($filters->typeFilters !== [], fn (Builder $query): Builder => $query->whereIn('type', $filters->typeFilters))
             // Filtered on the transaction's magnitude, not its signed amount — a user thinking
             // "between $50 and $200" doesn't want to also have to know/guess the sign, and the
             // Type filter above already covers direction (income/expense/transfer/adjustment).
@@ -67,8 +67,8 @@ final class BuildTransactionsQueryAction
             // integer cents (App\Casts\MoneyCast) but $filters->amountMin/Max are dollar values
             // from the filter input, so the bound value needs converting — this raw SQL bypasses
             // the model's cast entirely.
-            ->when($filters->amountMin !== '', fn ($query) => $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [round(((float) $filters->amountMin) * 100)]))
-            ->when($filters->amountMax !== '', fn ($query) => $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [round(((float) $filters->amountMax) * 100)]))
+            ->when($filters->amountMin !== '', fn (Builder $query): Builder => $query->whereRaw('ABS(amount) >= CAST(? AS REAL)', [round(((float) $filters->amountMin) * 100)]))
+            ->when($filters->amountMax !== '', fn (Builder $query): Builder => $query->whereRaw('ABS(amount) <= CAST(? AS REAL)', [round(((float) $filters->amountMax) * 100)]))
             ->with('categories')
             ->with('originalCategory')
             ->whereBetween('transactions.created_at', [$filters->dateFrom, $filters->dateTo]);
@@ -99,10 +99,10 @@ final class BuildTransactionsQueryAction
                     ->selectRaw('transactions.*, 0 as relevance');
             }
 
-            $query->where(function ($q) use ($terms): void {
+            $query->where(function (Builder $q) use ($terms): void {
                 // Every required term must match somewhere (name, merchant, or original category).
                 foreach ($terms['required'] as $term) {
-                    $q->where(function ($q1) use ($term): void {
+                    $q->where(function (Builder $q1) use ($term): void {
                         $q1->where('transactions.name', 'like', '%'.$term.'%')
                             ->orWhere('transactions.merchant_name', 'like', '%'.$term.'%')
                             ->orWhereRelation('originalCategory', 'name', 'like', '%'.$term.'%')
@@ -112,16 +112,16 @@ final class BuildTransactionsQueryAction
 
                 // No excluded term may match anywhere.
                 foreach ($terms['excluded'] as $term) {
-                    $q->where(function ($q1) use ($term): void {
+                    $q->where(function (Builder $q1) use ($term): void {
                         $q1->where('transactions.name', 'not like', '%'.$term.'%')
-                            ->where(function ($q2) use ($term): void {
+                            ->where(function (Builder $q2) use ($term): void {
                                 $q2->where('transactions.merchant_name', 'not like', '%'.$term.'%')
                                     ->orWhereNull('transactions.merchant_name');
                             })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
+                            ->whereDoesntHave('originalCategory', function (Builder $q2) use ($term): void {
                                 $q2->where('name', 'like', '%'.$term.'%');
                             })
-                            ->whereDoesntHave('originalCategory', function ($q2) use ($term): void {
+                            ->whereDoesntHave('originalCategory', function (Builder $q2) use ($term): void {
                                 $q2->where('pf_detailed', 'like', '%'.$term.'%');
                             });
                     });

@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Concerns;
 
 use App\Actions\CreateOrAdoptCategoryAction;
+use App\Models\Category;
 use App\Models\Transaction;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
@@ -29,7 +32,7 @@ trait HasCategoryAssignment
     public function categories()
     {
         return auth()->user()->categories()->get()
-            ->each(fn ($category) => $category->setAttribute('color', $category->pivot->color ?: '#3b82f6'))
+            ->each(fn (Category $category): Category => $category->setAttribute('color', $category->pivot->color ?: '#3b82f6'))
             ->sortBy('fullName')
             ->values();
     }
@@ -38,7 +41,7 @@ trait HasCategoryAssignment
     public function categoryPickerOptions(): array
     {
         return $this->categories
-            ->map(fn ($category): array => [
+            ->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'full_name' => $category->fullName,
@@ -53,7 +56,7 @@ trait HasCategoryAssignment
     public function categoryPickerLookup(): array
     {
         return $this->categories
-            ->mapWithKeys(fn ($category): array => [
+            ->mapWithKeys(fn (Category $category): array => [
                 $category->id => [
                     'id' => $category->id,
                     'name' => $category->name,
@@ -69,8 +72,10 @@ trait HasCategoryAssignment
      * For each distinct merchant on the current page, find the category most
      * commonly used on other transactions from that merchant. Doubles as the
      * groundwork for a future auto-categorization rule engine.
+     *
+     * @param  Collection<int, Transaction>  $transactions
      */
-    private function merchantSuggestions($transactions): array
+    private function merchantSuggestions(Collection $transactions): array
     {
         $merchants = collect($transactions)
             ->pluck('merchant_name')
@@ -93,7 +98,7 @@ trait HasCategoryAssignment
             ->with('categories')
             ->get()
             ->groupBy('merchant_name')
-            ->map(function ($merchantTransactions): ?array {
+            ->map(function (Collection $merchantTransactions): ?array {
                 $topCategoryId = $merchantTransactions
                     ->flatMap->categories
                     ->countBy('id')
@@ -117,7 +122,7 @@ trait HasCategoryAssignment
             ->toArray();
     }
 
-    public function saveCategory($transaction_id, $category_id): void
+    public function saveCategory(int|string $transaction_id, int|string $category_id): void
     {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('update', $transaction);
@@ -135,7 +140,7 @@ trait HasCategoryAssignment
      * inconsistent to match on, since Plaid's own categorization is usually
      * present). Already-assigned categories are excluded.
      */
-    public function suggestCategoriesForTransaction($transaction_id): array
+    public function suggestCategoriesForTransaction(int|string $transaction_id): array
     {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('view', $transaction);
@@ -143,12 +148,12 @@ trait HasCategoryAssignment
         $currentCategoryIds = $transaction->categories->pluck('id');
 
         return collect([
-            $this->topCategoryFor(fn ($query) => $query->where('merchant_name', $transaction->merchant_name), $transaction, (bool) $transaction->merchant_name),
-            $this->topCategoryFor(fn ($query) => $query->where('original_category_id', $transaction->original_category_id), $transaction, (bool) $transaction->original_category_id),
+            $this->topCategoryFor(fn (Builder $query): Builder => $query->where('merchant_name', $transaction->merchant_name), $transaction, (bool) $transaction->merchant_name),
+            $this->topCategoryFor(fn (Builder $query): Builder => $query->where('original_category_id', $transaction->original_category_id), $transaction, (bool) $transaction->original_category_id),
         ])
             ->filter()
             ->unique('id')
-            ->reject(fn ($suggestion) => $currentCategoryIds->contains($suggestion['id']))
+            ->reject(fn (array $suggestion): bool => $currentCategoryIds->contains($suggestion['id']))
             ->take(2)
             ->values()
             ->toArray();
@@ -209,7 +214,7 @@ trait HasCategoryAssignment
         ];
     }
 
-    public function clearCategory($transaction_id): void
+    public function clearCategory(int|string $transaction_id): void
     {
         $transaction = Transaction::findOrFail($transaction_id);
         $this->authorize('update', $transaction);
@@ -217,7 +222,7 @@ trait HasCategoryAssignment
         $this->chartNeedsRefresh = true;
     }
 
-    public function bulkAssignCategory($category_id, array $transaction_ids): void
+    public function bulkAssignCategory(int|string $category_id, array $transaction_ids): void
     {
         $transactions = Transaction::whereIn('id', $transaction_ids)->get();
 

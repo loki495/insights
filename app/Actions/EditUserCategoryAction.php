@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class EditUserCategoryAction
@@ -42,7 +43,7 @@ final class EditUserCategoryAction
 
                 $transactions = Transaction::query()
                     ->whereIn('account_id', $ownedAccountIds)
-                    ->whereHas('categories', fn ($query) => $query->where('categories.id', $old->id))
+                    ->whereHas('categories', fn (Builder $query): Builder => $query->where('categories.id', $old->id))
                     ->get();
 
                 foreach ($transactions as $transaction) {

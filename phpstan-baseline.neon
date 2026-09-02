@@ -1,90 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 2
-			path: app/Actions/BuildCategoryBreakdownForFilteredTransactionsAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 13
-			path: app/Actions/BuildTransactionsQueryAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Actions/EditUserCategoryAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Actions/PullLinkedAccountTransactionsAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Actions/RemoveCategoryForUserAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 2
-			path: app/Actions/Reports/BuildBalanceTrendAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Actions/Reports/BuildCategoryBreakdownTrendAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 3
-			path: app/Actions/Reports/BuildIncomeExpenseTrendAction.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 2
-			path: app/Actions/Reports/Concerns/FiltersBySearchAndAmount.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Console/Commands/BackfillTransactionTypes.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 13
-			path: app/Livewire/Concerns/HasCategoryAssignment.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Models/Category.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Models/OriginalCategory.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 1
-			path: app/Models/Transaction.php
-
-		-
 			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -133,12 +49,6 @@ parameters:
 			path: tests/Feature/AmountRangeFilterTest.php
 
 		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 2
-			path: tests/Feature/Auth/PasswordResetTest.php
-
-		-
 			message: '#^Function makeLinkedAccountForAutoPullTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -147,12 +57,6 @@ parameters:
 		-
 			message: '#^Function makeAccountForBalanceReportTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/BalanceReportTest.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
 			count: 1
 			path: tests/Feature/BalanceReportTest.php
 
@@ -247,12 +151,6 @@ parameters:
 			path: tests/Feature/CategoryColorScopingTest.php
 
 		-
-			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:bulkAssignCategory\(\) has parameter \$category_id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
 			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:bulkAssignCategory\(\) has parameter \$transaction_ids with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -277,44 +175,14 @@ parameters:
 			path: tests/Feature/CategoryColorScopingTest.php
 
 		-
-			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:clearCategory\(\) has parameter \$transaction_id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
 			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:createCategory\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/CategoryColorScopingTest.php
 
 		-
-			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:merchantSuggestions\(\) has parameter \$transactions with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
 			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:merchantSuggestions\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
-			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:saveCategory\(\) has parameter \$category_id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
-			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:saveCategory\(\) has parameter \$transaction_id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
-			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:suggestCategoriesForTransaction\(\) has parameter \$transaction_id with no type specified\.$#'
-			identifier: missingType.parameter
 			count: 1
 			path: tests/Feature/CategoryColorScopingTest.php
 
@@ -327,18 +195,6 @@ parameters:
 		-
 			message: '#^Method Livewire\\Component@anonymous/tests/Feature/CategoryColorScopingTest\.php\:43\:\:topCategoryFor\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
-			message: '#^Unable to resolve the template type TKey in call to function collect$#'
-			identifier: argument.templateType
-			count: 1
-			path: tests/Feature/CategoryColorScopingTest.php
-
-		-
-			message: '#^Unable to resolve the template type TValue in call to function collect$#'
-			identifier: argument.templateType
 			count: 1
 			path: tests/Feature/CategoryColorScopingTest.php
 
@@ -403,12 +259,6 @@ parameters:
 			path: tests/Feature/IncomeExpenseReportTest.php
 
 		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 7
-			path: tests/Feature/IncomeExpenseReportTest.php
-
-		-
 			message: '#^Calling toBeTrue\(\) on Expectation\<true\>; assertion is redundant\.$#'
 			identifier: pest.expectation.redundant
 			count: 2
@@ -425,12 +275,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/MatchTransferPairsActionTest.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 3
-			path: tests/Feature/PlaidLinkFlowTest.php
 
 		-
 			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturnUsing\(\)\.$#'
@@ -460,12 +304,6 @@ parameters:
 			message: '#^Function plaidPullTransactionPayload\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 4
 			path: tests/Feature/PullLinkedAccountTransactionsActionTest.php
 
 		-
@@ -581,12 +419,6 @@ parameters:
 			identifier: method.notFound
 			count: 3
 			path: tests/Feature/TransactionTypeFilterTest.php
-
-		-
-			message: '#^Out of 305 possible param types, only 242 \- 79\.3 %% actually have it\. Add more param types to get over 83 %%$#'
-			identifier: typeCoverage.paramTypeCoverage
-			count: 3
-			path: tests/Feature/TransactionsPerPageTest.php
 
 		-
 			message: '#^Function makeAccountForTransferPairIndicatorTest\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'

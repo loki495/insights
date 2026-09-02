@@ -12,6 +12,7 @@ use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 final class BuildCategoryBreakdownTrendAction
@@ -51,7 +52,7 @@ final class BuildCategoryBreakdownTrendAction
                 ->whereIn('account_id', $accountIds)
                 ->reportable()
                 ->whereBetween('created_at', [$from, $to])
-                ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $category->descendants));
+                ->whereHas('categories', fn (Builder $q): Builder => $q->whereIn('categories.id', $category->descendants));
 
             self::applySearchAndAmountFilters($query, $search, $amountMin, $amountMax);
 

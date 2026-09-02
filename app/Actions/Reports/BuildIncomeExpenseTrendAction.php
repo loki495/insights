@@ -10,6 +10,7 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 final class BuildIncomeExpenseTrendAction
@@ -46,7 +47,7 @@ final class BuildIncomeExpenseTrendAction
                 ->unique()
                 ->values();
 
-            $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $matchingIds));
+            $query->whereHas('categories', fn (Builder $q): Builder => $q->whereIn('categories.id', $matchingIds));
         }
 
         self::applySearchAndAmountFilters($query, $search, $amountMin, $amountMax);
@@ -71,7 +72,7 @@ final class BuildIncomeExpenseTrendAction
             }
         }
 
-        $net = array_map(fn ($i, $e): float => $i - $e, $income, $expense);
+        $net = array_map(fn (float $i, float $e): float => $i - $e, $income, $expense);
 
         return [
             'periods' => array_map(fn (array $period): string => $period['label'], $periods),

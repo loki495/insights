@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * Buckets a filtered transaction query into one chart segment per top-level category (or, when a
@@ -29,7 +30,7 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
     {
         $transactions = $query
             ->clone()
-            ->with(['categories' => function ($q): void {
+            ->with(['categories' => function (Relation $q): void {
                 $q->select('categories.id', 'categories.name', 'categories.parent_id');
             }])
             ->get();
@@ -118,7 +119,7 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
         return [
             'ids' => $chart_data->pluck('id')->toArray(),
             'labels' => $chart_data->pluck('label')->toArray(),
-            'values' => $chart_data->pluck('total')->map(fn ($v): float => round(abs($v), 2))->toArray(),
+            'values' => $chart_data->pluck('total')->map(fn (int|float $v): float => round(abs($v), 2))->toArray(),
             'colors' => $chart_data->pluck('color')->toArray(),
             'tooltipLabels' => $chart_data->map(function (array $item) use ($abs_total): string {
                 $val = abs($item['total']);
