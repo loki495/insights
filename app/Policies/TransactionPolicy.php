@@ -22,7 +22,7 @@ class TransactionPolicy
      */
     public function view(User $user, Transaction $transaction): bool
     {
-        return $user->id === $transaction->account->linked_account->user_id;
+        return $user->id === $transaction->user->id;
     }
 
     /**
@@ -38,7 +38,7 @@ class TransactionPolicy
      */
     public function update(User $user, Transaction $transaction): bool
     {
-        return $user->id === $transaction->account->linked_account->user_id;
+        return $user->id === $transaction->user->id;
     }
 
     /**
@@ -46,6 +46,6 @@ class TransactionPolicy
      */
     public function delete(User $user, Transaction $transaction): bool
     {
-        return $user->id === $transaction->account->linked_account->user_id;
+        return $user->id === $transaction->user->id;
     }
 }
