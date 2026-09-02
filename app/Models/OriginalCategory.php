@@ -42,7 +42,7 @@ class OriginalCategory extends Model
     public function total(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => $this->transactions->sum('amount')
+            get: fn (mixed $value) => $this->transactions->sum('amount')
         );
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\CategoryFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -99,7 +100,7 @@ class Category extends Model
         // CACHE
         $id = $this->id;
         $descendants = $this->descendants;
-        $transactions = Transaction::whereHas('categories', function ($query) use ($id, $descendants): void {
+        $transactions = Transaction::whereHas('categories', function (Builder $query) use ($id, $descendants): void {
             $query
                 ->where('categories.id', $id)
                 ->orWhereIn('categories.id', $descendants);

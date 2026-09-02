@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class RemoveCategoryForUserAction
@@ -26,7 +27,7 @@ final class RemoveCategoryForUserAction
 
             $transactions = Transaction::query()
                 ->whereIn('account_id', $ownedAccountIds)
-                ->whereHas('categories', fn ($query) => $query->where('categories.id', $category->id))
+                ->whereHas('categories', fn (Builder $query): Builder => $query->where('categories.id', $category->id))
                 ->get();
 
             foreach ($transactions as $transaction) {

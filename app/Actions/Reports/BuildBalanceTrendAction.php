@@ -72,7 +72,7 @@ final class BuildBalanceTrendAction
             }
         }
 
-        $net = array_map(fn ($asset, $liability): float => $asset - $liability, $assets, $liabilities);
+        $net = array_map(fn (float $asset, float $liability): float => $asset - $liability, $assets, $liabilities);
 
         return [
             'periods' => array_map(fn (array $boundary): string => $boundary['label'], $boundaries),

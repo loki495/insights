@@ -226,7 +226,7 @@ class Transaction extends Model
             ->where('account_id', '!=', $excludeAccountId)
             ->where('type', 'transfer')
             ->whereNull('transfer_pair_id')
-            ->where(function ($query) use ($search): void {
+            ->where(function (Builder $query) use ($search): void {
                 $term = '%'.$search.'%';
                 $query->where('name', 'like', $term)
                     ->orWhere('merchant_name', 'like', $term);
