@@ -327,6 +327,16 @@ it('suggestCategoriesForTransaction returns at most two suggestions with the mer
         ->and($suggestions[1]['id'])->toBe($originalCategoryCategory->id);
 });
 
+it('suggestCategoriesForTransaction returns no suggestions when neither the merchant nor the original category has any prior categorized history', function (): void {
+    [, $account] = makeUserAndAccount();
+    $target = Transaction::factory()->for($account)->create(['name' => 'Brand New Purchase', 'merchant_name' => 'Nobody Has Seen This', 'amount' => -10, 'currency' => 'USD']);
+
+    $test = Livewire::test('components.transactions', ['account' => $account]);
+    $suggestions = $test->instance()->suggestCategoriesForTransaction($target->id);
+
+    expect($suggestions)->toBe([]);
+});
+
 /**
  * Regression test for a cross-tenant leak found while implementing per-user category adoption:
  * merchantSuggestions()/topCategoryFor() queried Transaction::query() with no account/user

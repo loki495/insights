@@ -102,6 +102,20 @@ it('excludes a transaction with no merchant_name at all when filtering it out by
     expect($results->pluck('id'))->toContain($txn->id);
 });
 
+it('still runs a plain exclusion-only search with no required terms', function (): void {
+    // Covers the $scoreParts === [] branch: a search made up entirely of -excluded terms has
+    // zero required terms to build a relevance score from, so the query falls back to a plain
+    // `0 as relevance` select instead of the scored leftJoin variant.
+    $user = User::factory()->create();
+    $account = makeSearchTestAccount($user);
+    $kept = Transaction::factory()->for($account)->create(['name' => 'Coffee Shop', 'amount' => -5, 'currency' => 'USD']);
+    $excluded = Transaction::factory()->for($account)->create(['name' => 'Coffee Shop Refund', 'amount' => 5, 'currency' => 'USD']);
+
+    $results = runSearchQuery($user, '-refund');
+
+    expect($results->pluck('id'))->toContain($kept->id)->not->toContain($excluded->id);
+});
+
 it('requires every term across a mix of bare, +prefixed, and -excluded terms, without excluded/other terms leaking past required ones', function (): void {
     $user = User::factory()->create();
     $account = makeSearchTestAccount($user);

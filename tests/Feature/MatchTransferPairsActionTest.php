@@ -66,6 +66,26 @@ it('never pairs two transactions from the same account, protecting refunds from 
         ->and($b->fresh()->transfer_pair_id)->toBeNull();
 });
 
+it('never pairs two transactions with the same sign, even across different accounts', function (): void {
+    $a = makeMatchTestAccount(['name' => 'A']);
+    $b = makeMatchTestAccount(['name' => 'B']);
+
+    $first = Transaction::factory()->for($a)->create([
+        'name' => 'Leg A', 'amount' => -100, 'currency' => 'USD', 'type' => 'transfer',
+        'authorized_at' => '2026-06-10', 'created_at' => '2026-06-10',
+    ]);
+    $second = Transaction::factory()->for($b)->create([
+        'name' => 'Leg B', 'amount' => -100, 'currency' => 'USD', 'type' => 'transfer',
+        'authorized_at' => '2026-06-10', 'created_at' => '2026-06-10',
+    ]);
+
+    $result = MatchTransferPairsAction::run();
+
+    expect($result['matched_pairs'])->toBe(0)
+        ->and($first->fresh()->transfer_pair_id)->toBeNull()
+        ->and($second->fresh()->transfer_pair_id)->toBeNull();
+});
+
 it('tolerates a small FX/fee spread between the two legs of a cross-currency transfer', function (): void {
     $usd = makeMatchTestAccount(['name' => 'USD Checking', 'currency' => 'USD']);
     $cad = makeMatchTestAccount(['name' => 'CAD Savings', 'currency' => 'CAD']);

@@ -33,7 +33,13 @@ trait BucketsIntoPeriods
             'monthly' => $from->copy()->startOfMonth(),
             'quarterly' => $from->copy()->startOfQuarter(),
             'yearly' => $from->copy()->startOfYear(),
+            // @codeCoverageIgnoreStart
+            // Unreachable in practice: the only two callers of this private method
+            // (run()/assertValidGranularity()) always validate $granularity against
+            // self::GRANULARITIES first. Kept as a safety net against a future caller
+            // that skips that guard, not as a real, testable code path.
             default => throw new InvalidArgumentException('Invalid granularity.'),
+            // @codeCoverageIgnoreEnd
         };
 
         while ($cursor->lte($to)) {
@@ -42,7 +48,9 @@ trait BucketsIntoPeriods
                 'monthly' => $cursor->format('M Y'),
                 'quarterly' => 'Q'.$cursor->quarter.' '.$cursor->format('Y'),
                 'yearly' => $cursor->format('Y'),
+                // @codeCoverageIgnoreStart
                 default => throw new InvalidArgumentException('Invalid granularity.'),
+                // @codeCoverageIgnoreEnd
             };
 
             $end = match ($granularity) {
@@ -50,7 +58,9 @@ trait BucketsIntoPeriods
                 'monthly' => $cursor->copy()->endOfMonth(),
                 'quarterly' => $cursor->copy()->endOfQuarter(),
                 'yearly' => $cursor->copy()->endOfYear(),
+                // @codeCoverageIgnoreStart
                 default => throw new InvalidArgumentException('Invalid granularity.'),
+                // @codeCoverageIgnoreEnd
             };
 
             $boundaries[] = [
@@ -63,7 +73,9 @@ trait BucketsIntoPeriods
                 'monthly' => $cursor->copy()->addMonth(),
                 'quarterly' => $cursor->copy()->addQuarter(),
                 'yearly' => $cursor->copy()->addYear(),
+                // @codeCoverageIgnoreStart
                 default => throw new InvalidArgumentException('Invalid granularity.'),
+                // @codeCoverageIgnoreEnd
             };
         }
 

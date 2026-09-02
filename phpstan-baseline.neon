@@ -87,7 +87,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Livewire\\Component\:\:suggestCategoriesForTransaction\(\)\.$#'
 			identifier: method.notFound
-			count: 5
+			count: 6
 			path: tests/Feature/CategorizationPipelineTest.php
 
 		-
@@ -117,7 +117,7 @@ parameters:
 		-
 			message: '#^Unable to resolve the template type TValue in call to function expect$#'
 			identifier: argument.templateType
-			count: 5
+			count: 6
 			path: tests/Feature/CategorizationPipelineTest.php
 
 		-
