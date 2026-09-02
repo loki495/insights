@@ -106,9 +106,15 @@ trait HasCategoryAssignment
                     ->keys()
                     ->first();
 
+                // @codeCoverageIgnoreStart
+                // Unreachable in practice: $merchantTransactions only ever contains rows from
+                // the whereHas('categories') query above, so every transaction in this group is
+                // guaranteed to have at least one category — flatMap->categories can never
+                // actually be empty here. Kept as a defensive fallback, not a real code path.
                 if (! $topCategoryId) {
                     return null;
                 }
+                // @codeCoverageIgnoreEnd
 
                 $category = $this->categories->firstWhere('id', $topCategoryId);
 

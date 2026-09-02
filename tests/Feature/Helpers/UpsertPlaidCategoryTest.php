@@ -59,3 +59,7 @@ it('skips non-string or empty path segments', function (): void {
     expect(OriginalCategory::count())->toBe(2)
         ->and($leaf->full_path)->toBe('Food and Drink > Restaurants');
 });
+
+it('throws when every path segment is unusable', function (): void {
+    upsertPlaidCategory(['', null, ''], '13005000', ['primary' => 'FOOD_AND_DRINK']);
+})->throws(InvalidArgumentException::class, 'upsertPlaidCategory(): $path contained no usable segments.');
