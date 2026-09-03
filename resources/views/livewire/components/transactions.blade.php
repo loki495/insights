@@ -104,6 +104,10 @@ new class extends Component
         $this->original_category = $original_category;
         $this->original_category_id = $original_category?->id;
 
+        if ($category && $category->id) {
+            $this->authorize('view', $category);
+        }
+
         $this->category = $category;
         $this->category_id = $category?->id;
 
@@ -202,8 +206,19 @@ new class extends Component
 
     public function updatedCategoryId($value = null): void
     {
-        $this->category = Category::find($value);
+        $this->category = $this->findOwnedCategory($value ? (int) $value : null);
         $this->dispatch('categoryIdChanged', categoryId: $value);
+    }
+
+    /**
+     * category_id/handleChartClick's $categoryId are client-controlled (a Livewire public
+     * property and an event payload, respectively) — looking them up against $this->categories
+     * (already scoped to the user's own adopted categories) instead of a raw Category::find()
+     * stops a crafted request from disclosing another user's category by id/name.
+     */
+    private function findOwnedCategory(?int $id): ?Category
+    {
+        return $id ? $this->categories->firstWhere('id', $id) : null;
     }
 
     #[Computed]
@@ -248,7 +263,7 @@ new class extends Component
         } // Uncategorized or invalid
 
         $this->category_id = (int) $categoryId;
-        $this->category = Category::find($this->category_id);
+        $this->category = $this->findOwnedCategory($this->category_id);
         $this->chartNeedsRefresh = true;
         $this->resetPage();
     }
@@ -257,7 +272,7 @@ new class extends Component
     {
         if ($this->category && $this->category->parent_id) {
             $this->category_id = $this->category->parent_id;
-            $this->category = Category::find($this->category_id);
+            $this->category = $this->findOwnedCategory($this->category_id);
         } else {
             $this->category_id = 0;
             $this->category = null;
