@@ -75,9 +75,9 @@
         "test:types": "phpstan analyse --ansi --memory-limit=1G",
         "test:unit": [
             "@putenv XDEBUG_MODE=coverage",
-            "pest --colors=always --coverage --parallel --min=95 --testsuite=Feature,Unit"
+            "pest --colors=always --coverage --parallel --min=95 --testsuite=Feature,Unit --no-tia"
         ],
-        "test:browser": "pest --colors=always --parallel --testsuite=Browser",
+        "test:browser": "pest --colors=always --parallel --testsuite=Browser --no-tia",
         "test": [
             "@test:rector",
             "@test:pint",

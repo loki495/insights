@@ -21,6 +21,12 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature', 'Unit', 'Browser');
 
+// Speeds up ad-hoc local iteration (bare `vendor/bin/pest`) by replaying the last known result
+// for tests TIA doesn't think your change affects, instead of re-running them. That's a real
+// risk for anything meant to be an authoritative pass/fail signal — a replayed result never
+// re-executes, so it can silently keep reporting green (or a stale failure) long after the real
+// answer changed. composer's test:unit/test:browser scripts pass --no-tia for exactly that
+// reason and should stay that way; don't remove it to "speed up CI" without re-verifying this.
 pest()->tia()->locally();
 
 /*
