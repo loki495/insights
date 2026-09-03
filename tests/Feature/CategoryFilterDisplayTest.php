@@ -27,8 +27,9 @@ function makeAccountForCategoryFilterDisplayTest(): Account
 }
 
 it('updates the displayed category name when the Category filter changes', function (): void {
-    makeAccountForCategoryFilterDisplayTest();
+    $account = makeAccountForCategoryFilterDisplayTest();
     $category = Category::create(['name' => 'Groceries']);
+    $account->linked_account->user->categories()->syncWithoutDetaching([$category->id]);
 
     $test = Livewire::test('components.transactions')
         ->set('category_id', $category->id);

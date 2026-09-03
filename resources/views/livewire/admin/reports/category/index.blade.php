@@ -14,6 +14,14 @@ new class extends Component
 
     public function mount(?Category $category): void
     {
+        // Livewire replays route-bound mount() params on every subsequent request against this
+        // component, and when the optional {category?} segment is absent it replays as an empty,
+        // unsaved Category instance rather than literal null — a bare `if ($category)` treats
+        // that as truthy. Matches the subheading below's existing `$category?->id > 0` guard.
+        if ($category?->id) {
+            $this->authorize('view', $category);
+        }
+
         $this->category = $category;
         $this->category_id = $category?->id;
     }
