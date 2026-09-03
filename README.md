@@ -22,8 +22,8 @@ account](docs/SETUP.md#exploring-without-a-plaid-account).
 ## Status
 
 Work in progress. Core functionality — account linking, transaction sync, categorization, type
-classification, and reporting — is implemented. Autocategorization rules and budgeting tools are
-not built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
+classification, autocategorize rules, and reporting — is implemented. Budgeting tools are not
+built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
 
 ## Features
 
@@ -32,6 +32,13 @@ not built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
   metadata) alongside your own custom categories.
 - **Hierarchical, user-defined categories** — nested categories independent of Plaid's own tree,
   with color coding and a searchable picker.
+- **Autocategorize rules** — per-user rules that automatically assign a category to new
+  transactions based on merchant/name, amount, account, or date conditions, combinable via one
+  level of AND/OR groups (e.g. "(merchant contains Starbucks and amount < $10) or amount > $1,000").
+  A rule never overwrites a manual categorization, and only ever applies to a transaction that
+  doesn't already have one. The rule editor shows a live list of exactly which existing
+  uncategorized transactions the current rule matches, plus a button to apply it to them
+  retroactively right away.
 - **Transaction type classification** — every transaction is tagged `income`, `expense`,
   `transfer`, or `adjustment`, derived automatically from Plaid's category data at sync time (e.g.
   credit card payments are classified as transfers, not expenses, avoiding double-counting).
@@ -127,13 +134,13 @@ own reverse proxy.
 composer test   # Rector (dry-run) -> Pint -> peck -> PHPStan -> Pest (unit + browser)
 ```
 
-Runs against both SQLite and MySQL in CI. Coverage floor is 95% (currently ~95.9%) — see
+Runs against both SQLite and MySQL in CI. Coverage floor is 95% (currently ~99.7%) — see
 [CONTRIBUTING.md](CONTRIBUTING.md#before-opening-a-pr) for the full breakdown, including
 the Pest browser-test setup.
 
 ## Current limitations
 
-- No autocategorization rules or budgeting tools yet — see [docs/ROADMAP.md](docs/ROADMAP.md).
+- No budgeting tools yet — see [docs/ROADMAP.md](docs/ROADMAP.md).
 - Postgres isn't CI-tested (SQLite and MySQL are) — it should work, since Laravel supports
   it natively, but treat it as unverified until it's actually exercised in CI.
 - Single-user per install — there's no multi-tenant account model; each deployment is one

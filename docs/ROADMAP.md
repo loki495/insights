@@ -14,16 +14,12 @@ Roughly in priority order:
    column-mapping UI. PDF bank-statement import is a harder, separate problem (layouts vary wildly
    bank-to-bank, and reliable extraction likely needs either OCR or an AI-assisted step) and is
    being deferred to a later pass rather than blocking this one.
-2. **Autocategorize rules** — per-user rules that automatically assign a category based on
-   merchant name, Plaid's own category, account, amount, or date, with AND/OR logic and an
-   enable/disable toggle per rule. Complements the existing merchant-history category suggestions
-   rather than replacing them.
-3. **Security hardening pass** — a few concrete improvements identified while researching what
+2. **Security hardening pass** — a few concrete improvements identified while researching what
    compliance standards actually apply to a self-hosted personal-finance app at this scale (short
    answer: PCI-DSS and GLBA don't, Plaid's own developer policy does and is already substantially
    met). Includes documenting safe backup practices for `APP_KEY`, recommending host-level disk
    encryption for self-hosters, and confirming production TLS is properly enforced.
-4. **REST API** — token-based external access to a user's own data. The auth model (personal
+3. **REST API** — token-based external access to a user's own data. The auth model (personal
    access tokens vs. Laravel Sanctum) needs deciding as part of the design, not bolted on after.
 
 ## Under consideration
