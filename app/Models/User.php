@@ -103,4 +103,12 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Category::class)->withPivot('color')->withTimestamps();
     }
+
+    /**
+     * @return HasMany<CategoryRule, $this>
+     */
+    public function categoryRules(): HasMany
+    {
+        return $this->hasMany(CategoryRule::class);
+    }
 }

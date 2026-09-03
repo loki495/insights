@@ -42,6 +42,10 @@
                     <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Categories') }}</span>
                 </flux:navlist.item>
 
+                <flux:navlist.item icon="bolt" :href="route('category-rules.index')" :current="request()->routeIs('category-rules.*')" wire:navigate>
+                    <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Autocategorize Rules') }}</span>
+                </flux:navlist.item>
+
                 <flux:navlist.item icon="magnifying-glass" :href="route('reports.category.index')" :current="request()->routeIs('reports.category.*')" wire:navigate>
                     <span class="in-data-flux-sidebar-collapsed-desktop:hidden">{{ __('Transaction Search') }}</span>
                 </flux:navlist.item>

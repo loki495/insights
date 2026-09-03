@@ -32,7 +32,8 @@
             "browsable",
             "ints",
             "localhost",
-            "roadmap"
+            "roadmap",
+            "autocategorize"
         ],
         "paths": []
     }

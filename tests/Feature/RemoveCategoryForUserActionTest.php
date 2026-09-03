@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\RemoveCategoryForUserAction;
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\CategoryRule;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use App\Models\User;
@@ -38,6 +39,17 @@ it('detaches the category from the user\'s own transactions and drops their pivo
     expect($transaction->categories()->pluck('categories.id')->all())->toBeEmpty()
         ->and($user->categories()->pluck('categories.id')->all())->toBeEmpty()
         ->and(Category::find($category->id))->not->toBeNull();
+});
+
+it('deactivates (but does not delete) the user\'s own rules that assign the removed category', function (): void {
+    $user = User::factory()->create();
+    $category = categoryFor($user, 'Groceries');
+    $rule = CategoryRule::factory()->for($user)->for($category)->create(['active' => true]);
+
+    RemoveCategoryForUserAction::run($user, $category);
+
+    expect($rule->fresh()->active)->toBeFalse()
+        ->and(CategoryRule::find($rule->id))->not->toBeNull();
 });
 
 it('never touches another user\'s transactions or adoption of the same shared category', function (): void {

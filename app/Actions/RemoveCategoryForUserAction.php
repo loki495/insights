@@ -19,6 +19,10 @@ final class RemoveCategoryForUserAction
      * design — see the pre-launch audit note this whole feature stems from). This also sidesteps
      * a separate pre-existing latent bug: category_transaction's FK has no cascade, so directly
      * calling Category::delete() on a row with any transactions attached would likely throw.
+     *
+     * Also deactivates (never deletes) any of the user's own autocategorize rules that assign
+     * this category — a rule still pointing at a category the user no longer sees in their own
+     * picker would keep silently applying it, which is more confusing than just turning it off.
      */
     public static function run(User $user, Category $category): void
     {
@@ -35,6 +39,8 @@ final class RemoveCategoryForUserAction
             }
 
             $user->categories()->detach($category->id);
+
+            $user->categoryRules()->where('category_id', $category->id)->update(['active' => false]);
         });
     }
 }
