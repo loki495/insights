@@ -24,6 +24,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Volt::route('/categories/{category}/edit', 'admin.categories.edit')->name('edit');
     });
 
+    Route::name('category-rules.')->group(function () {
+        Volt::route('/category-rules', 'admin.category-rules.index')->name('index');
+        Volt::route('/category-rules/create', 'admin.category-rules.edit')->name('create');
+        Volt::route('/category-rules/{categoryRule}/edit', 'admin.category-rules.edit')->name('edit');
+    });
+
     Route::name('reports.')->group(function () {
         Volt::route('reports/balance', 'admin.reports.balance.index')->name('balance.index');
         Volt::route('reports/income-expense', 'admin.reports.income-expense.index')->name('income-expense.index');

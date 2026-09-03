@@ -35,6 +35,10 @@ final class UpdateAccountTransactionsAction
         );
 
         $transaction->refreshType();
+
+        if ($transaction->categories->isEmpty()) {
+            ApplyCategoryRulesAction::run($transaction);
+        }
     }
 
     /**

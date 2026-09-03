@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Actions\UpdateAccountTransactionsAction;
 use App\Models\Account;
+use App\Models\Category;
+use App\Models\CategoryRule;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
 use App\Models\User;
@@ -173,4 +175,33 @@ it('classifies the transaction type from the resolved category via refreshType()
 
     $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
     expect($transaction->type)->toBe('transfer');
+});
+
+it('auto-categorizes a new transaction via a matching active rule', function (): void {
+    $account = makeAccountForTransactionsTest();
+    $coffee = Category::factory()->create(['name' => 'Coffee']);
+    $rule = CategoryRule::factory()->for($account->linked_account->user)->for($coffee)->create();
+    $rule->conditionGroups()->create(['match_type' => 'all', 'position' => 0])->conditions()->create(['field' => 'merchant_name', 'operator' => 'contains', 'value' => 'coffee']);
+
+    UpdateAccountTransactionsAction::run(plaidTransactionInfo(['merchant_name' => 'Coffee Shop']), 'added');
+
+    $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
+    expect($transaction->categories()->pluck('categories.id')->all())->toBe([$coffee->id]);
+});
+
+it('never lets a rule override an already-categorized transaction on a re-sync ("modified")', function (): void {
+    $account = makeAccountForTransactionsTest();
+    $coffee = Category::factory()->create(['name' => 'Coffee']);
+    $groceries = Category::factory()->create(['name' => 'Groceries']);
+    $rule = CategoryRule::factory()->for($account->linked_account->user)->for($coffee)->create();
+    $rule->conditionGroups()->create(['match_type' => 'all', 'position' => 0])->conditions()->create(['field' => 'merchant_name', 'operator' => 'contains', 'value' => 'coffee']);
+
+    UpdateAccountTransactionsAction::run(plaidTransactionInfo(['merchant_name' => 'Coffee Shop']), 'added');
+    $transaction = Transaction::where('transaction_id', 'txn_1')->firstOrFail();
+    $transaction->categories()->sync([$groceries->id]);
+
+    // Simulates Plaid re-sending the same transaction as "modified" (e.g. a pending->posted flip).
+    UpdateAccountTransactionsAction::run(plaidTransactionInfo(['merchant_name' => 'Coffee Shop']), 'modified');
+
+    expect($transaction->fresh()->categories()->pluck('categories.id')->all())->toBe([$groceries->id]);
 });
