@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('category_rule_conditions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_rule_condition_group_id')->constrained()->cascadeOnDelete();
+            // Custom (shorter) constraint name: the default Laravel would generate here
+            // ("category_rule_conditions_category_rule_condition_group_id_foreign") exceeds
+            // MySQL's 64-character identifier limit — SQLite doesn't enforce this, so the
+            // default only broke on the MySQL CI job.
+            $table->foreignId('category_rule_condition_group_id')
+                ->constrained(indexName: 'category_rule_conditions_group_id_foreign')
+                ->cascadeOnDelete();
             $table->string('field');
             $table->string('operator');
             $table->string('value')->nullable();
