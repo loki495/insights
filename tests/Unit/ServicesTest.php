@@ -5,7 +5,7 @@ declare(strict_types=1);
 it('calls existing service endpoint', function (): void {
     $plaid = plaid('status');
 
-    $response = $plaid->getAPIStatus();
+    $response = fetchPlaidStatusWithRetry($plaid);
 
     expect($response)
         ->toHaveKeys([

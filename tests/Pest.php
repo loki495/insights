@@ -3,7 +3,9 @@
 declare(strict_types=1);
 use App\Models\Category;
 use App\Models\User;
+use App\Services\Plaid\PlaidService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
 use Tests\TestCase;
 
 /*
@@ -65,4 +67,40 @@ function categoryFor(User $user, string $name, ?int $parentId = null, ?string $c
     $user->categories()->syncWithoutDetaching([$category->id => ['color' => $color ?: '#3b82f6']]);
 
     return $category;
+}
+
+/**
+ * status.plaid.com (Statuspage.io) has been observed returning a response missing the
+ * expected keys under CI, most likely rate-limiting from parallel test workers hitting it
+ * near-simultaneously — StatusTest and ServicesTest both call it. Retries with real,
+ * increasing backoff so a genuine, persistent problem (e.g. Plaid actually changing the
+ * response shape) still fails the build. Uses plain usleep(), not Laravel's retry() helper —
+ * the base testing TestCase auto-fakes Sleep (which retry() uses internally), which would
+ * make every attempt fire back-to-back with no real delay and defeat the point.
+ *
+ * @return array<string, mixed>
+ */
+function fetchPlaidStatusWithRetry(PlaidService $plaid, int $attempts = 4): array
+{
+    $lastException = new RuntimeException('fetchPlaidStatusWithRetry() called with $attempts < 1');
+
+    for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+        try {
+            $response = $plaid->getAPIStatus();
+
+            if (Arr::has($response, ['status.description', 'page.name'])) {
+                return $response;
+            }
+
+            $lastException = new RuntimeException('Plaid status response missing expected keys');
+        } catch (Throwable $e) {
+            $lastException = $e;
+        }
+
+        if ($attempt < $attempts) {
+            usleep($attempt * 1_500_000);
+        }
+    }
+
+    throw $lastException;
 }

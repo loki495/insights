@@ -5,7 +5,8 @@ use App\Services\Plaid\PlaidService;
 
 it('gets plaid status', function (): void {
     $plaid = app(PlaidService::class, ['environment' => PlaidService::ENV_STATUS]);
-    $response = $plaid->getAPIStatus();
+
+    $response = fetchPlaidStatusWithRetry($plaid);
 
     expect($response)
         ->toHaveKeys([
