@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\PullLinkedAccountTransactionsAction;
+use App\Enums\AccountDisabledReason;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
@@ -24,6 +25,9 @@ function fakePullingPlaid(callable $expectations): void
     // stubbing it out.
     $real = new PlaidService(PlaidService::ENV_SANDBOX, 'test-client-id');
     $mock->shouldReceive('resolveCategory')->andReturnUsing(fn (array $info): ?\App\Models\OriginalCategory => $real->resolveCategory($info));
+    $mock->shouldReceive('getItemAccounts')->byDefault()->andReturn([
+        'accounts' => [plaidAccountPayload()],
+    ]);
     $expectations($mock);
     app()->bind(PlaidService::class, fn () => $mock);
 }
@@ -83,6 +87,11 @@ it('runs the full added/modified/removed happy path across a two-page pull, then
     ]);
 
     fakePullingPlaid(function ($mock): void {
+        $mock->shouldReceive('getItemAccounts')->once()->andReturn([
+            'accounts' => [plaidAccountPayload([
+                'balances' => ['iso_currency_code' => 'USD', 'available' => 150.0, 'current' => 200.0, 'limit' => null],
+            ])],
+        ]);
         $mock->shouldReceive('getItemTransactions')
             ->once()
             ->withArgs(fn (array $data): bool => ! isset($data['cursor']))
@@ -215,4 +224,104 @@ it('does not call Plaid at all for a demo linked account', function (): void {
     PullLinkedAccountTransactionsAction::run($linkedAccount);
 
     expect($linkedAccount->fresh()->last_pulled_at)->toBeNull();
+});
+
+it('disables accounts omitted from the latest successful account snapshot', function (): void {
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1',
+    ]);
+    $activeAccount = Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_checking_1', 'mask' => '0000', 'name' => 'Checking',
+        'official_name' => 'Checking Official', 'type' => 'depository', 'subtype' => 'checking',
+    ]);
+    $missingAccount = Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_missing', 'mask' => '9999', 'name' => 'Old Account',
+        'official_name' => 'Old Account', 'type' => 'depository', 'subtype' => 'checking',
+    ]);
+    $historicalTransaction = Transaction::factory()->for($missingAccount)->create([
+        'transaction_id' => 'historical_txn', 'name' => 'Historical transaction',
+        'amount' => -10, 'currency' => 'USD',
+    ]);
+
+    fakePullingPlaid(function ($mock): void {
+        $mock->shouldReceive('getItemTransactions')->once()->andReturn([
+            'accounts' => [], 'added' => [], 'modified' => [], 'removed' => [],
+            'has_more' => false, 'next_cursor' => 'cursor_1',
+        ]);
+    });
+
+    PullLinkedAccountTransactionsAction::run($linkedAccount);
+
+    expect($activeAccount->fresh()->disabled_at)->toBeNull()
+        ->and($missingAccount->fresh()->disabled_at)->not->toBeNull()
+        ->and($historicalTransaction->fresh()->account->is($missingAccount))->toBeTrue();
+});
+
+it('restores a disabled account when it returns in a later account snapshot', function (): void {
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1',
+    ]);
+    $account = Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_checking_1', 'disabled_at' => now(),
+        'disabled_reason' => AccountDisabledReason::MissingFromProvider, 'mask' => '0000',
+        'name' => 'Checking', 'official_name' => 'Checking Official',
+        'type' => 'depository', 'subtype' => 'checking',
+    ]);
+
+    fakePullingPlaid(function ($mock): void {
+        $mock->shouldReceive('getItemTransactions')->once()->andReturn([
+            'accounts' => [], 'added' => [], 'modified' => [], 'removed' => [],
+            'has_more' => false, 'next_cursor' => 'cursor_1',
+        ]);
+    });
+
+    PullLinkedAccountTransactionsAction::run($linkedAccount);
+
+    expect($account->fresh()->disabled_at)->toBeNull();
+});
+
+it('does not restore a manually disabled account during a normal pull', function (): void {
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1',
+    ]);
+    $account = Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_checking_1', 'disabled_at' => now(),
+        'disabled_reason' => AccountDisabledReason::Manual, 'mask' => '0000',
+        'name' => 'Checking', 'official_name' => 'Checking Official',
+        'type' => 'depository', 'subtype' => 'checking',
+    ]);
+
+    fakePullingPlaid(function ($mock): void {
+        $mock->shouldReceive('getItemTransactions')->once()->andReturn([
+            'accounts' => [], 'added' => [], 'modified' => [], 'removed' => [],
+            'has_more' => false, 'next_cursor' => 'cursor_1',
+        ]);
+    });
+
+    PullLinkedAccountTransactionsAction::run($linkedAccount);
+
+    expect($account->fresh()->disabled_at)->not->toBeNull()
+        ->and($account->fresh()->disabled_reason)->toBe(AccountDisabledReason::Manual);
+});
+
+it('does not disable missing accounts when the transaction pull fails', function (): void {
+    $user = User::factory()->create();
+    $linkedAccount = LinkedAccount::factory()->for($user)->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1',
+    ]);
+    $missingAccount = Account::factory()->for($linkedAccount, 'linked_account')->create([
+        'plaid_account_id' => 'plaid_missing', 'mask' => '9999', 'name' => 'Old Account',
+        'official_name' => 'Old Account', 'type' => 'depository', 'subtype' => 'checking',
+    ]);
+
+    fakePullingPlaid(function ($mock): void {
+        $mock->shouldReceive('getItemTransactions')->once()->andThrow(new RuntimeException('Plaid unavailable'));
+    });
+
+    expect(fn () => PullLinkedAccountTransactionsAction::run($linkedAccount))
+        ->toThrow(RuntimeException::class, 'Plaid unavailable')
+        ->and($missingAccount->fresh()->disabled_at)->toBeNull();
 });

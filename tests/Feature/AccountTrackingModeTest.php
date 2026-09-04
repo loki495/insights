@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\AccountDisabledReason;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
@@ -28,14 +29,60 @@ it('excludes reference and excluded accounts from the aggregate transaction view
     $tracked = makeAccountForTrackingTest($user, ['name' => 'Tracked']);
     $reference = makeAccountForTrackingTest($user, ['name' => 'Reference', 'tracking_mode' => 'reference']);
     $excluded = makeAccountForTrackingTest($user, ['name' => 'Excluded', 'tracking_mode' => 'excluded']);
+    $disabled = makeAccountForTrackingTest($user, ['name' => 'Disabled', 'disabled_at' => now()]);
 
     Transaction::factory()->for($tracked)->create(['name' => 'Tracked Txn', 'amount' => -10, 'currency' => 'USD']);
     Transaction::factory()->for($reference)->create(['name' => 'Reference Txn', 'amount' => -10, 'currency' => 'USD']);
     Transaction::factory()->for($excluded)->create(['name' => 'Excluded Txn', 'amount' => -10, 'currency' => 'USD']);
+    Transaction::factory()->for($disabled)->create(['name' => 'Disabled Txn', 'amount' => -10, 'currency' => 'USD']);
 
     $test = Livewire::test('components.transactions');
 
     expect($test->instance()->getTransactionsQuery()->pluck('name')->all())->toBe(['Tracked Txn']);
+});
+
+it('hides disabled accounts from the institution account list', function (): void {
+    $user = User::factory()->create();
+    test()->actingAs($user);
+    $account = makeAccountForTrackingTest($user, [
+        'name' => 'Former Checking',
+        'disabled_at' => now(),
+    ]);
+
+    test()->get(route('linked-accounts.accounts.index', $account->linked_account))
+        ->assertOk()
+        ->assertDontSee('Former Checking');
+});
+
+it('manually disables an owned account without deleting its transactions', function (): void {
+    $user = User::factory()->create();
+    test()->actingAs($user);
+    $account = makeAccountForTrackingTest($user, ['name' => 'Manual Removal Account']);
+    $transaction = Transaction::factory()->for($account)->create([
+        'name' => 'Preserved transaction', 'amount' => -10, 'currency' => 'USD',
+    ]);
+
+    Livewire::test('admin.accounts.index', ['linkedAccount' => $account->linked_account])
+        ->call('disableAccount', $account->id)
+        ->assertDontSee('Manual Removal Account');
+
+    expect($account->fresh()->disabled_at)->not->toBeNull()
+        ->and($account->fresh()->disabled_reason)->toBe(AccountDisabledReason::Manual)
+        ->and($transaction->fresh())->not->toBeNull();
+});
+
+it('refuses to manually disable another user\'s account', function (): void {
+    $owner = User::factory()->create();
+    $attacker = User::factory()->create();
+    $victimAccount = makeAccountForTrackingTest($owner);
+    $attackerAccount = makeAccountForTrackingTest($attacker);
+    test()->actingAs($attacker);
+
+    Livewire::test('admin.accounts.index', ['linkedAccount' => $attackerAccount->linked_account])
+        ->call('disableAccount', $victimAccount->id)
+        ->assertForbidden();
+
+    expect($victimAccount->fresh()->disabled_at)->toBeNull();
 });
 
 it('still shows a non-tracked account\'s own transactions when viewed directly', function (): void {

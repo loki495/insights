@@ -36,7 +36,9 @@ new class extends Component
 
     public function with(): array
     {
-        $linkedAccounts = auth()->user()->linked_accounts()->with('accounts')->get();
+        $linkedAccounts = auth()->user()->linked_accounts()
+            ->with(['accounts' => fn ($query) => $query->active()])
+            ->get();
 
         // The snapshot widgets (trend/spending/recent activity) only fold in accounts the user
         // wants counted in aggregates — same scope the Reports pages use. The account-card grid

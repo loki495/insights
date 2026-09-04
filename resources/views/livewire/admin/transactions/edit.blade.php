@@ -67,6 +67,7 @@ new class extends Component
         $accounts = auth()
             ->user()
             ->accounts()
+            ->where(fn ($query) => $query->active()->orWhere('accounts.id', $this->account_id))
             ->with('linked_account')
             ->get();
 

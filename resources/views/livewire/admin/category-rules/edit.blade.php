@@ -193,7 +193,7 @@ new class extends Component
 
         return [
             'categories' => auth()->user()->categories()->orderBy('name')->get(),
-            'accounts' => auth()->user()->accounts()->with('linked_account')->get(),
+            'accounts' => auth()->user()->accounts()->active()->with('linked_account')->get(),
             'matchingTransactions' => $matching->take(25),
             'matchingCount' => $matching->count(),
         ];

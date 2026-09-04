@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\RefreshLinkedAccountAccountsAction;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 use App\Services\Plaid\PlaidService;
@@ -93,6 +94,7 @@ new class extends Component
                 'access_token' => $result['access_token'],
             ]);
             $linkedAccount->updateInfo();
+            RefreshLinkedAccountAccountsAction::run($linkedAccount, restoreManuallyDisabled: true);
         } else {
             auth()->user()->linkedAccounts()->create([
                 'item_id' => $result['item_id'],
@@ -106,24 +108,27 @@ new class extends Component
 
     public function updateLinkedAccount(): void
     {
-        $this->linkedAccounts = auth()->user()->linkedAccounts()->with('accounts')->get()->map(fn (LinkedAccount $linkedAccount): array => [
-            'id' => $linkedAccount->id,
-            'provider_name' => $linkedAccount->provider_name,
-            'closed_at' => $linkedAccount->closed_at,
-            'auto_pull_enabled' => $linkedAccount->auto_pull_enabled,
-            'auto_pull_interval_value' => $linkedAccount->auto_pull_interval_value,
-            'auto_pull_interval_unit' => $linkedAccount->auto_pull_interval_unit,
-            'last_pulled_at' => $linkedAccount->last_pulled_at,
-            'last_sync_failed_at' => $linkedAccount->last_sync_failed_at,
-            'last_sync_error' => $linkedAccount->last_sync_error,
-            'accounts' => $linkedAccount->accounts->map(fn (Account $account): array => [
-                'id' => $account->id,
-                'display_name' => $account->display_name,
-                'type' => $account->type,
-                'current_balance' => $account->current_balance,
-                'available_balance' => $account->available_balance,
-            ])->toArray(),
-        ])->toArray();
+        $this->linkedAccounts = auth()->user()->linkedAccounts()
+            ->with(['accounts' => fn ($query) => $query->active()])
+            ->get()
+            ->map(fn (LinkedAccount $linkedAccount): array => [
+                'id' => $linkedAccount->id,
+                'provider_name' => $linkedAccount->provider_name,
+                'closed_at' => $linkedAccount->closed_at,
+                'auto_pull_enabled' => $linkedAccount->auto_pull_enabled,
+                'auto_pull_interval_value' => $linkedAccount->auto_pull_interval_value,
+                'auto_pull_interval_unit' => $linkedAccount->auto_pull_interval_unit,
+                'last_pulled_at' => $linkedAccount->last_pulled_at,
+                'last_sync_failed_at' => $linkedAccount->last_sync_failed_at,
+                'last_sync_error' => $linkedAccount->last_sync_error,
+                'accounts' => $linkedAccount->accounts->map(fn (Account $account): array => [
+                    'id' => $account->id,
+                    'display_name' => $account->display_name,
+                    'type' => $account->type,
+                    'current_balance' => $account->current_balance,
+                    'available_balance' => $account->available_balance,
+                ])->toArray(),
+            ])->toArray();
     }
 
     public function close(LinkedAccount $linkedAccount): void

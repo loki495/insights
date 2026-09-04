@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
+use App\Enums\AccountDisabledReason;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 
@@ -12,7 +13,7 @@ final class UpdateAccountAction
     /**
      * @param  array<string, mixed>  $account_info
      */
-    public static function run(array $account_info, LinkedAccount $linked_account): void
+    public static function run(array $account_info, LinkedAccount $linked_account, bool $restoreManuallyDisabled = false): void
     {
         // Plaid's own account_id is the stable identity to match on — it doesn't change just
         // because our stored name/official_name diverges from what Plaid is currently sending
@@ -46,7 +47,7 @@ final class UpdateAccountAction
             // entirely (App\Casts\MoneyCast on the balance columns would silently never run,
             // writing raw dollar amounts where cents are expected). Confirmed by a real test
             // failure when this was still a builder-level update.
-            $account->update([
+            $updates = [
                 'plaid_account_id' => $account_info['account_id'],
                 'mask' => $account_info['mask'],
                 'name' => cleanPlaidText($account_info['name']),
@@ -57,7 +58,14 @@ final class UpdateAccountAction
                 'available_balance' => $account_info['balances']['available'],
                 'current_balance' => $account_info['balances']['current'],
                 'limit' => $account_info['balances']['limit'],
-            ]);
+            ];
+
+            if ($account->disabled_reason !== AccountDisabledReason::Manual || $restoreManuallyDisabled) {
+                $updates['disabled_at'] = null;
+                $updates['disabled_reason'] = null;
+            }
+
+            $account->update($updates);
 
             return;
         }

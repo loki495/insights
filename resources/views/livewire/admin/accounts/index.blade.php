@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\PullLinkedAccountTransactionsAction;
+use App\Enums\AccountDisabledReason;
 use App\Models\Account;
 use App\Models\LinkedAccount;
 use Livewire\Volt\Component;
@@ -34,7 +35,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'accounts' => $this->linkedAccount->accounts()->paginate(10),
+            'accounts' => $this->linkedAccount->accounts()->active()->paginate(10),
         ];
     }
 
@@ -54,6 +55,16 @@ new class extends Component
         $account = Account::findOrFail($accountId);
         $this->authorize('update', $account);
         $account->update(['nickname' => trim((string) $nickname) ?: null]);
+    }
+
+    public function disableAccount(int $accountId): void
+    {
+        $account = Account::findOrFail($accountId);
+        $this->authorize('delete', $account);
+        $account->update([
+            'disabled_at' => now(),
+            'disabled_reason' => AccountDisabledReason::Manual,
+        ]);
     }
 }
 
