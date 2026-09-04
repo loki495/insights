@@ -6,6 +6,7 @@ namespace App\Actions\Reports;
 
 use App\Actions\Reports\Concerns\BucketsIntoPeriods;
 use App\Models\Account;
+use App\Models\Transaction;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -35,20 +36,34 @@ final class BuildBalanceTrendAction
 
         $boundaries = self::periodBoundaries($from, $to, $granularity);
 
-        // For each account, the transactions needed to answer "balance as of date X" for every X —
-        // ordered ascending so we can walk them alongside the (also ascending) period boundaries.
-        $transactionsByAccount = $accounts
-            ->mapWithKeys(fn (Account $account): array => [
-                $account->id => $account->transactions()
-                    ->orderBy('created_at')
-                    ->get(['created_at', 'running_balance']),
-            ]);
+        // The transactions needed to answer "balance as of date X" for every X — ordered
+        // ascending so we can walk them alongside the (also ascending) period boundaries.
+        //
+        // One query for every account rather than one per account: this runs on every
+        // dashboard load, so the previous per-account lazy load was an N+1 that scaled
+        // with how many accounts are linked.
+        //
+        // Bounded at the top end only. A transaction after $to can never affect a balance
+        // "as of" any boundary in range, so dropping those is free. The bottom end is
+        // deliberately NOT bounded: the first boundary's balance is the running_balance of
+        // the latest transaction at/before it, which may predate $from by any amount, and
+        // filtering those out would report an account as "no activity yet" instead of
+        // carrying its real balance forward (see this action's two dedicated tests).
+        $transactionsByAccount = Transaction::query()
+            ->whereIn('account_id', $accounts->pluck('id'))
+            ->where('created_at', '<=', $to)
+            ->orderBy('created_at')
+            ->get(['account_id', 'created_at', 'running_balance'])
+            ->groupBy('account_id')
+            ->map(fn (Collection $accountTransactions): Collection => $accountTransactions->values());
 
         $assets = array_fill(0, count($boundaries), 0.0);
         $liabilities = array_fill(0, count($boundaries), 0.0);
 
         foreach ($accounts as $account) {
-            $transactions = $transactionsByAccount[$account->id];
+            // An account with no transactions at all has no group, unlike the previous
+            // per-account query which always returned an (empty) collection.
+            $transactions = $transactionsByAccount->get($account->id) ?? collect();
             $isLiability = in_array($account->type, self::LIABILITY_TYPES, true);
 
             $cursor = 0;
