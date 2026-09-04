@@ -16,6 +16,7 @@ class BackfillTransactionTypes extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $signature = 'transactions:backfill-types';
 
     /**
@@ -23,6 +24,7 @@ class BackfillTransactionTypes extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $description = 'Classify type (income/expense/transfer) on existing transactions and match internal transfer pairs';
 
     /**

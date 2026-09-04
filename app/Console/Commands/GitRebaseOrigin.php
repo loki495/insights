@@ -13,6 +13,7 @@ class GitRebaseOrigin extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $signature = 'git:pull-main';
 
     /**
@@ -20,6 +21,7 @@ class GitRebaseOrigin extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $description = 'Rebase origin/main to main';
 
     /**

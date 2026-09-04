@@ -16,6 +16,7 @@ class PullTransactions extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $signature = 'transactions:pull {linked_account_id?} {force?}';
 
     /**
@@ -23,6 +24,7 @@ class PullTransactions extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $description = 'Pull transactions from Plaid';
 
     /**

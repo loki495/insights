@@ -18,6 +18,7 @@ class CategoryRuleConditionGroup extends Model
     /**
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'match_type',
         'position',

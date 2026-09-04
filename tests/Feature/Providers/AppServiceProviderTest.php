@@ -25,7 +25,7 @@ it('forces https when APP_URL is https, in a non-local environment', function ()
     // to be cached from the application's actual boot-time APP_URL, not this test's value.
     app()->instance('request', Request::create(config('app.url')));
     URL::forceScheme(''); // reset any scheme forced by a previous test/boot
-    (new AppServiceProvider(app()))->configureUrl();
+    new AppServiceProvider(app())->configureUrl();
 
     expect(url('/'))->toStartWith('https://');
 });
@@ -36,7 +36,7 @@ it('does not force https when APP_URL is plain http, even in a non-local environ
 
     app()->instance('request', Request::create(config('app.url')));
     URL::forceScheme(''); // reset any scheme forced by a previous test/boot
-    (new AppServiceProvider(app()))->configureUrl();
+    new AppServiceProvider(app())->configureUrl();
 
     expect(url('/'))->toStartWith('http://');
 });
