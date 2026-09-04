@@ -9,6 +9,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # laravel-vite-plugin 1.3.0 declares `peer vite@"^5.0.0 || ^6.0.0"`, so any Vite
+      # major past 6 fails `npm ci` with ERESOLVE before a single test runs - nothing
+      # in this repo can resolve it. Drop this entry once laravel-vite-plugin widens
+      # its peer range, then take the major bump deliberately.
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
