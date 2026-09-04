@@ -28,7 +28,7 @@
                         @foreach (auth()->user()->linkedAccounts()->with(['accounts' => fn ($query) => $query->active()])->get() as $linkedAccount)
                         <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)">
                             @foreach ($linkedAccount->accounts as $account)
-                            <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full !p-4">
+                            <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-center" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="false" wire:navigate class="w-full px-4! py-3! h-auto!" data-testid="sidebar-account-{{ $account->id }}">
                                 <div class="font-semibold">{{ $account->display_name }}</div>
                                 <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, 'USD', true) !!}</div>
                             </flux:navlist.item>

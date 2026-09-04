@@ -18,9 +18,20 @@
     x-cloak
 >
     <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
+        <div class="min-w-0 flex-1">
             <div class="text-[11px] text-zinc-500 dark:text-zinc-400">#{{ $item->id }}</div>
-            <div class="font-medium break-words">{{ $item->name }}</div>
+            <div class="flex items-center gap-1">
+                <div class="font-medium break-words">{{ $item->name }}</div>
+                @if(!$search && $item->has_children)
+                <span
+                    data-testid="category-chevron-{{ $item->id }}"
+                    class="inline-flex shrink-0 text-zinc-400 transition-transform duration-200 dark:text-zinc-500"
+                    x-bind:class="{ 'rotate-90': open[cat_id] === true }"
+                >
+                    <flux:icon.chevron-right class="size-4" />
+                </span>
+                @endif
+            </div>
             @if($item->parent)
             <div class="text-xs px-2 py-0.5 rounded inline-block mt-1" style="background-color: {{ $item->parent->color }}">
                 {{ $item->parent->fullName }}
@@ -29,9 +40,6 @@
         </div>
         <div class="flex items-center gap-2 shrink-0">
             <div class="w-4 h-4 rounded shrink-0" style="background-color: {{ $item->color }}"></div>
-            @if(!$search && $item->has_children)
-            <flux:icon.chevron-down class="size-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
-            @endif
         </div>
     </div>
 
