@@ -23,7 +23,13 @@ new class extends Component
     {
         try {
             PullLinkedAccountTransactionsAction::run($this->linkedAccount);
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            if (config('app.debug')) {
+                throw $exception;
+            }
+
+            report($exception);
+
             // Failure is already recorded on the LinkedAccount (last_sync_failed_at/
             // last_sync_error) and surfaced on the Linked Institutions page — nothing more to do
             // here than avoid a raw exception page for what was a manual, user-initiated retry.

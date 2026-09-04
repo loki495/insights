@@ -96,6 +96,13 @@ account list on `/transactions/sync`): missing accounts get `disabled_reason=mis
 and restore automatically if they return. A user-removed account gets `disabled_reason=manual` and
 only a deliberate Plaid Link update may restore it; ordinary pulls must leave it disabled.
 
+## Error visibility
+
+Unexpected exceptions must never be hidden in local/debug mode. Any UI action that catches an
+unexpected exception for graceful production handling must rethrow it when `app.debug` is true and
+must `report()` it before handling it in non-debug mode. Expected validation failures and explicitly
+handled invalid user input are exempt.
+
 ## Active work
 
 See the repo-root `todo` file (gitignored, not committed) for the current backlog —
