@@ -26,11 +26,12 @@
                     <flux:navlist.group heading="Linked Accounts" :href="route('linked-accounts.index')" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
                         {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
                         @foreach (auth()->user()->linkedAccounts()->with(['accounts' => fn ($query) => $query->active()])->get() as $linkedAccount)
-                        <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)">
+                        @php($isCurrentLinkedAccount = (string) request()->route('linkedAccount') === (string) $linkedAccount->getRouteKey())
+                        <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)" collapsible :expanded="$isCurrentLinkedAccount" wire:key="sidebar-institution-{{ $linkedAccount->id }}-{{ $isCurrentLinkedAccount ? 'current' : 'idle' }}" data-current-institution="{{ $isCurrentLinkedAccount ? 'true' : 'false' }}" data-testid="sidebar-institution-{{ $linkedAccount->id }}">
                             @foreach ($linkedAccount->accounts as $account)
-                            <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-center" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="false" wire:navigate class="w-full px-4! py-3! h-auto!" data-testid="sidebar-account-{{ $account->id }}">
+                            <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-center" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="false" wire:navigate class="w-full pl-4! pr-0! py-0.5! h-auto! mt-0! {{ $loop->last ? 'mb-2!' : 'mb-0!' }}" data-testid="sidebar-account-{{ $account->id }}">
                                 <div class="font-semibold">{{ $account->display_name }}</div>
-                                <div class="text-xs dark:!text-zinc-400">{!! currency($account->current_balance, 'USD', true) !!}</div>
+                                <div class="mt-0.5 text-xs dark:!text-zinc-400">{!! currency($account->current_balance, 'USD', true) !!}</div>
                             </flux:navlist.item>
                             @endforeach
                         </flux:navlist.group>
@@ -178,12 +179,32 @@
         window.addEventListener('livewire:init', function () {
             observeSidebarWidth();
             updateSidebarWidth();
+            expandCurrentSidebarInstitution();
         })
 
         window.addEventListener('livewire:navigated', function () {
             observeSidebarWidth();
             updateSidebarWidth();
+            expandCurrentSidebarInstitution();
         })
+
+        function expandCurrentSidebarInstitution() {
+            requestAnimationFrame(() => {
+                document.querySelectorAll('ui-disclosure[data-testid^="sidebar-institution-"]').forEach(disclosure => {
+                    const institutionLink = disclosure.querySelector(':scope > [data-flux-navlist-group-heading] a');
+
+                    if (!institutionLink) return;
+
+                    const institutionPath = new URL(institutionLink.href).pathname.replace(/\/accounts$/, '');
+                    const isCurrent = window.location.pathname === `${institutionPath}/accounts`
+                        || window.location.pathname.startsWith(`${institutionPath}/account/`);
+
+                    disclosure.dataset.currentInstitution = String(isCurrent);
+
+                    if (isCurrent) disclosure.value = true;
+                });
+            });
+        }
 
         function observeSidebarWidth() {
             const sidebar = document.querySelector('.sidebar');
