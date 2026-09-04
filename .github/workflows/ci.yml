@@ -59,12 +59,11 @@ jobs:
       - name: Run test suite
         run: composer test
 
-      - name: Upload coverage to Codecov
-        if: always()
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
-          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-mysql:
     runs-on: ubuntu-latest
