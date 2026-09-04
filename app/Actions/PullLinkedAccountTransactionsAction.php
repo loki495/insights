@@ -66,8 +66,8 @@ final class PullLinkedAccountTransactionsAction
             }
         }
 
-        if ($result['has_more'] ?? false) {
-            self::pull($linkedAccount, $result['next_cursor'] ?? null, $force);
+        if ($result['has_more']) {
+            self::pull($linkedAccount, $result['next_cursor'], $force);
         } else {
             ReconcileLinkedAccountTransactions::run($linkedAccount, $force);
 
