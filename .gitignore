@@ -28,6 +28,7 @@ yarn-error.log
 /.playwright-mcp/
 /docker-compose.override.yml
 /todo
+/.ai/plans/
 /GEMINI.md
 /.gemini/
 /tests/Browser/Screenshots/
