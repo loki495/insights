@@ -11,7 +11,7 @@
     ],
     "license": "AGPL-3.0-or-later",
     "require": {
-        "php": "^8.3",
+        "php": "^8.5",
         "ext-intl": "*",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
@@ -94,6 +94,9 @@
     },
     "config": {
         "optimize-autoloader": true,
+        "platform": {
+            "php": "8.5.0"
+        },
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {

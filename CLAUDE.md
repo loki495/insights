@@ -7,7 +7,7 @@ rules, Chart.js dashboards. See the repo root `README.md` for the full feature l
 
 ## Environment
 
-- Container: `insights-app` (PHP 8.4-apache). Run artisan/composer/pest via
+- Container: `insights-app` (PHP 8.5-apache). Run artisan/composer/pest via
   `docker exec insights-app ...`, never on the host.
 - **Always add `-u www-data` to every `docker exec insights-app ...` call** (e.g.
   `docker exec -u www-data insights-app php artisan ...`). A bare `docker exec` runs as
