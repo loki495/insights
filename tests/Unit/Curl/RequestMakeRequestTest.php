@@ -10,14 +10,28 @@ namespace App\Services\Curl {
      * Request::makeRequest() (and, transitively, API::__call()) makes, without a real
      * network/curl round trip or a mocking library. State is read from $GLOBALS so each test can
      * configure its own fake response via the helpers below.
+     *
+     * Once declared, these functions exist for the rest of the PHP process — PHP has no way to
+     * "undeclare" them — so without the __curlMockActive guard below, any *other* test that
+     * happens to run afterward in the same process/worker and calls real curl_* from this same
+     * namespace (e.g. a real Plaid network call in tests/Unit/Plaid/StatusTest.php or
+     * tests/Unit/ServicesTest.php) would silently get these fakes instead, regardless of which
+     * test file that call is in. Confirmed reproducible: running this file's tests alongside
+     * those real-network tests in the same run made the real ones always receive a stale '{}'.
+     * Guarding on a flag that's only true during this file's own beforeEach/afterEach — and
+     * delegating to the real global curl_* otherwise — keeps the fakes scoped to this file.
      */
     function curl_init(): object
     {
-        return new \stdClass;
+        return ($GLOBALS['__curlMockActive'] ?? false) ? new \stdClass : \curl_init();
     }
 
     function curl_setopt(object $ch, int $option, mixed $value): bool
     {
+        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
+            return \curl_setopt($ch, $option, $value);
+        }
+
         $GLOBALS['__curlMockSetopts'][$option] = $value;
 
         return true;
@@ -25,25 +39,46 @@ namespace App\Services\Curl {
 
     function curl_exec(object $ch): string|false
     {
+        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
+            return \curl_exec($ch);
+        }
+
         return $GLOBALS['__curlMockResponse'] ?? '{}';
     }
 
     function curl_errno(object $ch): int
     {
+        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
+            return \curl_errno($ch);
+        }
+
         return $GLOBALS['__curlMockErrno'] ?? 0;
     }
 
     function curl_error(object $ch): string
     {
+        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
+            return \curl_error($ch);
+        }
+
         return $GLOBALS['__curlMockError'] ?? '';
     }
 
     function curl_getinfo(object $ch, int $option): mixed
     {
+        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
+            return \curl_getinfo($ch, $option);
+        }
+
         return $GLOBALS['__curlMockHttpCode'] ?? 200;
     }
 
-    function curl_close(object $ch): void {}
+    function curl_close(object $ch): void
+    {
+        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
+            \curl_close($ch);
+        }
+    }
 }
 
 namespace {
@@ -53,6 +88,7 @@ namespace {
     use App\Services\Curl\Request;
 
     beforeEach(function (): void {
+        $GLOBALS['__curlMockActive'] = true;
         $GLOBALS['__curlMockSetopts'] = [];
         $GLOBALS['__curlMockResponse'] = '{}';
         $GLOBALS['__curlMockErrno'] = 0;
@@ -62,6 +98,7 @@ namespace {
 
     afterEach(function (): void {
         unset(
+            $GLOBALS['__curlMockActive'],
             $GLOBALS['__curlMockSetopts'],
             $GLOBALS['__curlMockResponse'],
             $GLOBALS['__curlMockErrno'],
