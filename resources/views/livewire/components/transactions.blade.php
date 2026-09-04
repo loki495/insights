@@ -199,7 +199,9 @@ new class extends Component
         return [
             'transactions' => $transactions,
             'count' => $query->count(),
-            'total' => $query->sum('amount'),
+            // Eloquent lists aggregates in Builder::$passthru, so sum() runs on the base
+            // query builder and never applies MoneyCast - it returns raw integer cents.
+            'total' => $query->sum('amount') / 100,
             'merchantSuggestions' => $this->merchantSuggestions($transactions->getCollection()),
         ];
     }

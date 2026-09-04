@@ -15,8 +15,12 @@ final class PullLinkedAccountTransactionsAction
         // Pagination continuations are entirely pull()'s own concern (it recurses on
         // has_more/next_cursor internally) — run() is always the outermost call, so
         // success/failure is recorded exactly once per call, covering every page.
+        //
+        // Resumes from the stored cursor so each pull only asks Plaid for what changed
+        // since the last successful one. A null cursor (new item, or one deliberately
+        // reset for a full re-sync) makes Plaid replay the whole days_requested window.
         try {
-            self::pull($linkedAccount, null, $force);
+            self::pull($linkedAccount, $linkedAccount->transactions_cursor, $force);
             $linkedAccount->update(['last_sync_failed_at' => null, 'last_sync_error' => null]);
         } catch (\Throwable $e) {
             $linkedAccount->update(['last_sync_failed_at' => now(), 'last_sync_error' => $e->getMessage()]);
@@ -62,8 +66,8 @@ final class PullLinkedAccountTransactionsAction
             }
         }
 
-        if ($result['has_more']) {
-            self::pull($linkedAccount, $result['next_cursor'], $force);
+        if ($result['has_more'] ?? false) {
+            self::pull($linkedAccount, $result['next_cursor'] ?? null, $force);
         } else {
             ReconcileLinkedAccountTransactions::run($linkedAccount, $force);
 
@@ -77,7 +81,14 @@ final class PullLinkedAccountTransactionsAction
                 )
             );
 
-            $linkedAccount->update(['last_pulled_at' => now()]);
+            // Only persisted once the final page has been fully processed. If any page
+            // throws, the cursor stays where it was and the next pull safely replays
+            // from there — re-applying an added/modified/removed event is idempotent,
+            // whereas advancing past an unprocessed page would lose it permanently.
+            $linkedAccount->update([
+                'last_pulled_at' => now(),
+                'transactions_cursor' => $result['next_cursor'] ?? $linkedAccount->transactions_cursor,
+            ]);
         }
     }
 }
