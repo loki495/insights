@@ -25,12 +25,14 @@ it('expands and collapses a category tree, cascade-closing descendants on collap
     $page = visit('/categories')
         ->assertSee('Expenses')
         ->assertDontSee('Groceries')
-        ->assertDontSee('Organic');
+        ->assertDontSee('Organic')
+        ->assertScript("getComputedStyle(Array.from(document.querySelectorAll('[data-testid=category-chevron-{$root->id}]')).find((element) => element.getClientRects().length > 0)).rotate === 'none'");
 
     // Expand the root — its direct child appears, but the grandchild (two levels down) stays hidden.
     $page->click('Expenses')
         ->assertSee('Groceries')
-        ->assertDontSee('Organic');
+        ->assertDontSee('Organic')
+        ->assertScript("getComputedStyle(Array.from(document.querySelectorAll('[data-testid=category-chevron-{$root->id}]')).find((element) => element.getClientRects().length > 0)).rotate === '90deg'");
 
     // Expand the child — the grandchild appears too.
     $page->click('Groceries')
@@ -47,5 +49,6 @@ it('expands and collapses a category tree, cascade-closing descendants on collap
     $page->click('Expenses')
         ->assertDontSee('Groceries')
         ->assertDontSee('Organic')
+        ->assertScript("getComputedStyle(Array.from(document.querySelectorAll('[data-testid=category-chevron-{$root->id}]')).find((element) => element.getClientRects().length > 0)).rotate === 'none'")
         ->assertNoSmoke();
 });

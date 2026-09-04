@@ -32,7 +32,18 @@
 
     {{-- Name --}}
     <x-table.td class="text-left">
-        {{ $item->name }}
+        <div class="flex items-center justify-between gap-2">
+            <span>{{ $item->name }}</span>
+            @if(!$search && $item->has_children)
+            <span
+                data-testid="category-chevron-{{ $item->id }}"
+                class="inline-flex shrink-0 text-zinc-400 transition-transform duration-200 dark:text-zinc-500"
+                x-bind:class="{ 'rotate-90': open[cat_id] === true }"
+            >
+                <flux:icon.chevron-right class="size-4" />
+            </span>
+            @endif
+        </div>
     </x-table.td>
 
     {{-- Description --}}

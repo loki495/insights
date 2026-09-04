@@ -54,6 +54,17 @@ it('hides disabled accounts from the institution account list', function (): voi
         ->assertDontSee('Former Checking');
 });
 
+it('links account names to their transaction pages in institution account lists', function (): void {
+    $user = User::factory()->create();
+    test()->actingAs($user);
+    $account = makeAccountForTrackingTest($user, ['name' => 'Everyday Checking']);
+
+    test()->get(route('linked-accounts.accounts.index', $account->linked_account))
+        ->assertOk()
+        ->assertSeeHtml('data-testid="account-name-link-'.$account->id.'"')
+        ->assertSeeHtml('href="'.route('linked-accounts.accounts.show', [$account->linked_account, $account]).'"');
+});
+
 it('manually disables an owned account without deleting its transactions', function (): void {
     $user = User::factory()->create();
     test()->actingAs($user);

@@ -1,6 +1,11 @@
 <div wire:key="mobile-account-{{ $item['id'] }}" class="flex flex-col gap-1 p-2 rounded-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-transparent shadow-sm dark:shadow-none">
     <div class="flex items-start justify-between gap-2">
-        <div class="font-medium break-words">{{ $item['name'] }}</div>
+        <a
+            href="{{ route('linked-accounts.accounts.show', [ $linkedAccount, $item['id'] ]) }}"
+            wire:navigate
+            data-testid="account-name-link-{{ $item['id'] }}"
+            class="font-medium break-words hover:underline focus-visible:underline"
+        >{{ $item['name'] }}</a>
         <div class="flex shrink-0 gap-2">
             <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('linked-accounts.accounts.show', [ $linkedAccount, $item['id'] ]) }}" wire:navigate></x-button>
             <x-button icon="trash" title="Remove Account" class="cursor-pointer !bg-red-600 hover:!bg-red-500" wire:confirm="Remove this account from Insights? Its transaction history will be preserved. Re-enabling it requires relinking the institution and selecting this account again." wire:click="disableAccount({{ $item['id'] }})"></x-button>

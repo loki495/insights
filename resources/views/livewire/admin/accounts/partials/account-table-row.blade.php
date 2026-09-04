@@ -1,5 +1,12 @@
 <x-table.tr>
-    <x-table.td>{{ $item['name'] }}</x-table.td>
+    <x-table.td>
+        <a
+            href="{{ route('linked-accounts.accounts.show', [ $linkedAccount, $item['id'] ]) }}"
+            wire:navigate
+            data-testid="account-name-link-{{ $item['id'] }}"
+            class="font-medium hover:underline focus-visible:underline"
+        >{{ $item['name'] }}</a>
+    </x-table.td>
     <x-table.td>
         <flux:input wire:change="updateNickname({{ $item['id'] }}, $event.target.value)" value="{{ $item['nickname'] }}" placeholder="(none)" size="sm" />
     </x-table.td>
