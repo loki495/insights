@@ -88,6 +88,14 @@ match, with a button to apply that one rule to them retroactively right now
 (`ApplyCategoryRuleRetroactivelyAction`) — deliberately scoped to the one rule on
 screen, not a full backfill-everything pass.
 
+## Account lifecycle
+
+Accounts are disabled rather than soft-deleted so their transactions retain a normal account
+relationship. A successful pull reconciles against Plaid `/accounts/get` (not the incomplete
+account list on `/transactions/sync`): missing accounts get `disabled_reason=missing_from_provider`
+and restore automatically if they return. A user-removed account gets `disabled_reason=manual` and
+only a deliberate Plaid Link update may restore it; ordinary pulls must leave it disabled.
+
 ## Active work
 
 See the repo-root `todo` file (gitignored, not committed) for the current backlog —

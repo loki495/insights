@@ -9,6 +9,7 @@ use App\Services\Curl\API;
 
 /**
  * @method static array{accounts: ?array<int, array<string, mixed>>, added: ?array<int, array<string, mixed>>, removed: ?array<int, array<string, mixed>>, modified: ?array<int, array<string, mixed>>, has_more: bool, next_cursor: string} getItemTransactions(array{access_token: string} $data)
+ * @method static array{accounts: array<int, array<string, mixed>>} getItemAccounts(array{access_token: string} $data)
  * @method static array{item: array{institution_name: ?string}} getItemInfo(array{access_token: string} $data)
  * @method static array{link_token: string} getLinkToken(array<string, mixed> $data)
  * @method static array{item_id: string, access_token: string} exchangePublicToken(array{public_token: string} $data)

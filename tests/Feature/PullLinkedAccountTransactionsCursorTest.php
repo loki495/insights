@@ -33,6 +33,7 @@ function fakeCursorPlaid(callable $expectations): void
     $mock = Mockery::mock(PlaidService::class);
     $real = new PlaidService(PlaidService::ENV_SANDBOX, 'test-client-id');
     $mock->shouldReceive('resolveCategory')->andReturnUsing(fn (array $info): ?\App\Models\OriginalCategory => $real->resolveCategory($info));
+    $mock->shouldReceive('getItemAccounts')->once()->andReturn(['accounts' => []]);
     $expectations($mock);
     app()->bind(PlaidService::class, fn () => $mock);
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\AccountDisabledReason;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -25,6 +26,8 @@ class Account extends Model
     protected $fillable = [
         'linked_account_id',
         'plaid_account_id',
+        'disabled_at',
+        'disabled_reason',
         'mask',
         'name',
         'official_name',
@@ -40,6 +43,8 @@ class Account extends Model
 
     #[\Override]
     public $casts = [
+        'disabled_at' => 'datetime',
+        'disabled_reason' => AccountDisabledReason::class,
         'available_balance' => MoneyCast::class,
         'current_balance' => MoneyCast::class,
         'limit' => MoneyCast::class,
@@ -83,6 +88,15 @@ class Account extends Model
      */
     public function scopeTracked(Builder $query): Builder
     {
-        return $query->where('tracking_mode', 'tracked');
+        return $query->where('tracking_mode', 'tracked')->active();
+    }
+
+    /**
+     * @param  Builder<Account>  $query
+     * @return Builder<Account>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('disabled_at');
     }
 }

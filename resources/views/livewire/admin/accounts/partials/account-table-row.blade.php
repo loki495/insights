@@ -13,6 +13,9 @@
         </flux:select>
     </x-table.td>
     <x-table.td>
-        <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('linked-accounts.accounts.show', [ $linkedAccount, $item['id'] ]) }}" wire:navigate></x-button>
+        <div class="flex gap-2">
+            <x-button icon="list-bullet" title="View Transactions" class="cursor-pointer" href="{{ route('linked-accounts.accounts.show', [ $linkedAccount, $item['id'] ]) }}" wire:navigate></x-button>
+            <x-button icon="trash" title="Remove Account" class="cursor-pointer !bg-red-600 hover:!bg-red-500" wire:confirm="Remove this account from Insights? Its transaction history will be preserved. Re-enabling it requires relinking the institution and selecting this account again." wire:click="disableAccount({{ $item['id'] }})"></x-button>
+        </div>
     </x-table.td>
 </x-table.tr>

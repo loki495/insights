@@ -25,7 +25,7 @@
                 <div class="in-data-flux-sidebar-collapsed-desktop:hidden">
                     <flux:navlist.group heading="Linked Accounts" :href="route('linked-accounts.index')" expandable :expanded="request()->routeIs('linked-accounts.*')" expanded>
                         {{-- <flux:navlist.item icon="pencil" :href="route('linked-accounts.create')" :current="request()->routeIs('linked-accounts.create')" wire:navigate>{{ __('Add Linked Account') }}</flux:navlist.item> --}}
-                        @foreach (auth()->user()->linkedAccounts()->with('accounts')->get() as $linkedAccount)
+                        @foreach (auth()->user()->linkedAccounts()->with(['accounts' => fn ($query) => $query->active()])->get() as $linkedAccount)
                         <flux:navlist.group :heading="$linkedAccount->provider_name" :href="route('linked-accounts.accounts.index', $linkedAccount)">
                             @foreach ($linkedAccount->accounts as $account)
                             <flux:navlist.item :badge="$account->transactions()->count()" badge-class="self-start" :href="route('linked-accounts.accounts.show', [ $linkedAccount, $account ])" :current="request()->routeIs('linked-accounts.account.show', [$linkedAccount, $account])" wire:navigate class="w-full !p-4">

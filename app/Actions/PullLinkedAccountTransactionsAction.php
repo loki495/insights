@@ -12,6 +12,10 @@ final class PullLinkedAccountTransactionsAction
 {
     public static function run(LinkedAccount $linkedAccount, bool $force = false): void
     {
+        if ($linkedAccount->isClosed() || $linkedAccount->is_demo) {
+            return;
+        }
+
         // Pagination continuations are entirely pull()'s own concern (it recurses on
         // has_more/next_cursor internally) — run() is always the outermost call, so
         // success/failure is recorded exactly once per call, covering every page.
@@ -20,7 +24,14 @@ final class PullLinkedAccountTransactionsAction
         // since the last successful one. A null cursor (new item, or one deliberately
         // reset for a full re-sync) makes Plaid replay the whole days_requested window.
         try {
-            self::pull($linkedAccount, $linkedAccount->transactions_cursor, $force);
+            $accountResult = plaid()->getItemAccounts(data: ['access_token' => $linkedAccount->access_token]);
+
+            self::pull(
+                $linkedAccount,
+                $linkedAccount->transactions_cursor,
+                $force,
+                $accountResult['accounts'],
+            );
             $linkedAccount->update(['last_sync_failed_at' => null, 'last_sync_error' => null]);
         } catch (\Throwable $e) {
             $linkedAccount->update(['last_sync_failed_at' => now(), 'last_sync_error' => $e->getMessage()]);
@@ -28,12 +39,11 @@ final class PullLinkedAccountTransactionsAction
         }
     }
 
-    private static function pull(LinkedAccount $linkedAccount, ?string $cursor, bool $force): void
+    /**
+     * @param  array<int, array<string, mixed>>  $accountData
+     */
+    private static function pull(LinkedAccount $linkedAccount, ?string $cursor, bool $force, array $accountData): void
     {
-        if ($linkedAccount->isClosed() || $linkedAccount->is_demo) {
-            return;
-        }
-
         $plaid = plaid();
 
         $request_data = [
@@ -67,8 +77,12 @@ final class PullLinkedAccountTransactionsAction
         }
 
         if ($result['has_more']) {
-            self::pull($linkedAccount, $result['next_cursor'], $force);
+            self::pull($linkedAccount, $result['next_cursor'], $force, $accountData);
         } else {
+            // /transactions/sync only includes accounts associated with transactions in that
+            // response, so the complete /accounts/get snapshot is reconciled only after every
+            // transaction page succeeds. A failed/partial pull can never disable an account.
+            ReconcileLinkedAccountAccountsAction::run($linkedAccount, $accountData);
             ReconcileLinkedAccountTransactions::run($linkedAccount, $force);
 
             // Transfers commonly span different institutions (e.g. a Chase checking payment to a

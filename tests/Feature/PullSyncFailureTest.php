@@ -17,6 +17,7 @@ use App\Services\Plaid\PlaidService;
 function fakeFailingPlaid(Throwable $exception): void
 {
     $mock = Mockery::mock(PlaidService::class);
+    $mock->shouldReceive('getItemAccounts')->once()->andReturn(['accounts' => []]);
     $mock->shouldReceive('getItemTransactions')->andThrow($exception);
     app()->bind(PlaidService::class, fn () => $mock);
 }
@@ -47,6 +48,7 @@ it('clears a previously recorded failure once a pull succeeds', function (): voi
     ]);
 
     $mock = Mockery::mock(PlaidService::class);
+    $mock->shouldReceive('getItemAccounts')->once()->andReturn(['accounts' => []]);
     $mock->shouldReceive('getItemTransactions')->once()->andReturn([
         'accounts' => [], 'added' => [], 'removed' => [], 'modified' => [], 'has_more' => false,
     ]);
@@ -71,6 +73,7 @@ it('does not let one failing institution block the others in the scheduled comma
     ]);
 
     $mock = Mockery::mock(PlaidService::class);
+    $mock->shouldReceive('getItemAccounts')->twice()->andReturn(['accounts' => []]);
     $mock->shouldReceive('getItemTransactions')
         ->withArgs(fn (array $data): bool => $data['access_token'] === 'token_fail')
         ->andThrow(new CurlRequestException('ITEM_LOGIN_REQUIRED', 400));
