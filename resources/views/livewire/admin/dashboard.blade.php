@@ -122,7 +122,9 @@ new class extends Component
                         </div>
                     @else
                         <div class="flex h-64 items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 p-8 text-center text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                            No spending recorded this month yet.
+                            No expenses this month yet — anything under Recent
+                            Transactions is from an earlier month, or is income,
+                            a transfer, or an adjustment.
                         </div>
                     @endif
                 </div>

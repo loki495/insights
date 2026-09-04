@@ -35,6 +35,7 @@ class LinkedAccount extends Model
         'last_pulled_at',
         'last_sync_failed_at',
         'last_sync_error',
+        'transactions_cursor',
     ];
 
     public $casts = [
