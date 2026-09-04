@@ -2,7 +2,7 @@
 # One stage (not split further) because resources/css/app.css imports
 # vendor/livewire/flux/dist/flux.css and Tailwind scans vendor/livewire/flux/stubs for class
 # usage — the frontend build genuinely depends on composer's output, not just on Node.
-FROM php:8.4-apache AS build
+FROM php:8.5-apache AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git unzip curl ca-certificates \
@@ -30,7 +30,7 @@ RUN rm -f bootstrap/cache/*.php \
     && npm run build
 
 # ---- Stage 2: lean runtime image — no Node, no dev/test-only PHP extensions, no build tools ----
-FROM php:8.4-apache
+FROM php:8.5-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libzip-dev libicu-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
