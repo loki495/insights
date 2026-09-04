@@ -131,6 +131,31 @@ it('lists the 8 most recent transactions across tracked accounts, most recent fi
     $response->assertDontSee('Txn 01');
 });
 
+it('shows the institution and account for each recent transaction', function (): void {
+    $user = User::factory()->create();
+    $account = dashboardAccount($user, [
+        'tracking_mode' => 'tracked',
+        'name' => 'Everyday Checking',
+        'nickname' => 'Household Account',
+    ]);
+    $account->linked_account->update(['provider_name' => 'Example Credit Union']);
+
+    Transaction::factory()->for($account)->create([
+        'name' => 'Neighborhood Market',
+        'amount' => -25,
+        'currency' => 'USD',
+    ]);
+
+    test()->actingAs($user)
+        ->get('/')
+        ->assertOk()
+        ->assertSeeTextInOrder([
+            'Neighborhood Market',
+            'Example Credit Union',
+            'Household Account',
+        ]);
+});
+
 it('does not show transactions from reference/excluded accounts in Recent Transactions', function (): void {
     $user = User::factory()->create();
     $trackedAccount = dashboardAccount($user, ['tracking_mode' => 'tracked']);

@@ -142,7 +142,7 @@ new class extends Component
                                 <div class="flex min-w-0 flex-col">
                                     <span class="truncate font-medium">{{ $transaction->merchant_name ?: $transaction->name }}</span>
                                     <span class="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                                        {{ $transaction->account->display_name }} &middot; {{ $transaction->created_at->format('M j') }}
+                                        {{ $transaction->account->linked_account->provider_name }} &middot; {{ $transaction->account->display_name }} &middot; {{ $transaction->created_at->format('M j') }}
                                         @if($transaction->categories->isNotEmpty())
                                             &middot; {{ $transaction->categories->first()->fullName }}
                                         @endif
