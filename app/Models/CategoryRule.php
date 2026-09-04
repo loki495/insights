@@ -18,6 +18,7 @@ class CategoryRule extends Model
     /**
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'user_id',
         'category_id',

@@ -15,6 +15,7 @@ class LinkedAccount extends Model
     /** @use HasFactory<LinkedAccountFactory> */
     use HasFactory;
 
+    #[\Override]
     protected $hidden = [
         'access_token',
     ];
@@ -22,6 +23,7 @@ class LinkedAccount extends Model
     /**
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'user_id',
         'item_id',
@@ -38,6 +40,7 @@ class LinkedAccount extends Model
         'transactions_cursor',
     ];
 
+    #[\Override]
     public $casts = [
         'access_token' => 'encrypted',
         'closed_at' => 'datetime',

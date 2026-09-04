@@ -73,12 +73,7 @@ namespace App\Services\Curl {
         return $GLOBALS['__curlMockHttpCode'] ?? 200;
     }
 
-    function curl_close(object $ch): void
-    {
-        if (! ($GLOBALS['__curlMockActive'] ?? false)) {
-            \curl_close($ch);
-        }
-    }
+    function curl_close(object $ch): void {}
 }
 
 namespace {
@@ -108,7 +103,7 @@ namespace {
     });
 
     it('toArray/toJson expose the request\'s url, method, headers, and data', function (): void {
-        $request = (new Request('https://example.test/thing', 'POST'))
+        $request = new Request('https://example.test/thing', 'POST')
             ->addHeader('X-Api-Key', 'secret')
             ->addDataItem('foo', 'bar');
 
@@ -126,13 +121,13 @@ namespace {
     it('returns the decoded response body on a successful call', function (): void {
         $GLOBALS['__curlMockResponse'] = json_encode(['ok' => true]);
 
-        $result = (new Request('https://example.test/status', 'GET'))->makeRequest();
+        $result = new Request('https://example.test/status', 'GET')->makeRequest();
 
         expect($result)->toBe(['ok' => true]);
     });
 
     it('json-encodes POST data when Content-Type is application/json', function (): void {
-        (new Request('https://example.test/thing', 'POST'))
+        new Request('https://example.test/thing', 'POST')
             ->addHeader('Content-Type', 'application/json')
             ->addDataItem('foo', 'bar')
             ->makeRequest();
@@ -142,7 +137,7 @@ namespace {
     });
 
     it('does not set POSTFIELDS for a JSON POST request with no data', function (): void {
-        (new Request('https://example.test/thing', 'POST'))
+        new Request('https://example.test/thing', 'POST')
             ->addHeader('Content-Type', 'application/json')
             ->makeRequest();
 
@@ -150,7 +145,7 @@ namespace {
     });
 
     it('sends POST data as raw fields when Content-Type is not JSON', function (): void {
-        (new Request('https://example.test/thing', 'POST'))
+        new Request('https://example.test/thing', 'POST')
             ->addDataItem('foo', 'bar')
             ->makeRequest();
 
@@ -158,7 +153,7 @@ namespace {
     });
 
     it('uses CUSTOMREQUEST and a query-string body for a non-POST method', function (): void {
-        (new Request('https://example.test/thing', 'DELETE'))
+        new Request('https://example.test/thing', 'DELETE')
             ->addDataItem('id', '5')
             ->makeRequest();
 
@@ -167,7 +162,7 @@ namespace {
     });
 
     it('sends every added header formatted for CURLOPT_HTTPHEADER', function (): void {
-        (new Request('https://example.test/thing', 'GET'))
+        new Request('https://example.test/thing', 'GET')
             ->addHeader('X-Api-Key', 'secret')
             ->makeRequest();
 
@@ -178,19 +173,19 @@ namespace {
         $GLOBALS['__curlMockErrno'] = 7;
         $GLOBALS['__curlMockError'] = 'Could not connect';
 
-        (new Request('https://example.test/thing', 'GET'))->makeRequest();
+        new Request('https://example.test/thing', 'GET')->makeRequest();
     })->throws(RuntimeException::class, 'Curl error: Could not connect');
 
     it('throws when curl_exec itself returns false', function (): void {
         $GLOBALS['__curlMockResponse'] = false;
 
-        (new Request('https://example.test/thing', 'GET'))->makeRequest();
+        new Request('https://example.test/thing', 'GET')->makeRequest();
     })->throws(RuntimeException::class, 'Curl error: ');
 
     it('propagates a Plaid-shaped error response through parseResponse', function (): void {
         $GLOBALS['__curlMockResponse'] = json_encode(['error_type' => 'ITEM_ERROR', 'error_code' => 'X']);
 
-        (new Request('https://example.test/thing', 'GET'))->makeRequest();
+        new Request('https://example.test/thing', 'GET')->makeRequest();
     })->throws(CurlRequestException::class);
 
     it('API::__call forwards data items through to the real request', function (): void {
@@ -207,7 +202,7 @@ namespace {
 
     it('API::__call throws for an unknown endpoint', function (): void {
         // @phpstan-ignore method.notFound (API's endpoints are dispatched dynamically via __call)
-        (new API('plaid', 'https://sandbox.plaid.com/'))->notARealEndpoint();
+        new API('plaid', 'https://sandbox.plaid.com/')->notARealEndpoint();
     })->throws(Exception::class, 'Unknown endpoint: notARealEndpoint');
 
 }

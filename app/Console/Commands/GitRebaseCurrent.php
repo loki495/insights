@@ -13,6 +13,7 @@ class GitRebaseCurrent extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $signature = 'git:rebase-current';
 
     /**
@@ -20,6 +21,7 @@ class GitRebaseCurrent extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $description = 'Rebase current to main';
 
     /**

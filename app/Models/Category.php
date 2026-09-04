@@ -30,6 +30,7 @@ class Category extends Model
     /**
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'parent_id',
         'name',

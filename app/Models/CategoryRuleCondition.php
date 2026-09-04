@@ -19,6 +19,7 @@ class CategoryRuleCondition extends Model
     /**
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'field',
         'operator',

@@ -21,6 +21,7 @@ class Account extends Model
     /**
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'linked_account_id',
         'plaid_account_id',
@@ -37,6 +38,7 @@ class Account extends Model
         'tracking_mode',
     ];
 
+    #[\Override]
     public $casts = [
         'available_balance' => MoneyCast::class,
         'current_balance' => MoneyCast::class,

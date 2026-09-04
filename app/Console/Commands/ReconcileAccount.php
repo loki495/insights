@@ -15,6 +15,7 @@ class ReconcileAccount extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $signature = 'transactions:reconcile {linked_account_id} {force?}';
 
     /**
@@ -22,6 +23,7 @@ class ReconcileAccount extends Command
      *
      * @var string
      */
+    #[\Override]
     protected $description = 'Reconcile already saved transactions';
 
     /**

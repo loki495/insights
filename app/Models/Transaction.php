@@ -36,6 +36,7 @@ class Transaction extends Model
      *
      * @var list<string>
      */
+    #[\Override]
     protected $fillable = [
         'account_id',
         'transaction_id',
@@ -57,6 +58,7 @@ class Transaction extends Model
         'updated_at',
     ];
 
+    #[\Override]
     public $casts = [
         'original' => 'json',
         'amount' => MoneyCast::class,

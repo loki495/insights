@@ -82,7 +82,6 @@ class Request
         $curlErrno = curl_errno($ch);
         $curlError = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         if ($response === false || $curlErrno !== 0) {
             throw new \RuntimeException('Curl error: '.$curlError);

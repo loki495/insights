@@ -19,6 +19,7 @@ class OriginalCategory extends Model
     /** @use HasFactory<OriginalCategoryFactory> */
     use HasFactory;
 
+    #[\Override]
     protected $fillable = [
         'name',
         'plaid_id',
