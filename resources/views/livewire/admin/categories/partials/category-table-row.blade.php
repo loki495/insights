@@ -37,7 +37,7 @@
             @if(!$search && $item->has_children)
             <span
                 data-testid="category-chevron-{{ $item->id }}"
-                class="inline-flex shrink-0 text-zinc-400 transition-transform duration-200 dark:text-zinc-500"
+                class="inline-flex shrink-0 cursor-pointer text-zinc-400 transition-transform duration-200 dark:text-zinc-500"
                 x-bind:class="{ 'rotate-90': open[cat_id] === true }"
             >
                 <flux:icon.chevron-right class="size-4" />
