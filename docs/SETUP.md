@@ -13,7 +13,7 @@ overview; this doc is the detailed operator's manual.
 
 ## Requirements
 
-- PHP 8.3 or newer, with the extensions Laravel needs by default (BCMath, Ctype, cURL, DOM,
+- PHP 8.5 or newer, with the extensions Laravel needs by default (BCMath, Ctype, cURL, DOM,
   Fileinfo, JSON, Mbstring, OpenSSL, PCRE, PDO — plus `pdo_sqlite` for the default database, or
   `pdo_mysql` if you point `DB_CONNECTION` at MySQL instead), plus `intl` (used for currency
   formatting)

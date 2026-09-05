@@ -86,7 +86,7 @@ built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
 
 ## Tech Stack
 
-- PHP 8.3+ / Laravel 13
+- PHP 8.5+ / Laravel 13
 - Livewire 4 / Volt (single-file components)
 - Flux UI (free tier)
 - Tailwind CSS 4
