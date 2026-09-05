@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/loki495/insights/actions/workflows/ci.yml/badge.svg)](https://github.com/loki495/insights/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/loki495/insights/graph/badge.svg)](https://codecov.io/gh/loki495/insights)
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+[![License: AGPL v3 (or later)](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
 
 A Laravel + Livewire application for aggregating and tracking personal financial data across
 multiple bank accounts and credit cards using [Plaid](https://plaid.com/).
@@ -158,8 +158,8 @@ This project is actively evolving; some routes and UI components may still chang
 
 ## License
 
-Licensed under [AGPL-3.0](LICENSE). In short: you're free to use, modify, and self-host this —
-including commercially — but if you distribute a modified version or run it as a network service,
-you have to make that version's source available under the same license too. Genuinely separate
-add-ons that merely integrate with this app (not modifications to it) aren't required to be
-AGPL — see [CONTRIBUTING.md](CONTRIBUTING.md) if you're contributing.
+Licensed under [AGPL-3.0-or-later](LICENSE). In short: you're free to use, modify, and self-host
+this — including commercially — but if you distribute a modified version or run it as a network
+service, you have to make that version's source available under the same license too, with no
+carve-out for add-ons or integrations. See [CONTRIBUTING.md](CONTRIBUTING.md) if you're
+contributing.

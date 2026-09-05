@@ -98,11 +98,21 @@ introducing a new pattern for the same kind of problem.
   or otherwise have the right to submit it under this project's license. No CLA, no copyright
   assignment — you keep authorship of your own contribution. This isn't currently enforced by any
   automated check — it's requested on the honor system, not a hard blocker on your PR.
+- **On your first PR that adds copyrightable content, add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md)**
+  with a `Copyright (C) <year> <Your Name>` line. This is a hard requirement, checked as part of
+  PR review — see the License section below for why.
 
 ## License
 
-This project is licensed under [AGPL-3.0](LICENSE). By contributing, you agree your contribution
-is licensed under the same terms.
+This project is licensed under [AGPL-3.0-or-later](LICENSE). By contributing, you agree your
+contribution is licensed under the same terms, and you keep copyright over it — there's no CLA and
+no copyright assignment here.
+
+That means relicensing any part of this project later (for example, a separately-licensed
+plugin/API layer) would need separate consent from every contributor who holds copyright on the
+code involved. [CONTRIBUTORS.md](CONTRIBUTORS.md) is the record of who that is, which is why
+adding your copyright line there is mandatory, not optional — it keeps that question answerable
+without having to reconstruct it from `git log` later.
 
 ## Reporting bugs
 

@@ -10,4 +10,5 @@
 ## Checklist
 
 - [ ] Commits are signed off (DCO) — see [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [ ] If this is your first contribution, you've added yourself to [CONTRIBUTORS.md](../CONTRIBUTORS.md)
 - [ ] This PR is focused on one logical change
