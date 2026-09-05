@@ -242,8 +242,9 @@ This creates (or reuses) a `test@example.com` / `password` login. It's not part 
 
 The "Forgot your password?" link on the login page is live and works out of the box, but
 `.env.example` defaults `MAIL_MAILER=log` — no real email ever gets sent, the reset link is
-written to `storage/logs/laravel.log` (or, in the Docker setups, `docker/logs/laravel.log`)
-instead. Fine for local development, but a problem for a real deployment: if you lock yourself out
+written to `storage/logs/laravel.log` instead — the same path in every setup, visible on the host
+via the bind mount in dev and readable via `docker exec` in prod. Fine for local development, but
+a problem for a real deployment: if you lock yourself out
 without configuring real mail delivery first, digging the reset link out of a log file is your only
 way back in.
 
