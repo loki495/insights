@@ -115,7 +115,7 @@ default for a local trial (`APP_URL` only matters once you're deploying somewher
 
 ```bash
 docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --show
+docker compose -f docker-compose.prod.yml run --rm --entrypoint "" app php artisan key:generate --show
 # paste the output into .env's APP_KEY=, then:
 docker compose -f docker-compose.prod.yml up -d --wait  # waits for migrations to finish
 docker compose -f docker-compose.prod.yml exec app php artisan db:seed --class=DemoDataSeeder --force

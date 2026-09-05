@@ -52,7 +52,7 @@ domain, and your Plaid credentials (see [Linking a bank account](#linking-a-bank
 
 ```bash
 docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --show
+docker compose -f docker-compose.prod.yml run --rm --entrypoint "" app php artisan key:generate --show
 # paste the output into .env's APP_KEY=, then:
 docker compose -f docker-compose.prod.yml up -d --wait
 ```
