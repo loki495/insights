@@ -30,6 +30,14 @@ This is the setup for actually self-hosting Insights for real use (the README's 
 the condensed version of the Docker steps below). It's a genuinely different, hardened build from
 local development, below — no hot-reloading, no debug output, a lean production image.
 
+> **Before exposing this to the internet:** registration is unrestricted by default — anyone who
+> can reach the URL can create their own account, and this app has no invite code or
+> first-user-only gate. If you seeded the `test@example.com` / `password` demo login (see
+> [Quick Start](../README.md#quick-start) or
+> [Exploring without a Plaid account](#exploring-without-a-plaid-account)), delete that user before
+> going live — it's a known, public default password. Put the app behind an auth proxy, restrict
+> `/register` once you've created your own account, or both; nothing here does it for you.
+
 ### Docker
 
 ```bash
