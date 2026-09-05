@@ -1,7 +1,7 @@
 # Optional local override for docker-compose.yml.
 #
 # The base docker-compose.yml routes through Traefik on a custom local
-# domain (insights.dev.local.test) — one supported setup, not a requirement.
+# domain (insights.ac495.net) — one supported setup, not a requirement.
 #
 # If you don't already run Traefik with an external "web" network, copy this
 # file to docker-compose.override.yml (same directory, gitignored, picked up

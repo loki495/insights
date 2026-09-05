@@ -51,7 +51,7 @@ services:
       - ./:/var/www/html
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.insights-vite.rule=Host(`vite.insights.dev.local.test`)"
+      - "traefik.http.routers.insights-vite.rule=Host(`vite.insights.ac495.net`)"
       - "traefik.http.routers.insights-vite.entrypoints=web"
       - "traefik.http.services.insights-vite.loadbalancer.server.port=5173"
     networks:

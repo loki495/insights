@@ -32,7 +32,7 @@ it('forces the built manifest and a secure cookie for a configured remote host',
 
 it('leaves LAN hosts on the default hot file and existing cookie setting', function (): void {
     $middleware = new UseStaticAssetsForRemoteHost;
-    $request = Request::create('http://insights.dev.local.test/');
+    $request = Request::create('http://localhost/');
 
     $seenHotFile = null;
     $seenSecure = null;

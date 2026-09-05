@@ -19,7 +19,7 @@ rules, Chart.js dashboards. See the repo root `README.md` for the full feature l
   symptoms shows up, check `find storage bootstrap/cache /tmp -not -user www-data` before
   assuming it's a real bug.
 - Vite dev server: `insights-vite`, routed via Traefik at
-  `vite.insights.dev.local.test`. App itself at `insights.dev.local.test`.
+  `vite.insights.ac495.net`. App itself at `insights.ac495.net`.
 - `vite.config.js` sets `refresh: ['resources/views/**/*']` — almost any request
   touching a blade file triggers a full browser reload in local dev. If a page
   unexpectedly resets mid-interactive-test (e.g. a filter reverts to defaults),
