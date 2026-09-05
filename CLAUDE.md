@@ -1,7 +1,7 @@
 # Insights — project notes for Claude
 
 Laravel + Livewire Volt + Flux personal-finance app. Plaid integration for bank
-transactions, hierarchical categories (up to 3 levels deep) with per-user autocategorize
+transactions, hierarchical (nested, no depth limit enforced) categories with per-user autocategorize
 rules, Chart.js dashboards. See the repo root `README.md` for the full feature list and
 `docs/ROADMAP.md` for what's planned next.
 

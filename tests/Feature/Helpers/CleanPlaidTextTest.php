@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 it('strips stray U+FFFD replacement characters and collapses the resulting double space', function (): void {
-    $result = cleanPlaidText("WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD");
+    $result = cleanPlaidText("DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD");
 
-    expect($result)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($result)->toBe('DEMO BANK REWARDS VISA CARD');
 });
 
 it('leaves normal text untouched', function (): void {

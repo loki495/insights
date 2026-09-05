@@ -90,13 +90,13 @@ it('cleans stray U+FFFD replacement characters out of the account name/official_
     ]);
 
     UpdateAccountAction::run(plaidAccountInfo([
-        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
-        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
     ]), $linkedAccount);
 
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD')
-        ->and($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->name)->toBe('DEMO BANK REWARDS VISA CARD')
+        ->and($account->official_name)->toBe('DEMO BANK REWARDS VISA CARD');
 });
 
 it('matches an existing account by plaid_account_id even when the incoming name no longer matches the cleaned stored name', function (): void {
@@ -109,21 +109,21 @@ it('matches an existing account by plaid_account_id even when the incoming name 
     ]);
     Account::factory()->for($linkedAccount, 'linked_account')->create([
         'plaid_account_id' => 'plaid_account_1', 'mask' => '0000',
-        'name' => 'WELLS FARGO REFLECT VISA CARD',
-        'official_name' => 'WELLS FARGO REFLECT VISA CARD',
+        'name' => 'DEMO BANK REWARDS VISA CARD',
+        'official_name' => 'DEMO BANK REWARDS VISA CARD',
         'type' => 'depository', 'subtype' => 'checking',
         'available_balance' => 0, 'current_balance' => 0,
     ]);
 
     UpdateAccountAction::run(plaidAccountInfo([
         'account_id' => 'plaid_account_1',
-        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
-        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
     ]), $linkedAccount);
 
     expect(Account::count())->toBe(1);
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD')
+    expect($account->name)->toBe('DEMO BANK REWARDS VISA CARD')
         ->and($account->available_balance)->toEqual(100)
         ->and($account->current_balance)->toEqual(150);
 });
@@ -139,17 +139,17 @@ it('cleans stray U+FFFD replacement characters out of the account name/official_
     ]);
     Account::factory()->for($linkedAccount, 'linked_account')->create([
         'plaid_account_id' => 'plaid_account_1', 'mask' => '0000',
-        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
-        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
         'type' => 'depository', 'subtype' => 'checking',
     ]);
 
     UpdateAccountAction::run(plaidAccountInfo([
-        'name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
-        'official_name' => "WELLS FARGO REFLECT VISA\u{FFFD}\u{FFFD} CARD",
+        'name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
+        'official_name' => "DEMO BANK REWARDS VISA\u{FFFD}\u{FFFD} CARD",
     ]), $linkedAccount);
 
     $account = Account::where('plaid_account_id', 'plaid_account_1')->firstOrFail();
-    expect($account->name)->toBe('WELLS FARGO REFLECT VISA CARD')
-        ->and($account->official_name)->toBe('WELLS FARGO REFLECT VISA CARD');
+    expect($account->name)->toBe('DEMO BANK REWARDS VISA CARD')
+        ->and($account->official_name)->toBe('DEMO BANK REWARDS VISA CARD');
 });

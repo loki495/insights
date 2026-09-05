@@ -44,14 +44,19 @@ browser-testing toolchain locally, `composer test:unit` alone covers everything 
 `tests/Browser/` — just know CI will still run the browser suite against your PR. A few notes on
 what "passing" means here:
 
+- **`peck` (typo check) needs the `aspell`/`aspell-en` system packages** — not a PHP dependency,
+  install via your distro's package manager (CI installs them explicitly; see
+  `.github/workflows/ci.yml`). Without them `composer test`/`peck` fails outright, not just on
+  typos.
 - **PHPStan** runs at level 6 with a type-coverage floor (not the default 99%) — see the comments
   in `phpstan.neon.dist` for why. Raising these thresholds is welcome; lowering them isn't.
 - **Pest coverage** has a `--min=95` floor for the same reason — it's well below today's real
   number (~99.7% as of this writing), not an aspirational one. Adding tests that raise it is
-  welcome. Two tests (`tests/Unit/Plaid/StatusTest.php`, `tests/Unit/ServicesTest.php`) call
-  Plaid's real status API over the network and can fail specifically under `--coverage`
-  (instrumentation overhead pushing a live HTTP call past its timeout) despite passing on their
-  own — a known flake, not a sign your change broke something, if you hit it.
+  welcome. Two tests (`tests/Unit/Plaid/StatusTest.php`, `tests/Unit/ServicesTest.php`) make real
+  network calls to Plaid's status API — they'll fail outright offline or behind a restrictive
+  proxy/sandbox, and separately can also fail specifically under `--coverage`
+  (instrumentation overhead pushing the live HTTP call past its timeout) despite passing on their
+  own — neither is a sign your change broke something, if you hit it.
 - **Tests must never be deleted, weakened, or skipped to force a pass.** If a test fails, either
   the code or the test's expectations need to change deliberately — not the assertions being
   loosened to make red go green.

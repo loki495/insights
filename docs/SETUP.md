@@ -9,6 +9,7 @@ overview; this doc is the detailed operator's manual.
 - [Getting Started (local development)](#getting-started-local-development)
 - [Exploring without a Plaid account](#exploring-without-a-plaid-account)
 - [Password reset / mail delivery](#password-reset--mail-delivery)
+- [Maintenance commands](#maintenance-commands)
 - [Linking a bank account](#linking-a-bank-account)
 
 ## Requirements
@@ -253,6 +254,17 @@ provider Laravel supports) and fill in the matching `MAIL_HOST`/`MAIL_PORT`/`MAI
 `MAIL_PASSWORD`/`MAIL_FROM_ADDRESS` values in `.env` — see [Laravel's mail
 documentation](https://laravel.com/docs/mail) for the full list of supported drivers and their
 config options.
+
+## Maintenance commands
+
+`transactions:pull` (documented above, via the scheduler) isn't the only artisan command this
+app ships — two more exist for one-off/manual maintenance:
+
+- `php artisan transactions:reconcile {linked_account_id} {force?}` — re-reconciles already-saved
+  transactions for one linked account against what Plaid currently has, without doing a full sync.
+- `php artisan transactions:backfill-types` — classifies type (income/expense/transfer) on
+  existing transactions and matches internal transfer pairs. Useful after a schema/logic change
+  to that classification, to backfill data that predates it.
 
 ## Linking a bank account
 

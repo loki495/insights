@@ -45,6 +45,9 @@ built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
   credit card payments are classified as transfers, not expenses, avoiding double-counting).
   Transfers are automatically paired across accounts (opposite sign, similar amount, close dates);
   pairing can also be searched/set/cleared manually from a quick-edit popup on any transaction.
+- **Manual transaction entry** — add or edit an individual transaction by hand on any existing
+  account, for anything Plaid doesn't capture (cash, a correction, a one-off) — see "Current
+  limitations" below for what this doesn't cover (a whole manual/CSV-imported account).
 - **Account tracking modes** — mark an account `tracked` (included in aggregate reports),
   `reference` (visible but excluded from totals), or `excluded`. Unlinking an institution soft-closes
   it (reversible) instead of deleting its accounts/transaction history.
