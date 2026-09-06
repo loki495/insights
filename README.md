@@ -11,11 +11,15 @@ multiple bank accounts and credit cards using [Plaid](https://plaid.com/).
 
 | Dashboard | Transaction Search |
 | --- | --- |
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Transaction Search](docs/screenshots/report.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Transaction Search](docs/screenshots/transaction-search.png) |
 
 | Dark mode | Mobile |
 | --- | --- |
 | ![Dark mode](docs/screenshots/dark-mode.png) | ![Mobile view](docs/screenshots/mobile.png) |
+
+| Autocategorize rules |
+| --- |
+| ![Autocategorize rule builder with live match preview](docs/screenshots/autocategorize-rules.png) |
 
 All captured against the seeded demo dataset — see [Exploring without a Plaid
 account](docs/SETUP.md#exploring-without-a-plaid-account).
