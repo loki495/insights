@@ -96,12 +96,16 @@ class DemoDataSeeder extends Seeder
         $months = 6;
         for ($monthsAgo = $months - 1; $monthsAgo >= 0; $monthsAgo--) {
             $monthStart = now()->subMonthsNoOverflow($monthsAgo)->startOfMonth();
+            // The current (partial) month can't backfill days that haven't happened yet -
+            // capping the offset here keeps every generated date <= now, so a screenshot taken
+            // mid-month never shows a "recent transaction" dated later than today.
+            $maxDay = $monthsAgo === 0 ? now()->day - 1 : 27;
 
-            $this->seedPaycheck($checking, $categories['Paycheck'], $original['Paycheck'], $monthStart);
-            $this->seedExpenses($checking, $categories, $original, $monthStart);
-            $this->seedCreditCardActivity($creditCard, $categories['Entertainment'], $original['Entertainment'], $monthStart);
-            $this->seedCreditCardPayment($checking, $creditCard, $original['CreditCardPayment'], $monthStart);
-            $this->seedSavingsTransfer($checking, $savings, $original['Transfer'], $monthStart);
+            $this->seedPaycheck($checking, $categories['Paycheck'], $original['Paycheck'], $monthStart, $maxDay);
+            $this->seedExpenses($checking, $categories, $original, $monthStart, $maxDay);
+            $this->seedCreditCardActivity($creditCard, $categories['Entertainment'], $original['Entertainment'], $monthStart, $maxDay);
+            $this->seedCreditCardPayment($checking, $creditCard, $original['CreditCardPayment'], $monthStart, $maxDay);
+            $this->seedSavingsTransfer($checking, $savings, $original['Transfer'], $monthStart, $maxDay);
         }
 
         ReconcileLinkedAccountTransactions::run($linkedAccount);
@@ -152,9 +156,13 @@ class DemoDataSeeder extends Seeder
         ];
     }
 
-    private function seedPaycheck(Account $checking, Category $category, OriginalCategory $originalCategory, CarbonInterface $monthStart): void
+    private function seedPaycheck(Account $checking, Category $category, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
         foreach ([1, 15] as $dayOfMonth) {
+            if ($dayOfMonth - 1 > $maxDay) {
+                continue;
+            }
+
             $transaction = Transaction::create([
                 'account_id' => $checking->id,
                 'name' => 'Acme Corp Payroll',
@@ -173,12 +181,13 @@ class DemoDataSeeder extends Seeder
      * @param  array<string, Category>  $categories
      * @param  array<string, OriginalCategory>  $original
      */
-    private function seedExpenses(Account $checking, array $categories, array $original, CarbonInterface $monthStart): void
+    private function seedExpenses(Account $checking, array $categories, array $original, CarbonInterface $monthStart, int $maxDay): void
     {
         foreach (self::EXPENSE_BUCKETS as $label => [, $merchants, [$min, $max], [$countMin, $countMax]]) {
             $count = random_int($countMin, $countMax);
 
             for ($i = 0; $i < $count; $i++) {
+                $day = random_int(0, $maxDay);
                 $transaction = Transaction::create([
                     'account_id' => $checking->id,
                     'name' => $merchants[array_rand($merchants)],
@@ -186,8 +195,8 @@ class DemoDataSeeder extends Seeder
                     'currency' => 'USD',
                     'type' => 'expense',
                     'original_category_id' => $original[$label]->id,
-                    'created_at' => $monthStart->copy()->addDays(random_int(0, 27)),
-                    'updated_at' => $monthStart->copy()->addDays(random_int(0, 27)),
+                    'created_at' => $monthStart->copy()->addDays($day),
+                    'updated_at' => $monthStart->copy()->addDays($day),
                 ]);
 
                 // Leave ~15% uncategorized on purpose — demo data should show the "only
@@ -199,9 +208,10 @@ class DemoDataSeeder extends Seeder
         }
     }
 
-    private function seedCreditCardActivity(Account $creditCard, Category $entertainmentCategory, OriginalCategory $originalCategory, CarbonInterface $monthStart): void
+    private function seedCreditCardActivity(Account $creditCard, Category $entertainmentCategory, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
         foreach (['Netflix', 'Spotify'] as $merchant) {
+            $day = random_int(0, $maxDay);
             $transaction = Transaction::create([
                 'account_id' => $creditCard->id,
                 'name' => $merchant,
@@ -209,15 +219,19 @@ class DemoDataSeeder extends Seeder
                 'currency' => 'USD',
                 'type' => 'expense',
                 'original_category_id' => $originalCategory->id,
-                'created_at' => $monthStart->copy()->addDays(random_int(0, 27)),
-                'updated_at' => $monthStart->copy()->addDays(random_int(0, 27)),
+                'created_at' => $monthStart->copy()->addDays($day),
+                'updated_at' => $monthStart->copy()->addDays($day),
             ]);
             $transaction->categories()->attach($entertainmentCategory->id);
         }
     }
 
-    private function seedCreditCardPayment(Account $checking, Account $creditCard, OriginalCategory $originalCategory, CarbonInterface $monthStart): void
+    private function seedCreditCardPayment(Account $checking, Account $creditCard, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
+        if ($maxDay < 20) {
+            return;
+        }
+
         $day = $monthStart->copy()->addDays(20);
 
         $outgoing = Transaction::create([
@@ -243,8 +257,12 @@ class DemoDataSeeder extends Seeder
         $outgoing->pairWith($incoming);
     }
 
-    private function seedSavingsTransfer(Account $checking, Account $savings, OriginalCategory $originalCategory, CarbonInterface $monthStart): void
+    private function seedSavingsTransfer(Account $checking, Account $savings, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
+        if ($maxDay < 2) {
+            return;
+        }
+
         $day = $monthStart->copy()->addDays(2);
 
         $outgoing = Transaction::create([
