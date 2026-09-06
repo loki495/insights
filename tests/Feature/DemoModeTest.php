@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\ResolveDemoDatabase;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -91,6 +93,38 @@ it('logs in with the one shared seeded demo login baked into the template', func
         ->assertRedirect(route('dashboard', absolute: false));
 
     $this->assertAuthenticated();
+});
+
+it('runs the demo-database swap before auth middleware resolves the authenticated user', function (): void {
+    // Regression test for a real bug: Laravel's built-in middleware priority list silently
+    // forces 'auth' (Authenticate, via the AuthenticatesRequests contract) to run before
+    // SubstituteBindings regardless of registration order - which put it before
+    // ResolveDemoDatabase too, since ResolveDemoDatabase wasn't in the priority list at all.
+    // 'guest' (RedirectIfAuthenticated) doesn't implement that contract, so it was never
+    // reordered and correctly ran after ResolveDemoDatabase. Net effect in the real, live
+    // deployment: a logged-in demo visitor was seen as authenticated by /login's guest check
+    // (correct, post-swap database) but unauthenticated by /'s auth check (wrong, pre-swap
+    // database) - an infinite / <-> /login redirect loop.
+    //
+    // A plain $this->get() feature test can't catch this: ResolveDemoDatabase's
+    // config('database.default') mutation is a global, process-wide side effect that leaks
+    // across simulated requests within the same test (there's no real per-request process
+    // boundary here like php-fpm/apache gives production) - a *prior* request's mutation masks
+    // the *current* request's own ordering bug. Assert directly on the router's actual sorted
+    // middleware order instead - the real mechanism that caused the bug.
+    $router = app('router');
+    $gatherRouteMiddleware = new ReflectionClass($router)->getMethod('gatherRouteMiddleware');
+
+    $dashboardMiddleware = array_values($gatherRouteMiddleware->invoke(
+        $router, $router->getRoutes()->getByName('dashboard')
+    ));
+    $loginMiddleware = array_values($gatherRouteMiddleware->invoke(
+        $router, $router->getRoutes()->getByName('login')
+    ));
+
+    expect(array_search(ResolveDemoDatabase::class, $dashboardMiddleware))
+        ->toBeLessThan(array_search(Authenticate::class, $dashboardMiddleware))
+        ->and(array_search(ResolveDemoDatabase::class, $loginMiddleware))->toBeLessThan(array_search(RedirectIfAuthenticated::class, $loginMiddleware));
 });
 
 it('isolates a second visitor from data created by the first', function (): void {
