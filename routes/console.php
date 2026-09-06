@@ -8,3 +8,17 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('transactions:pull')
     ->withoutOverlapping()
     ->hourly();
+
+// Demo mode only - the ->when() checks make these a no-op on every normal (non-demo)
+// deployment of this same image, same convention as config('app.demo_mode') everywhere else.
+// Unlike homie's equivalent (a static, non-date-sensitive demo dataset whose template is never
+// regenerated), insights' DemoDataSeeder anchors transaction dates to "now" at seed time (see
+// commit 8b577ca), so the template itself must also be rebuilt daily, not just have stale
+// per-visitor files cleaned up.
+Schedule::command('demo:build-template')
+    ->daily()
+    ->when(fn (): bool => (bool) config('app.demo_mode'));
+
+Schedule::command('demo:cleanup')
+    ->daily()
+    ->when(fn (): bool => (bool) config('app.demo_mode'));

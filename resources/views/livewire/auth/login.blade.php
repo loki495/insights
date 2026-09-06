@@ -3,7 +3,6 @@
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -11,7 +10,8 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 
-new #[Layout('components.layouts.auth')] class extends Component {
+new #[Layout('components.layouts.auth')] class extends Component
+{
     #[Validate('required|string|email')]
     public string $email = '';
 
@@ -119,7 +119,9 @@ new #[Layout('components.layouts.auth')] class extends Component {
         </div>
     </form>
 
-    @if (Route::has('register'))
+    {{-- Hidden in demo mode too, not just gated at the route: the link would otherwise point to
+    a route that 404s (see DisableRegistrationInDemoMode) rather than actually disappearing. --}}
+    @if (Route::has('register') && ! config('app.demo_mode'))
       <div class="space-x-1 text-center text-sm text-zinc-600 dark:text-zinc-400">
           Don't have an account?
           <flux:link :href="route('register')" wire:navigate>Sign up</flux:link>

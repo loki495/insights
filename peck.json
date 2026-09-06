@@ -33,7 +33,12 @@
             "ints",
             "localhost",
             "roadmap",
-            "autocategorize"
+            "autocategorize",
+            "homie's",
+            "laravel's",
+            "middleware's",
+            "docblock",
+            "dbs"
         ],
         "paths": []
     }

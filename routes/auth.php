@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Middleware\DisableRegistrationInDemoMode;
 use App\Livewire\Actions\Logout;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -9,7 +10,10 @@ Route::middleware('guest')->group(function () {
     Volt::route('login', 'auth.login')
         ->name('login');
 
+    // Demo mode only (config('app.demo_mode')) - see DisableRegistrationInDemoMode. The demo
+    // build shares one seeded login rather than allowing public account creation.
     Volt::route('register', 'auth.register')
+        ->middleware(DisableRegistrationInDemoMode::class)
         ->name('register');
 
     Volt::route('forgot-password', 'auth.forgot-password')
