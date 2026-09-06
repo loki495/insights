@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ResolveDemoDatabase;
 use App\Http\Middleware\UseStaticAssetsForRemoteHost;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(prepend: [
             UseStaticAssetsForRemoteHost::class,
+        ]);
+
+        // Demo mode only (config('app.demo_mode')) - no-op otherwise. Appended (not
+        // prepended) so it runs after session start but before any route-specific
+        // middleware (e.g. 'auth') that queries the users table.
+        $middleware->appendToGroup('web', [
+            ResolveDemoDatabase::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

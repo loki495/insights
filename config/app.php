@@ -155,4 +155,25 @@ return [
         explode(',', (string) env('STATIC_ASSET_HOSTS', ''))
     )),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Demo mode
+    |--------------------------------------------------------------------------
+    |
+    | Off by default - this same image also serves the real production deployment, which
+    | must never be affected by any of this. When on: every visitor gets their own private
+    | copy of demo_db_template_path instead of sharing one database with every concurrent
+    | visitor (see App\Http\Middleware\ResolveDemoDatabase), and public registration is
+    | disabled (see App\Http\Middleware\DisableRegistrationInDemoMode) so the only way in
+    | is the one seeded demo login (test@example.com / password, from DemoDataSeeder).
+    | Unlike a static demo dataset, DemoDataSeeder anchors its transaction dates to "now"
+    | at seed time (see commit 8b577ca), so demo_db_template_path is rebuilt daily rather
+    | than built once — see the demo:build-template schedule in routes/console.php.
+    |
+    */
+
+    'demo_mode' => (bool) env('DEMO_MODE', false),
+    'demo_db_template_path' => env('DEMO_DB_TEMPLATE_PATH', storage_path('demo-template.sqlite')),
+    'demo_db_storage_path' => env('DEMO_DB_STORAGE_PATH', storage_path('demo-dbs')),
+
 ];

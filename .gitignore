@@ -6,6 +6,8 @@
 /storage/*.key
 /storage/pail
 /storage/phpstan-cache
+/storage/demo-template.sqlite
+/storage/demo-dbs
 /vendor
 .env
 .env.backup
