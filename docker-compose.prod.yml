@@ -2,6 +2,7 @@ name: insights
 
 services:
   app:
+    image: ghcr.io/loki495/insights:demo
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
@@ -29,6 +30,7 @@ services:
   # page — off by default for newly-linked institutions). No queue worker service: this app has no
   # queued jobs at all (nothing implements ShouldQueue), so QUEUE_CONNECTION is unused in practice.
   scheduler:
+    image: ghcr.io/loki495/insights:demo
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
