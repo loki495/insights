@@ -10,6 +10,9 @@ on:
       - develop
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -232,3 +235,44 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker rm -f insights-prod-smoke || true
+
+  publish-ghcr:
+    runs-on: ubuntu-latest
+
+    # Only runs on a push to main (never on a PR — GHCR publishing must not run from an
+    # untrusted fork), and only after the existing test/smoke jobs have passed, so we never
+    # publish an image that hasn't been verified.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, test-mysql, docker-prod-smoke]
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.prod
+          push: true
+          tags: |
+            ghcr.io/loki495/insights:demo
+            ghcr.io/loki495/insights:sha-${{ steps.vars.outputs.short_sha }}
