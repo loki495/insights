@@ -276,3 +276,12 @@ jobs:
           tags: |
             ghcr.io/loki495/insights:demo
             ghcr.io/loki495/insights:sha-${{ steps.vars.outputs.short_sha }}
+
+      # Fires Watchtower's own update check on media instead of waiting on its
+      # 24h poll interval - see dotfiles/cd-trigger for the endpoint itself
+      # (token-gated, fire-and-forget). continue-on-error: a missed trigger
+      # just means Watchtower catches this image on its next scheduled poll -
+      # never worth failing an otherwise-successful publish over.
+      - name: Trigger Watchtower on media
+        continue-on-error: true
+        run: curl -sS -m 15 "${{ secrets.CD_TRIGGER_URL }}"
