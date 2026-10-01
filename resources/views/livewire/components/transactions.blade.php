@@ -95,7 +95,7 @@ new class extends Component
         $this->allow_accounts = $allow_accounts;
         $this->allow_running_balance = $allow_running_balance;
 
-        if ($account && $account->id) {
+        if ($account instanceof \App\Models\Account && $account->id) {
             $this->authorize('view', $account);
         }
 
@@ -104,7 +104,7 @@ new class extends Component
         $this->original_category = $original_category;
         $this->original_category_id = $original_category?->id;
 
-        if ($category && $category->id) {
+        if ($category instanceof \App\Models\Category && $category->id) {
             $this->authorize('view', $category);
         }
 
@@ -272,7 +272,7 @@ new class extends Component
 
     public function goBack(): void
     {
-        if ($this->category && $this->category->parent_id) {
+        if ($this->category instanceof \App\Models\Category && $this->category->parent_id) {
             $this->category_id = $this->category->parent_id;
             $this->category = $this->findOwnedCategory($this->category_id);
         } else {

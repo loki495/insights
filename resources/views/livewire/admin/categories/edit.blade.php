@@ -24,7 +24,7 @@ new class extends Component
 
     public function mount(?Category $category): void
     {
-        if ($category && $category->exists) {
+        if ($category instanceof \App\Models\Category && $category->exists) {
             $this->authorize('update', $category);
         } else {
             $this->authorize('create', Category::class);
@@ -46,7 +46,7 @@ new class extends Component
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        if ($this->category && $this->category->exists) {
+        if ($this->category instanceof \App\Models\Category && $this->category->exists) {
             $this->authorize('update', $this->category);
 
             $this->category = EditUserCategoryAction::run(
