@@ -47,7 +47,7 @@ new class extends Component
 
     public function linkAccount(?LinkedAccount $linkedAccount = null): void
     {
-        if ($linkedAccount && $linkedAccount->id) {
+        if ($linkedAccount instanceof \App\Models\LinkedAccount && $linkedAccount->id) {
             $this->authorize('update', $linkedAccount);
         }
 
@@ -65,7 +65,7 @@ new class extends Component
             ],
         ];
 
-        if ($linkedAccount && $linkedAccount->id > 0) {
+        if ($linkedAccount instanceof \App\Models\LinkedAccount && $linkedAccount->id > 0) {
             $data['access_token'] = $linkedAccount->access_token;
         }
 
