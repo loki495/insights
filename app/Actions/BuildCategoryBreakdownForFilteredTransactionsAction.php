@@ -50,9 +50,7 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
                 $name = 'Uncategorized';
                 $color = '#9ca3af';
 
-                if (! isset($chart_data[$id])) {
-                    $chart_data[$id] = ['id' => $id, 'label' => $name, 'color' => $color, 'total' => 0];
-                }
+                $chart_data[$id] ??= ['id' => $id, 'label' => $name, 'color' => $color, 'total' => 0];
                 $chart_data[$id]['total'] += $transaction->amount;
                 $total_sum += abs($transaction->amount);
 
@@ -97,14 +95,12 @@ final class BuildCategoryBreakdownForFilteredTransactionsAction
                 }
 
                 if ($target) {
-                    if (! isset($chart_data[$target->id])) {
-                        $chart_data[$target->id] = [
-                            'id' => $target->id,
-                            'label' => $target->name,
-                            'color' => $target->color ?: '#3b82f6',
-                            'total' => 0,
-                        ];
-                    }
+                    $chart_data[$target->id] ??= [
+                        'id' => $target->id,
+                        'label' => $target->name,
+                        'color' => $target->color ?: '#3b82f6',
+                        'total' => 0,
+                    ];
                     $chart_data[$target->id]['total'] += $transaction->amount;
                     $total_sum += abs($transaction->amount);
                 }

@@ -35,12 +35,12 @@ new class extends Component
 
     public function mount(?Account $account, ?Transaction $transaction): void
     {
-        if ($account && $account->id) {
+        if ($account instanceof \App\Models\Account && $account->id) {
             $this->authorize('view', $account);
             $this->account_id = $account->id;
         }
 
-        if ($transaction && $transaction->id) {
+        if ($transaction instanceof \App\Models\Transaction && $transaction->id) {
             $this->authorize('view', $transaction);
             $this->transaction_id = $transaction->id;
             $this->account_id = $transaction->account_id;

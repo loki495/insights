@@ -33,7 +33,7 @@ new class extends Component
 
     public function mount(?CategoryRule $categoryRule): void
     {
-        if ($categoryRule && $categoryRule->exists) {
+        if ($categoryRule instanceof \App\Models\CategoryRule && $categoryRule->exists) {
             $this->authorize('update', $categoryRule);
 
             $this->categoryRule = $categoryRule;
@@ -160,7 +160,7 @@ new class extends Component
      */
     private function persistRule(array $validated): CategoryRule
     {
-        if ($this->categoryRule) {
+        if ($this->categoryRule instanceof \App\Models\CategoryRule) {
             $this->authorize('update', $this->categoryRule);
 
             $rule = UpdateCategoryRule::run(
