@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AutoLoginForTrustedRequests;
 use App\Http\Middleware\ResolveDemoDatabase;
 use App\Http\Middleware\UseStaticAssetsForRemoteHost;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // middleware (e.g. 'auth') that queries the users table.
         $middleware->appendToGroup('web', [
             ResolveDemoDatabase::class,
+            AutoLoginForTrustedRequests::class,
         ]);
 
         // Registration order above is NOT execution order: Laravel's built-in middleware
@@ -46,6 +48,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             before: AuthenticatesRequests::class,
             prepend: ResolveDemoDatabase::class,
+        );
+        // Inserted directly before the contract again, so it lands after ResolveDemoDatabase.
+        $middleware->prependToPriorityList(
+            before: AuthenticatesRequests::class,
+            prepend: AutoLoginForTrustedRequests::class,
         );
     })
     ->withExceptions(function (Exceptions $exceptions) {
