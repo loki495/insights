@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Volt\Volt as LivewireVolt;
+use Tests\TestCase;
 
 /**
  * Feature-level test of ResolveDemoDatabase actually composing with a real route (insights
@@ -169,4 +170,65 @@ it('leaves registration open when demo mode is off', function (): void {
 
     $this->get('/register')->assertOk();
     $this->get('/login')->assertOk()->assertSee('Sign up');
+});
+
+it('does not auto-login by default, even from a private address with no Cloudflare headers', function (): void {
+    /** @var TestCase $this */
+    $this->withoutVite();
+    $this->call('GET', '/', server: ['REMOTE_ADDR' => '192.168.1.50'])->assertRedirect('/login');
+});
+
+it('auto-logs in the demo user for a LAN request when auto_login_lan is on', function (): void {
+    /** @var TestCase $this */
+    $this->withoutVite();
+    config(['app.auto_login_lan' => true]);
+
+    $this->call('GET', '/', server: ['REMOTE_ADDR' => '192.168.1.50'])->assertOk();
+
+    $this->assertAuthenticated();
+});
+
+it('does not auto-login a non-private address even with no Cloudflare headers', function (): void {
+    /** @var TestCase $this */
+    $this->withoutVite();
+    config(['app.auto_login_lan' => true]);
+
+    $this->call('GET', '/', server: ['REMOTE_ADDR' => '8.8.8.8'])->assertRedirect('/login');
+});
+
+it('does not give a Cloudflare-routed request the LAN auto-login', function (): void {
+    /** @var TestCase $this */
+    $this->withoutVite();
+    config(['app.auto_login_lan' => true]);
+
+    $this->call('GET', '/', server: ['REMOTE_ADDR' => '192.168.1.50', 'HTTP_CF_CONNECTING_IP' => '1.2.3.4'])
+        ->assertRedirect('/login');
+});
+
+it('auto-logs in when Cloudflare Access asserts the configured owner email', function (): void {
+    /** @var TestCase $this */
+    $this->withoutVite();
+    config(['app.auto_login_owner_email' => 'owner@example.com']);
+
+    $this->withHeaders(['CF-Connecting-IP' => '1.2.3.4', 'Cf-Access-Authenticated-User-Email' => 'owner@example.com'])
+        ->get('/')
+        ->assertOk();
+
+    $this->assertAuthenticated();
+});
+
+it('does not auto-login on a mismatched or client-supplied identity header', function (): void {
+    /** @var TestCase $this */
+    $this->withoutVite();
+    config(['app.auto_login_owner_email' => 'owner@example.com']);
+
+    $this->withHeaders(['CF-Connecting-IP' => '1.2.3.4', 'Cf-Access-Authenticated-User-Email' => 'other@example.com'])
+        ->get('/')
+        ->assertRedirect('/login');
+
+    config(['app.auto_login_owner_email' => null]);
+
+    $this->withHeaders(['CF-Connecting-IP' => '1.2.3.4', 'Cf-Access-Authenticated-User-Email' => 'owner@example.com'])
+        ->get('/')
+        ->assertRedirect('/login');
 });
