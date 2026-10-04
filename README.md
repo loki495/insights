@@ -7,6 +7,9 @@
 A Laravel + Livewire application for aggregating and tracking personal financial data across
 multiple bank accounts and credit cards using [Plaid](https://plaid.com/).
 
+**Live demo:** [insights-demo.ac495.net](https://insights-demo.ac495.net) (sample data, sign in
+with `test@example.com` / `password`; each visitor gets their own copy, reset daily).
+
 ## Screenshots
 
 | Dashboard | Transaction Search |
@@ -26,8 +29,11 @@ account](docs/SETUP.md#exploring-without-a-plaid-account).
 
 ## Status
 
-Work in progress. Core functionality — account linking, transaction sync, categorization, type
-classification, autocategorize rules, and reporting — is implemented. Budgeting tools are not
+Public beta for early user feedback, not mature financial software. Try the sample dataset
+before connecting real accounts, and keep backups of any data you want to retain. Linking real
+banks needs your own Plaid developer account, and Plaid must approve it for production access
+before it returns real institutions. Core functionality (account linking, transaction sync,
+categorization, type classification, autocategorize rules, and reporting) is implemented. Budgeting tools are not
 built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
 
 ## Features
@@ -112,7 +118,7 @@ to try it out (see below); you'll only need one once you're ready to link a real
 see [Linking a bank account](docs/SETUP.md#linking-a-bank-account).
 
 ```bash
-git clone <this-repo> insights && cd insights
+git clone https://github.com/loki495/insights.git insights && cd insights
 cp .env.example .env
 ```
 
@@ -136,13 +142,25 @@ Want to develop/contribute instead? See [docs/SETUP.md](docs/SETUP.md) for the l
 setup (hot-reloading, debug output) as well as bare-metal install options and running behind your
 own reverse proxy.
 
+## Feedback
+
+Start with the [sample-data quick start](#quick-start); no bank connection is needed.
+Please [open an issue](https://github.com/loki495/insights/issues) with your version or commit,
+installation method, expected behavior, actual behavior, and steps to reproduce. The most useful
+early feedback is where setup becomes unclear, whether categorization and transfer matching make
+sense, and which reports help you understand the sample data.
+
+Use sample transactions in screenshots. Never include bank data, access tokens, `.env`, or a
+database backup; report suspected vulnerabilities through [SECURITY.md](SECURITY.md).
+See [backup and upgrades](docs/SETUP.md#backup-restore-and-upgrades) before using real data.
+
 ## Testing
 
 ```bash
 composer test   # Rector (dry-run) -> Pint -> peck -> PHPStan -> Pest (unit + browser)
 ```
 
-Runs against both SQLite and MySQL in CI. Coverage floor is 95% (currently ~99.7%) — see
+Runs against both SQLite and MySQL in CI. Coverage floor is 95% (the badge above shows today's figure); see
 [CONTRIBUTING.md](CONTRIBUTING.md#before-opening-a-pr) for the full breakdown, including
 the Pest browser-test setup.
 

@@ -9,6 +9,8 @@ overview; this doc is the detailed operator's manual.
 - [Getting Started (local development)](#getting-started-local-development)
 - [Exploring without a Plaid account](#exploring-without-a-plaid-account)
 - [Password reset / mail delivery](#password-reset--mail-delivery)
+- [Backup, restore, and upgrades](#backup-restore-and-upgrades)
+- [Hosting a disposable public demo](#hosting-a-disposable-public-demo)
 - [Maintenance commands](#maintenance-commands)
 - [Linking a bank account](#linking-a-bank-account)
 
@@ -96,7 +98,7 @@ if you'd rather clean them up.
 ### Bare metal
 
 ```bash
-git clone <this-repo> insights && cd insights
+git clone https://github.com/loki495/insights.git insights && cd insights
 cp .env.example .env
 composer install --no-dev --optimize-autoloader
 npm ci
@@ -140,7 +142,7 @@ you're ready to actually link an account (see below).
 ### Option A — Docker (recommended)
 
 ```bash
-git clone <this-repo> insights && cd insights
+git clone https://github.com/loki495/insights.git insights && cd insights
 cp .env.example .env
 ```
 
@@ -206,7 +208,7 @@ hostname always serves from `public/build`, never the dev server.
 ### Option C — Bare metal (no Docker)
 
 ```bash
-git clone <this-repo> insights && cd insights
+git clone https://github.com/loki495/insights.git insights && cd insights
 cp .env.example .env
 composer install
 npm install
@@ -241,6 +243,108 @@ php artisan db:seed --class=DemoDataSeeder
 This creates (or reuses) a `test@example.com` / `password` login. It's not part of the default
 `db:seed` run, so it never runs against a real user's database by accident. The demo institution's
 "Pull Data" button is hidden — there's no real Plaid item behind it, so pulling would just fail.
+
+## Backup, restore, and upgrades
+
+These commands apply to the default SQLite production Compose installation. They use the
+existing Compose project and its named volume; run them from the same checkout and with the
+same project name as installation. For an external MySQL database, use its native consistent
+backup/restore procedure instead of treating the SQLite archive as a database backup.
+
+### Back up before an update
+
+Save the current commit (`git rev-parse HEAD`), image identity
+(`docker compose -f docker-compose.prod.yml images`), and your `.env` in private backup storage.
+The **original `APP_KEY` is required** to decrypt stored Plaid tokens after a restore. Store the
+configuration and backup securely outside the public repository; neither belongs in an issue.
+
+Stop both writers before archiving SQLite, including any journal/WAL files:
+
+```bash
+umask 077
+backup_dir="$(mktemp -d "${TMPDIR:-/tmp}/insights-backup.XXXXXX")"
+cp .env "$backup_dir/environment.env"
+docker compose -f docker-compose.prod.yml stop scheduler app
+docker compose -f docker-compose.prod.yml run --rm --no-deps -T --entrypoint tar app \
+  -C /var/www/html/storage/app -czf - . > "$backup_dir/storage-app.tar.gz"
+tar -tzf "$backup_dir/storage-app.tar.gz" >/dev/null
+docker compose -f docker-compose.prod.yml up -d --wait
+```
+
+Check every command succeeds. If archive creation or validation fails, restart the existing
+services and fix the backup before upgrading. Copy the backup directory to durable private
+storage: temporary storage is not a retention policy. The archive contains sensitive financial
+data and encrypted tokens; the environment file contains the encryption key and credentials.
+
+### Upgrade
+
+Read the target version's release notes and retain the old image/commit for recovery. After a
+verified backup, stop `scheduler` and `app`, check out the intended version, then run:
+
+```bash
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d --wait
+docker compose -f docker-compose.prod.yml exec -u www-data app php artisan migrate:status
+```
+
+Startup applies pending migrations. Check login, existing transactions, and a report before
+resuming normal use. Do not run `migrate:fresh`, reseed a real database, regenerate `APP_KEY`,
+or run `docker compose down -v`: these can destroy data or make tokens unreadable.
+
+### Restore / failed upgrade
+
+Test recovery in a separate Compose project with a fresh volume and an unused loopback port
+first. Use the **saved application version and original environment/key**, with real Plaid
+credentials removed for the rehearsal and the scheduler stopped. Extract only your own trusted
+backup archive, into the fresh volume:
+
+```bash
+export COMPOSE_PROJECT_NAME=insights-restore-test APP_PORT=8099
+docker compose -f docker-compose.prod.yml run --rm --no-deps -T --entrypoint tar app \
+  -C /var/www/html/storage/app -xzf - < /private/path/storage-app.tar.gz
+docker compose -f docker-compose.prod.yml up -d --wait app
+```
+
+The project name gives the rehearsal its own volume (`insights-restore-test_insights-database`)
+instead of extracting over the live one; remove it afterwards with
+`docker compose -f docker-compose.prod.yml down -v` while that variable is still set. A real
+restore runs the same `tar` command in the live project after stopping `scheduler` and `app` and
+moving the failed volume's contents aside, never extracting on top of them.
+
+Verify expected account/transaction counts and login before considering the backup usable.
+A database migrated by newer code may not work with older code: roll back the application and
+its matching pre-upgrade backup together. Keep the failed volume intact until recovery is
+confirmed. Starting `scheduler` against restored real data can contact Plaid; do that only when
+you intend to resume synchronization.
+
+## Hosting a disposable public demo
+
+`DEMO_MODE=true` differs from simply running `DemoDataSeeder` in a normal installation:
+each visitor receives a separate SQLite copy, selected by an encrypted cookie. Visitors use the
+same sample login (`test@example.com` / `password`), but edits are kept in their own database
+copy. Registration is disabled. This is disposable sample data, not private financial storage.
+
+Use a dedicated deployment with no real Plaid credentials or real user data. Set:
+
+```dotenv
+DEMO_MODE=true
+SESSION_DRIVER=file
+DEMO_DB_TEMPLATE_PATH=/var/www/html/storage/app/demo-template.sqlite
+DEMO_DB_STORAGE_PATH=/var/www/html/storage/app/demo-dbs
+```
+
+After the initial migration, prepare the template before allowing visitors:
+
+```bash
+docker compose -f docker-compose.prod.yml exec -u www-data app php artisan demo:build-template
+```
+
+The scheduler rebuilds the template daily to keep sample transaction dates current and removes
+visitor copies whose file modification time is older than 24 hours. Existing visitors may lose
+their edits after cleanup; a later request creates a fresh copy. Clearing the demo cookie also
+starts a fresh copy. Persistent paths above keep both the template and copies in the mounted
+volume. Use HTTPS and monitor disk usage on a public demo; per-visitor copies are not a resource
+quota or a substitute for rate limiting at your proxy.
 
 ## Password reset / mail delivery
 
