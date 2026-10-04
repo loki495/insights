@@ -49,7 +49,10 @@ Edit `.env`: at minimum set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` t
 domain, and your Plaid credentials (see [Linking a bank account](#linking-a-bank-account)). Leave
 `APP_KEY` blank for now. Optionally set `LOG_CHANNEL=stderr` so application errors show up in
 `docker logs` alongside PHP's own error log (already routed to stderr). Optionally set
-`APP_PORT=9000` (or similar) to change the port the container publishes — defaults to 8000.
+`APP_PORT=9000` (or similar) to change the port the container publishes — defaults to 8000 on `127.0.0.1` only.
+Keep that loopback binding when a reverse proxy runs on the host. Set `APP_BIND_ADDRESS`
+explicitly only when another host must reach the app, and restrict access with a firewall and
+TLS/authentication proxy. Never expose the sample-data login on a deployment holding real data.
 
 ```bash
 docker compose -f docker-compose.prod.yml build
