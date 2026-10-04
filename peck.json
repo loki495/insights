@@ -38,7 +38,10 @@
             "laravel's",
             "middleware's",
             "docblock",
-            "dbs"
+            "dbs",
+            "cidr",
+            "loopback",
+            "addr"
         ],
         "paths": []
     }

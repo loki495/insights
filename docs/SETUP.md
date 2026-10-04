@@ -55,6 +55,9 @@ domain, and your Plaid credentials (see [Linking a bank account](#linking-a-bank
 Keep that loopback binding when a reverse proxy runs on the host. Set `APP_BIND_ADDRESS`
 explicitly only when another host must reach the app, and restrict access with a firewall and
 TLS/authentication proxy. Never expose the sample-data login on a deployment holding real data.
+Behind a reverse proxy that terminates TLS, set `TRUSTED_PROXIES` to the address the proxy
+connects from (for a proxy on the host, the Compose network's subnet, shown by
+`docker network inspect insights_default`), so the app sees the real client IP and https. Never `*`.
 
 ```bash
 docker compose -f docker-compose.prod.yml build
@@ -193,7 +196,7 @@ proxy at the `app` service (port 80) and `vite` service (port 5173) on whatever 
 If you use Traefik with an external network named `web`, the existing labels will pick it up
 automatically. Set `VITE_HMR_HOST` (and `VITE_HMR_CLIENT_PORT` if your proxy isn't on port 80) in
 `.env` to your chosen hostname so Vite's hot-reload websocket connects correctly — see the comments
-in `.env.example`.
+in `.env.example`. Set `TRUSTED_PROXIES` to the proxy's address or network if it terminates TLS.
 
 ### Remote access via Cloudflare Tunnel
 

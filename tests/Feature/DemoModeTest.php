@@ -205,30 +205,16 @@ it('does not give a Cloudflare-routed request the LAN auto-login', function (): 
         ->assertRedirect('/login');
 });
 
-it('auto-logs in when Cloudflare Access asserts the configured owner email', function (): void {
+it('never auto-logs in a request claiming a Cloudflare Access identity', function (): void {
     /** @var TestCase $this */
     $this->withoutVite();
-    config(['app.auto_login_owner_email' => 'owner@example.com']);
+    config(['app.auto_login_lan' => true]);
 
-    $this->withHeaders(['CF-Connecting-IP' => '1.2.3.4', 'Cf-Access-Authenticated-User-Email' => 'owner@example.com'])
-        ->get('/')
-        ->assertOk();
+    $this->call('GET', '/', server: [
+        'REMOTE_ADDR' => '192.168.1.50',
+        'HTTP_CF_RAY' => 'abc123',
+        'HTTP_CF_ACCESS_AUTHENTICATED_USER_EMAIL' => 'test@example.com',
+    ])->assertRedirect('/login');
 
-    $this->assertAuthenticated();
-});
-
-it('does not auto-login on a mismatched or client-supplied identity header', function (): void {
-    /** @var TestCase $this */
-    $this->withoutVite();
-    config(['app.auto_login_owner_email' => 'owner@example.com']);
-
-    $this->withHeaders(['CF-Connecting-IP' => '1.2.3.4', 'Cf-Access-Authenticated-User-Email' => 'other@example.com'])
-        ->get('/')
-        ->assertRedirect('/login');
-
-    config(['app.auto_login_owner_email' => null]);
-
-    $this->withHeaders(['CF-Connecting-IP' => '1.2.3.4', 'Cf-Access-Authenticated-User-Email' => 'owner@example.com'])
-        ->get('/')
-        ->assertRedirect('/login');
+    $this->assertGuest();
 });

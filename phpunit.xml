@@ -36,5 +36,13 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Deployment-specific; a developer's .env or container environment must not leak into tests.
+             Pinned as <server> too, since Laravel reads $_SERVER first. -->
+        <env name="AUTO_LOGIN_EMAIL" value="" force="true"/>
+        <env name="AUTO_LOGIN_LAN" value="false" force="true"/>
+        <env name="TRUSTED_PROXIES" value="" force="true"/>
+        <server name="AUTO_LOGIN_EMAIL" value="" force="true"/>
+        <server name="AUTO_LOGIN_LAN" value="false" force="true"/>
+        <server name="TRUSTED_PROXIES" value="" force="true"/>
     </php>
 </phpunit>
