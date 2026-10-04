@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Services\Plaid\PlaidService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Number;
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureCommands();
         $this->configureModels();
         $this->configureUrl();
+        $this->configureProxies();
         $this->configureVite();
         $this->configureNumbers();
     }
@@ -68,6 +70,14 @@ class AppServiceProvider extends ServiceProvider
         if (! $this->app->isLocal() && str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
+    }
+
+    public function configureProxies(): void
+    {
+        $proxies = config('app.trusted_proxies');
+
+        // Laravel only treats the bare string "*" as "trust any peer"; inside an array it matches nothing.
+        TrustProxies::at(in_array('*', $proxies, true) ? '*' : $proxies);
     }
 
     public function configureVite(): void

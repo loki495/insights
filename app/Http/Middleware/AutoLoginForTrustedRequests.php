@@ -8,6 +8,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,15 +17,20 @@ use Symfony\Component\HttpFoundation\Response;
  * config('app.auto_login_email') - never creates an account. In demo mode that defaults to the shared
  * demo account.
  *
- * Never trusts $request->ip()/X-Forwarded-For alone (a client can append to that chain). A request counts
- * as LAN when auto_login_lan is on, it carries no Cloudflare edge header (CF-Connecting-IP/CF-Ray, which
- * only Cloudflare adds) and its peer is a private address - only valid when nothing but the tunnel and the
- * LAN can reach this app. A request that did come through Cloudflare is trusted only when Cloudflare Access
- * itself asserted auto_login_owner_email (Cf-Access-Authenticated-User-Email).
+ * A request counts as LAN when auto_login_lan is on, it carries no Cloudflare edge header (CF-Connecting-IP/
+ * CF-Ray) and its client IP is private. That IP is the direct peer unless the peer is in trusted_proxies, so
+ * it's only enabled while every trusted proxy lies inside a private or loopback block: any entry reaching
+ * public space ("*", REMOTE_ADDR, 0.0.0.0/0, a public range) would let a client forge a LAN address through
+ * X-Forwarded-For. A request that came through Cloudflare is never auto-logged-in: anyone reaching the app
+ * directly could forge its headers. Only valid when nothing but the tunnel and the LAN can reach this app.
  * Must run after StartSession (and ResolveDemoDatabase in demo mode) and before the auth gate.
  */
 class AutoLoginForTrustedRequests
 {
+    private const array PRIVATE_BLOCKS = [
+        '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8', 'fc00::/7', '::1/128',
+    ];
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -52,18 +58,41 @@ class AutoLoginForTrustedRequests
 
     private function isTrusted(Request $request): bool
     {
-        if (! $request->headers->has('CF-Connecting-IP') && ! $request->headers->has('CF-Ray')) {
-            $ip = $request->ip();
-
-            return (bool) config('app.auto_login_lan')
-                && $ip !== null
-                && filter_var($ip, FILTER_VALIDATE_IP) !== false
-                && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE) === false;
+        if (! config('app.auto_login_lan')
+            || ! $this->onlyPrivateProxies(config('app.trusted_proxies'))
+            || $request->headers->has('CF-Connecting-IP')
+            || $request->headers->has('CF-Ray')) {
+            return false;
         }
 
-        $ownerEmail = config('app.auto_login_owner_email');
+        $ip = $request->ip();
 
-        return $ownerEmail !== null && $ownerEmail !== ''
-            && $request->header('Cf-Access-Authenticated-User-Email') === $ownerEmail;
+        return $ip !== null
+            && filter_var($ip, FILTER_VALIDATE_IP) !== false
+            && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE) === false;
+    }
+
+    /**
+     * A CIDR lies inside a block when its prefix is at least the block's and its address is in the block.
+     *
+     * @param  list<string>  $proxies
+     */
+    private function onlyPrivateProxies(array $proxies): bool
+    {
+        foreach ($proxies as $proxy) {
+            $address = strstr($proxy, '/', true) ?: $proxy;
+            $bits = $address === $proxy ? (str_contains($proxy, ':') ? '128' : '32') : substr($proxy, strlen($address) + 1);
+
+            $inside = ctype_digit($bits) && array_any(
+                self::PRIVATE_BLOCKS,
+                fn (string $block): bool => (int) $bits >= (int) explode('/', $block)[1] && IpUtils::checkIp($address, $block),
+            );
+
+            if (! $inside) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

@@ -166,15 +166,32 @@ the Pest browser-test setup.
 
 ## Owner auto-login (optional)
 
-Off by default. For a single-owner deployment you can skip the login page for yourself with three `.env` settings:
+Off by default. On a single-owner deployment you can skip the login page from your own network
+with two `.env` settings:
 
 | Variable | Effect |
 |---|---|
 | `AUTO_LOGIN_EMAIL` | An existing account to sign in as. It is never created. In demo mode it defaults to the demo account. |
 | `AUTO_LOGIN_LAN=true` | Signs that account in for requests that carry no Cloudflare edge header (`CF-Connecting-IP`/`CF-Ray`) and come from a private address. |
-| `AUTO_LOGIN_OWNER_EMAIL` | Signs it in when Cloudflare Access itself reports that email (`Cf-Access-Authenticated-User-Email`). |
 
-Only enable `AUTO_LOGIN_LAN` when nothing but your tunnel and your LAN can reach the app (no public port-forward), since that is what makes "no Cloudflare header" mean "on the LAN". `X-Forwarded-For` is never trusted, because a client can append to it. Apply a change with `docker compose up -d`; a plain image pull keeps the old environment. See `AutoLoginForTrustedRequests`.
+This trusts the network path, not a credential: **everyone who can reach the app from a private
+address is treated as you.** Before enabling it:
+
+- **Nothing but your LAN and your tunnel may reach the app.** No public port-forward, and no
+  `APP_BIND_ADDRESS` reachable from outside.
+- **A request that came through Cloudflare is never auto-logged-in**, Cloudflare Access included.
+  Those headers can be forged by anyone who reaches the app directly, so it uses the normal login.
+- **The address checked is Laravel's client IP:** the direct peer, unless that peer is listed in
+  `TRUSTED_PROXIES`, in which case it's the address that proxy put in `X-Forwarded-For`.
+- **Behind a reverse proxy (Traefik, nginx, Caddy), set `TRUSTED_PROXIES` to it.** Left blank,
+  every request through the proxy arrives from its private Docker address and counts as LAN,
+  whoever sent it.
+- **List only private or loopback addresses in `TRUSTED_PROXIES`.** An entry reaching public space
+  (`*`, `0.0.0.0/0`, a public range) would let a client claim a LAN address, so the app turns
+  auto-login off when it sees one.
+
+Apply a change with `docker compose up -d`; a plain image pull keeps the old environment. See
+`AutoLoginForTrustedRequests`.
 
 ## Current limitations
 
