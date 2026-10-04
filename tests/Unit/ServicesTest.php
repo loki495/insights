@@ -2,17 +2,23 @@
 
 declare(strict_types=1);
 
+beforeEach(fn () => fakeCurl(plaidStatusResponse()));
+
+afterEach(fn () => stopFakingCurl());
+
 it('calls existing service endpoint', function (): void {
     $plaid = plaid('status');
 
-    $response = fetchPlaidStatusWithRetry($plaid);
+    $response = $plaid->getAPIStatus();
 
     expect($response)
         ->toHaveKeys([
             'status.description',
             'page.name',
         ])
-        ->and($response['page']['name'])->toBe('Plaid');
+        ->and($response['page']['name'])->toBe('Plaid')
+        ->and($GLOBALS['__curlMockSetopts'][CURLOPT_URL])->toBe('https://status.plaid.com/api/v2/status.json')
+        ->and($GLOBALS['__curlMockSetopts'][CURLOPT_CUSTOMREQUEST])->toBe('GET');
 
 });
 

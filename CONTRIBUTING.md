@@ -50,13 +50,10 @@ what "passing" means here:
   typos.
 - **PHPStan** runs at level 6 with a type-coverage floor (not the default 99%) — see the comments
   in `phpstan.neon.dist` for why. Raising these thresholds is welcome; lowering them isn't.
-- **Pest coverage** has a `--min=95` floor for the same reason — it's well below today's real
-  number (~99.7% as of this writing), not an aspirational one. Adding tests that raise it is
-  welcome. Two tests (`tests/Unit/Plaid/StatusTest.php`, `tests/Unit/ServicesTest.php`) make real
-  network calls to Plaid's status API — they'll fail outright offline or behind a restrictive
-  proxy/sandbox, and separately can also fail specifically under `--coverage`
-  (instrumentation overhead pushing the live HTTP call past its timeout) despite passing on their
-  own — neither is a sign your change broke something, if you hit it.
+- **Pest coverage** has a `--min=95` floor for the same reason: it sits below the real number
+  (see the Codecov badge), not above it. Adding tests that raise it is welcome. The suite makes no
+  network calls; HTTP to Plaid goes through `App\Services\Curl`, which tests fake with
+  `fakeCurl()` (`tests/Pest.php`, `tests/Support/CurlFake.php`).
 - **Tests must never be deleted, weakened, or skipped to force a pass.** If a test fails, either
   the code or the test's expectations need to change deliberately — not the assertions being
   loosened to make red go green.
