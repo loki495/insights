@@ -4,6 +4,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # From PHPStan 2.2.10, result-cache meta extensions run before bootstrap files, so
+      # Bladestan's (0.11.7) asks for Laravel's view factory before Larastan has booted the app
+      # and every analysis crashes with "Target [Illuminate\Contracts\View\Factory] is not
+      # instantiable". composer.json caps phpstan/phpstan below 2.2.10; the newest Rector and
+      # Larastan releases need 2.2.14+. Drop these once a Bladestan release resolves the view
+      # paths lazily, then lift the cap.
+      - dependency-name: "phpstan/phpstan"
+        versions: [">=2.2.10"]
+      - dependency-name: "rector/rector"
+        versions: [">=2.6.5"]
+      - dependency-name: "larastan/larastan"
+        versions: [">=3.12.1"]
 
   - package-ecosystem: "npm"
     directory: "/"

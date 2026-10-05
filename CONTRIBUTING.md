@@ -50,6 +50,8 @@ what "passing" means here:
   typos.
 - **PHPStan** runs at level 6 with a type-coverage floor (not the default 99%) — see the comments
   in `phpstan.neon.dist` for why. Raising these thresholds is welcome; lowering them isn't.
+  `composer.json` caps PHPStan below 2.2.10 because newer releases crash on boot with Bladestan;
+  `.github/dependabot.yml` explains it and when the cap can go.
 - **Pest coverage** has a `--min=95` floor for the same reason: it sits below the real number
   (see the Codecov badge), not above it. Adding tests that raise it is welcome. The suite makes no
   network calls; HTTP to Plaid goes through `App\Services\Curl`, which tests fake with
