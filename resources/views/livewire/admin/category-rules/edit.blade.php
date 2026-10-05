@@ -262,7 +262,7 @@ new class extends Component
 
             <div class="flex flex-col gap-2 p-3 rounded-xl border border-zinc-300 dark:border-zinc-600" wire:key="group-{{ $groupIndex }}">
                 <div class="flex items-center justify-between gap-2">
-                    <flux:select wire:model.live="groups.{{ $groupIndex }}.match_type" class="w-56">
+                    <flux:select wire:model.live="groups.{{ $groupIndex }}.match_type" class="w-fit">
                         <flux:select.option value="all">ALL of these conditions match</flux:select.option>
                         <flux:select.option value="any">ANY of these conditions match</flux:select.option>
                     </flux:select>
