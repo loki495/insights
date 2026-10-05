@@ -7,7 +7,6 @@ apt-get install -y --no-install-recommends \
     curl \
     wget \
     openssh-client \
-    openssh-server \
     git \
     vim-tiny \
     jq \
@@ -26,9 +25,6 @@ apt-get install -y --no-install-recommends \
     zip \
     vim \
     unzip
-
-# Enable ssh
-sudo systemctl start ssh && sudo systemctl enable ssh
 
 # Configure git
 git config --global --add safe.directory /var/www/html
@@ -55,39 +51,7 @@ EOF
 # Update Apache document root
 sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
-# Determine Debian release
-release=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2)
-
-# Fix sources list for old Debian releases
-if [ "$release" = "stretch" ] || [ "$release" = "buster" ]; then
-    sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/sources.list
-    sed -i '/security.debian.org/d' /etc/apt/sources.list
-
-    if [ -d /etc/apt/sources.list.d ]; then
-        for f in /etc/apt/sources.list.d/*; do
-            [ -f "$f" ] || continue
-            sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' "$f"
-            sed -i '/security.debian.org/d' "$f"
-        done
-    fi
-
-elif [ "$release" = "bullseye" ]; then
-    sed -i 's|archive.debian.org/debian|deb.debian.org/debian|g' /etc/apt/sources.list
-    sed -i 's|http://deb.debian.org/debian-security|http://security.debian.org/debian-security|g' /etc/apt/sources.list
-fi
-
-# Disable Check-Valid-Until
-echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-
-# Determine PHP version
-phpver=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
-
-# Configure GD extension
-if [ "$phpver" = "7.0" ] || [ "$phpver" = "7.1" ] || [ "$phpver" = "7.2" ] || [ "$phpver" = "7.3" ]; then
-    docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ --with-freetype-dir=/usr/include/
-else
-    docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp
-fi
+docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp
 
 # Install PHP extensions
 docker-php-ext-install gd mysqli pdo_mysql zip intl sockets pcntl
