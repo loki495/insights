@@ -217,3 +217,8 @@ this — including commercially — but if you distribute a modified version or 
 service, you have to make that version's source available under the same license too, with no
 carve-out for add-ons or integrations. See [CONTRIBUTING.md](CONTRIBUTING.md) if you're
 contributing.
+
+Third-party files keep their own licenses: `resources/views/flux/` holds Flux component views
+published with `flux:publish` (inherited from the MIT Laravel Livewire starter kit), which stay
+under [Flux's license](https://fluxui.dev), and its icon views are [Lucide](https://lucide.dev)
+icons (ISC).
