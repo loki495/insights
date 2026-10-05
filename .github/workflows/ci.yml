@@ -78,7 +78,7 @@ jobs:
         image: mysql:8
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: insights
+          MYSQL_DATABASE: insights_test
         ports:
           - 3306:3306
         options: >-
@@ -124,7 +124,7 @@ jobs:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_DATABASE: insights
+          DB_DATABASE: insights_test
           DB_USERNAME: root
           DB_PASSWORD: root
         run: php artisan migrate --force
@@ -134,7 +134,7 @@ jobs:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_DATABASE: insights
+          DB_DATABASE: insights_test
           DB_USERNAME: root
           DB_PASSWORD: root
         run: vendor/bin/pest --colors=always --parallel --testsuite=Feature,Unit

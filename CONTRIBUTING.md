@@ -54,6 +54,9 @@ what "passing" means here:
   (see the Codecov badge), not above it. Adding tests that raise it is welcome. The suite makes no
   network calls; HTTP to Plaid goes through `App\Services\Curl`, which tests fake with
   `fakeCurl()` (`tests/Pest.php`, `tests/Support/CurlFake.php`).
+- **The suite refuses to touch a real database.** `tests/TestCase.php` stops every test unless the
+  connection is in-memory SQLite or a database whose name ends in `_test`, so a `DB_*` value in
+  your `.env` or container environment can't send it at real data.
 - **Tests must never be deleted, weakened, or skipped to force a pass.** If a test fails, either
   the code or the test's expectations need to change deliberately — not the assertions being
   loosened to make red go green.
