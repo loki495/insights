@@ -74,6 +74,11 @@ persists the database in a named volume (`insights-database`), so `docker compos
 blocks until the healthcheck passes (i.e. migrations have actually finished) rather than returning
 as soon as the container starts.
 
+Instead of building, you can pull a prebuilt image from GHCR:
+`docker compose -f docker-compose.prod.yml pull` fetches `ghcr.io/loki495/insights:latest`, the
+newest release. Set `INSIGHTS_TAG` in `.env` to pin a version (`INSIGHTS_TAG=0.2.0`) or follow
+`main` (`INSIGHTS_TAG=main`, unreleased and less tested). Every tag is built only after CI passes.
+
 It also starts a second `scheduler` service running `php artisan schedule:work` — required for
 this app's scheduled Plaid sync (`transactions:pull`, checked hourly — see `routes/console.php`)
 to actually fire on its own. Without it, syncing only happens when you manually click "Pull Data".

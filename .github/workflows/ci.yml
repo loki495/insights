@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
@@ -235,10 +237,10 @@ jobs:
   publish-ghcr:
     runs-on: ubuntu-latest
 
-    # Only runs on a push to main (never on a PR — GHCR publishing must not run from an
-    # untrusted fork), and only after the existing test/smoke jobs have passed, so we never
-    # publish an image that hasn't been verified.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Only runs on a push to main or a v* tag (never on a PR — GHCR publishing must not run from
+    # an untrusted fork), and only after the test/smoke jobs have passed, so we never publish an
+    # image that hasn't been verified.
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: [test, test-mysql, docker-prod-smoke]
 
     permissions:
@@ -249,9 +251,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set short SHA
+      # main: rolling :main and :demo (what the public demo runs) plus :sha-<commit>.
+      # v1.2.3 tag: :1.2.3, and :latest unless it's a prerelease (v1.2.3-beta.1).
+      - name: Choose image tags
         id: vars
-        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: |
+          image=ghcr.io/${{ github.repository }}
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version=${GITHUB_REF_NAME#v}
+            tags="$image:$version"
+            [[ "$version" == *-* ]] || tags="$tags,$image:latest"
+          else
+            tags="$image:main,$image:demo,$image:sha-${GITHUB_SHA::7}"
+          fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -269,15 +282,12 @@ jobs:
           context: .
           file: docker/Dockerfile.prod
           push: true
-          tags: |
-            ghcr.io/loki495/insights:demo
-            ghcr.io/loki495/insights:sha-${{ steps.vars.outputs.short_sha }}
+          tags: ${{ steps.vars.outputs.tags }}
 
-      # Fires Watchtower's own update check on media instead of waiting on its
-      # 24h poll interval - see dotfiles/cd-trigger for the endpoint itself
-      # (token-gated, fire-and-forget). continue-on-error: a missed trigger
-      # just means Watchtower catches this image on its next scheduled poll -
-      # never worth failing an otherwise-successful publish over.
-      - name: Trigger Watchtower on media
+      # Asks the public demo's host to pull the new :demo image now rather than on its next
+      # scheduled poll. Maintainer-only (needs the CD_TRIGGER_URL secret); a miss just means the
+      # demo updates on that poll, so it never fails the publish.
+      - name: Redeploy the public demo
+        if: github.repository == 'loki495/insights' && github.ref == 'refs/heads/main'
         continue-on-error: true
         run: curl -sS -m 15 "${{ secrets.CD_TRIGGER_URL }}"
