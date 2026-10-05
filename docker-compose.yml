@@ -1,8 +1,5 @@
 name: insights
 
-volumes:
-  mysql-data: {}
-
 services:
   app:
     container_name: insights-app
@@ -10,7 +7,6 @@ services:
     volumes:
       - ./:/var/www/html
       - ./docker/logs:/var/www/html/logs:rw
-      - ./storage/ssh:/var/www/html/storage/ssh:rw
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.insights.loadbalancer.server.port=80"
