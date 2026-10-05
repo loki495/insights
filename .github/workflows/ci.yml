@@ -3,11 +3,9 @@ name: ci
 on:
   push:
     branches:
-      - develop
       - main
   pull_request:
     branches:
-      - develop
       - main
 
 permissions:
@@ -71,10 +69,8 @@ jobs:
   test-mysql:
     runs-on: ubuntu-latest
 
-    # Experimental: the `test` job above only ever exercises SQLite. README claims
-    # `DB_CONNECTION` is configurable to MySQL/Postgres, but that path has never actually been run
-    # against — this confirms migrations and the Unit/Feature suite actually work against a real
-    # MySQL instance rather than just assuming SQLite's type-affinity leniency generalizes.
+    # The `test` job only exercises SQLite; this runs migrations and the Unit/Feature suite against
+    # a real MySQL instance, so SQLite's type-affinity leniency can't hide a MySQL-only failure.
     # Browser tests are skipped here (they exercise the UI, not the DB driver, and would double
     # runtime for no real signal).
     services:

@@ -13,17 +13,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Demo mode only (config('app.demo_mode')): gives each visitor their own private copy of the
- * demo dataset instead of one database shared by every concurrent visitor. Unlike homie's
- * equivalent, insights keeps its real login form — every visitor logs in with the same seeded
+ * demo dataset instead of one database shared by every concurrent visitor. The real login form
+ * stays: every visitor logs in with the same seeded
  * demo credentials (test@example.com / password, from DemoDataSeeder), but their own
  * transactions/rules/categories are isolated to their own session's file copy. Deliberately
  * keyed by a dedicated cookie rather than Laravel's own session ID, so this never depends on
  * the session already being resolved (SESSION_DRIVER must be `file` or `cookie`, not the
- * `database` default, in a demo deployment — see .env.example). See
- * .ai/plans/2026-09-06-demo-sites-and-cd (outside this repo) for the full design.
+ * `database` default, in a demo deployment — see .env.example and docs/SETUP.md).
  *
  * Deliberately switches `database.default` to a dedicated connection name (CONNECTION_NAME)
- * rather than overwriting `database.connections.sqlite.database` in place (homie's approach):
+ * rather than overwriting `database.connections.sqlite.database` in place:
  * doing the latter and then `DB::purge('sqlite')`-ing it corrupts Laravel's shared in-memory
  * SQLite connection during testing — `RefreshDatabase` never expects the literal `sqlite`
  * connection it manages to be disconnected mid-suite, and purging it cascades "table already

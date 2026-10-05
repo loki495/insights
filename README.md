@@ -198,8 +198,8 @@ Apply a change with `docker compose up -d`; a plain image pull keeps the old env
 - No budgeting tools yet — see [docs/ROADMAP.md](docs/ROADMAP.md).
 - Postgres isn't CI-tested (SQLite and MySQL are) — it should work, since Laravel supports
   it natively, but treat it as unverified until it's actually exercised in CI.
-- Single-user per install — there's no multi-tenant account model; each deployment is one
-  person's own finances.
+- Each user's accounts and data are isolated from other users on the same install, but there's
+  no shared or household model, and registration should be closed or gated on a public host.
 - Plaid-only — no manual/CSV-imported accounts yet for banks Plaid doesn't cover.
 
 ## Contributing

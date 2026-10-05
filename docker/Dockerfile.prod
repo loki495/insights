@@ -18,14 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /var/www/html
 COPY . .
-# This project's composer.json has no post-autoload-dump hook, so package discovery isn't
-# regenerated automatically — do it explicitly, and clear any bootstrap/cache/*.php that leaked
-# in from the build context despite .dockerignore, so this always reflects exactly what --no-dev
+# Clear any bootstrap/cache/*.php that leaked in from the build context despite .dockerignore;
+# composer's post-autoload-dump hook then regenerates package discovery from exactly what --no-dev
 # actually installed (a stale dev-generated cache referencing a require-dev-only package, like
 # laravel-debugbar, is a hard boot-time crash under --no-dev, not just a warning).
 RUN rm -f bootstrap/cache/*.php \
     && composer install --no-dev --optimize-autoloader --no-interaction \
-    && php artisan package:discover --ansi \
     && npm ci \
     && npm run build
 

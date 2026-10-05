@@ -19,7 +19,7 @@ rules, Chart.js dashboards. See the repo root `README.md` for the full feature l
   symptoms shows up, check `find storage bootstrap/cache /tmp -not -user www-data` before
   assuming it's a real bug.
 - Vite dev server: `insights-vite`, routed via Traefik at
-  `vite.insights.ac495.net`. App itself at `insights.ac495.net`.
+  `insights-vite.ac495.net`. App itself at `insights.ac495.net`.
 - `vite.config.js` sets `refresh: ['resources/views/**/*']` — almost any request
   touching a blade file triggers a full browser reload in local dev. If a page
   unexpectedly resets mid-interactive-test (e.g. a filter reverts to defaults),
@@ -27,8 +27,9 @@ rules, Chart.js dashboards. See the repo root `README.md` for the full feature l
 
 ## Git workflow
 
-No `local` branch here — commits go directly to `main`. This deviates from the
-global default branch model; don't introduce a `local` branch unless asked.
+No `local` branch here. Work happens on a branch and lands on `main` through a pull request:
+`main` is protected and requires the `test`, `test-mysql` and `docker-prod-smoke` CI jobs.
+Don't introduce a `local` branch unless asked.
 
 **Commit each finished fix/feature as its own commit, proactively, without
 waiting to be asked each time.** If a file already has unrelated uncommitted
@@ -80,8 +81,7 @@ manual categorization). Shape: a rule has one level of condition **groups**
 (`CategoryRuleCondition`). Both the rule's own `match_type` (how its groups combine)
 and each group's own `match_type` (how its conditions combine) are independently
 `all`/`any` — **not** a fixed AND-within-group/OR-between-groups convention — which is
-what lets a rule express both `(X and Y) or Z` and `(X or Y) and Z`. See
-`.ai/plans/autocategorize-rules/` for the original design writeup and build history.
+what lets a rule express both `(X and Y) or Z` and `(X or Y) and Z`.
 The create/edit page (`admin/category-rules/edit.blade.php`) also shows a live list of
 the user's own uncategorized transactions the current (possibly unsaved) rule would
 match, with a button to apply that one rule to them retroactively right now
@@ -105,7 +105,5 @@ handled invalid user input are exempt.
 
 ## Active work
 
-See the repo-root `todo` file (gitignored, not committed) for the current backlog —
-it's kept up to date as work happens, so don't rely on a dated summary here going stale
-again. `.ai/plans/` holds file-based state for any multi-session initiative currently
-in progress (check `.ai/plans/INDEX.md` first when resuming cold).
+The maintainer's backlog is tracked outside this repo. Contributor-facing work is in the GitHub
+issues; don't assume a local `todo` file or `.ai/` directory exists.
