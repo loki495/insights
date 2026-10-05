@@ -30,6 +30,7 @@ abstract class TestCase extends BaseTestCase
 
     public static function isTestDatabase(string $database): bool
     {
-        return $database === ':memory:' || str_ends_with($database, '_test');
+        // Parallel runs give each worker its own copy, named <database>_test_<token>.
+        return $database === ':memory:' || preg_match('/_test(_\d+)?$/', $database) === 1;
     }
 }
