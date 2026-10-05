@@ -6,6 +6,7 @@ use App\Http\Middleware\UseStaticAssetsForRemoteHost;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Foundation\Vite;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 beforeEach(function (): void {
     config(['app.static_asset_hosts' => ['insights.ac495.net']]);
@@ -19,7 +20,7 @@ it('forces the built manifest and a secure cookie for a configured remote host',
     $seenHotFile = null;
     $seenSecure = null;
 
-    $middleware->handle($request, function ($req) use (&$seenHotFile, &$seenSecure): ResponseFactory|\Illuminate\Http\Response {
+    $middleware->handle($request, function ($req) use (&$seenHotFile, &$seenSecure): ResponseFactory|Response {
         $seenHotFile = app(Vite::class)->hotFile();
         $seenSecure = config('session.secure');
 
@@ -37,7 +38,7 @@ it('leaves LAN hosts on the default hot file and existing cookie setting', funct
     $seenHotFile = null;
     $seenSecure = null;
 
-    $middleware->handle($request, function ($req) use (&$seenHotFile, &$seenSecure): ResponseFactory|\Illuminate\Http\Response {
+    $middleware->handle($request, function ($req) use (&$seenHotFile, &$seenSecure): ResponseFactory|Response {
         $seenHotFile = app(Vite::class)->hotFile();
         $seenSecure = config('session.secure');
 
