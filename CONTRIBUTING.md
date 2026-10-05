@@ -91,7 +91,8 @@ introducing a new pattern for the same kind of problem.
 - Keep commits focused — one logical change per commit is easier to review than a bundle of
   unrelated fixes.
 - Write commit messages that explain *why*, not just *what* (the diff already shows what changed).
-- Open PRs against `main`.
+- Open PRs against `main`. It's protected: the `test`, `test-mysql` and `docker-prod-smoke` CI
+  jobs must pass before a merge.
 - Small, focused PRs get reviewed faster than large ones. If you're planning something big,
   opening an issue first to discuss the approach is a good idea.
 - **Please sign off your commits** (`git commit -s`, or add `Signed-off-by: Your Name <email>` to

@@ -12,10 +12,9 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Builds (or rebuilds) the demo database template that ResolveDemoDatabase copies for every
- * new demo visitor - see config('app.demo_db_template_path'). Unlike homie's equivalent
- * (never regenerated - its demo data isn't date-sensitive), this MUST be safe to run
+ * new demo visitor - see config('app.demo_db_template_path'). This MUST be safe to run
  * repeatedly on a schedule: DemoDataSeeder anchors its transaction dates to "now" at seed
- * time (fixed in commit 8b577ca), so a template built once and never rebuilt would show
+ * time, so a template built once and never rebuilt would show
  * increasingly stale/implausible dates. See routes/console.php for the daily schedule.
  *
  * Builds against a dedicated connection (ResolveDemoDatabase::CONNECTION_NAME), not the

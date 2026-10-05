@@ -220,7 +220,7 @@ touch storage/app/database.sqlite
 php artisan migrate
 ```
 
-Start everything (web server, queue worker, log tailer, and Vite) with:
+Start everything (web server, log tailer, and Vite) with:
 
 ```bash
 composer run dev

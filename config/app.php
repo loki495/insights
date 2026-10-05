@@ -167,7 +167,7 @@ return [
     | disabled (see App\Http\Middleware\DisableRegistrationInDemoMode) so the only way in
     | is the one seeded demo login (test@example.com / password, from DemoDataSeeder).
     | Unlike a static demo dataset, DemoDataSeeder anchors its transaction dates to "now"
-    | at seed time (see commit 8b577ca), so demo_db_template_path is rebuilt daily rather
+    | at seed time, so demo_db_template_path is rebuilt daily rather
     | than built once — see the demo:build-template schedule in routes/console.php.
     |
     */

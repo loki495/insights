@@ -8,7 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 // Only needed if you're running Vite behind a reverse proxy on a custom
 // hostname (e.g. Traefik, nginx). For a plain `docker compose up` or bare
 // metal `npm run dev`, leave these unset — Vite's defaults (localhost, auto
-// client port) just work. See README.md's "Custom local domain" section.
+// client port) just work. See docs/SETUP.md's "Option B" section.
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
 
