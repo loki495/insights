@@ -24,5 +24,5 @@ labels: bug
 **Additional context**
 
 Logs, screenshots, or anything else that might help. If this involves auth, authorization, or
-Plaid credential/token handling, please use [SECURITY.md](../../SECURITY.md)'s private reporting
+Plaid credential/token handling, please use [SECURITY.md](https://github.com/loki495/insights/blob/main/SECURITY.md)'s private reporting
 instead of a public issue.

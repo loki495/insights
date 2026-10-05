@@ -12,5 +12,5 @@ labels: enhancement
 **Alternatives considered**
 
 Small, focused suggestions are easier to discuss than large ones — see
-[CONTRIBUTING.md](../../CONTRIBUTING.md)'s PR guidance if you're also planning to implement this
+[CONTRIBUTING.md](https://github.com/loki495/insights/blob/main/CONTRIBUTING.md)'s PR guidance if you're also planning to implement this
 yourself.
