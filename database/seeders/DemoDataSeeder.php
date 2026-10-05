@@ -27,17 +27,54 @@ use Illuminate\Support\Str;
 class DemoDataSeeder extends Seeder
 {
     /**
-     * label => [type, [merchant names...], [min, max] whole-dollar amount magnitude, per-month count]
+     * Top-level category => [color, [subcategory => color]]. Each top level gets its own hue so the
+     * dashboard's per-category chart and the transaction chips read as distinct groups.
      *
-     * @var array<string, array{0: string, 1: array<int, string>, 2: array{0: int, 1: int}, 3: array{0: int, 1: int}}>
+     * @var array<string, array{0: string, 1: array<string, string>}>
      */
-    private const EXPENSE_BUCKETS = [
-        'Groceries' => ['expense', ['Trader Joes', 'Whole Foods', 'Safeway', 'Kroger'], [15, 140], [3, 6]],
-        'Dining' => ['expense', ['Chipotle', 'Corner Diner', 'Pizza Palace', 'Sushi House'], [10, 65], [2, 5]],
-        'Utilities' => ['expense', ['City Power & Light', 'Metro Water', 'Comcast Internet'], [40, 180], [2, 3]],
-        'Transportation' => ['expense', ['Shell Gas Station', 'Metro Transit', 'Uber'], [8, 70], [2, 5]],
-        'Shopping' => ['expense', ['Amazon', 'Target', 'Best Buy'], [12, 220], [2, 4]],
+    private const array CATEGORY_TREE = [
+        'Income' => ['#16a34a', ['Paycheck' => '#22c55e', 'Freelance' => '#84cc16', 'Interest' => '#10b981']],
+        'Food & Drink' => ['#f97316', ['Groceries' => '#fb923c', 'Restaurants' => '#ea580c', 'Coffee' => '#a16207']],
+        'Housing' => ['#8b5cf6', ['Rent' => '#7c3aed', 'Utilities' => '#a78bfa', 'Home Improvement' => '#c4b5fd']],
+        'Transportation' => ['#0ea5e9', ['Gas' => '#0284c7', 'Rideshare' => '#38bdf8', 'Public Transit' => '#7dd3fc']],
+        'Shopping' => ['#ec4899', ['Online' => '#db2777', 'Electronics' => '#f472b6', 'Clothing' => '#f9a8d4']],
+        'Entertainment' => ['#eab308', ['Subscriptions' => '#ca8a04', 'Events' => '#facc15', 'Games' => '#fde047']],
+        'Health & Fitness' => ['#14b8a6', ['Pharmacy' => '#0d9488', 'Gym' => '#2dd4bf']],
+        'Travel' => ['#6366f1', ['Flights' => '#4f46e5', 'Hotels' => '#818cf8']],
+        'Pets' => ['#65a30d', []],
+        'Transfers' => ['#64748b', []],
     ];
+
+    /**
+     * category => [account, [merchants...], [min, max] whole-dollar amount, [min, max] per-month count,
+     * Plaid personal_finance_category primary, detailed]
+     *
+     * @var array<string, array{0: 'checking'|'card', 1: array<int, string>, 2: array{0: int, 1: int}, 3: array{0: int, 1: int}, 4: string, 5: string}>
+     */
+    private const array EXPENSE_BUCKETS = [
+        'Groceries' => ['checking', ['Trader Joes', 'Whole Foods', 'Safeway', 'Kroger'], [15, 140], [3, 6], 'FOOD_AND_DRINK', 'FOOD_AND_DRINK_GROCERIES'],
+        'Restaurants' => ['card', ['Chipotle', 'Corner Diner', 'Pizza Palace', 'Sushi House'], [12, 85], [3, 6], 'FOOD_AND_DRINK', 'FOOD_AND_DRINK_RESTAURANT'],
+        'Coffee' => ['card', ['Blue Bottle', 'Starbucks', 'Local Roasters'], [4, 9], [3, 7], 'FOOD_AND_DRINK', 'FOOD_AND_DRINK_COFFEE'],
+        'Rent' => ['checking', ['Parkview Apartments'], [1450, 1450], [1, 1], 'RENT_AND_UTILITIES', 'RENT_AND_UTILITIES_RENT'],
+        'Utilities' => ['checking', ['City Power & Light', 'Metro Water', 'Comcast Internet'], [40, 160], [2, 3], 'RENT_AND_UTILITIES', 'RENT_AND_UTILITIES_GAS_AND_ELECTRICITY'],
+        'Home Improvement' => ['card', ['Home Depot', 'IKEA'], [25, 240], [0, 2], 'HOME_IMPROVEMENT', 'HOME_IMPROVEMENT_HARDWARE'],
+        'Gas' => ['checking', ['Shell', 'Chevron'], [30, 65], [2, 4], 'TRANSPORTATION', 'TRANSPORTATION_GAS'],
+        'Rideshare' => ['card', ['Uber', 'Lyft'], [9, 42], [1, 4], 'TRANSPORTATION', 'TRANSPORTATION_TAXIS_AND_RIDE_SHARES'],
+        'Public Transit' => ['checking', ['Metro Transit'], [3, 30], [1, 3], 'TRANSPORTATION', 'TRANSPORTATION_PUBLIC_TRANSIT'],
+        'Online' => ['card', ['Amazon', 'Etsy'], [12, 140], [2, 4], 'GENERAL_MERCHANDISE', 'GENERAL_MERCHANDISE_ONLINE_MARKETPLACES'],
+        'Electronics' => ['card', ['Best Buy', 'Apple Store'], [30, 400], [0, 1], 'GENERAL_MERCHANDISE', 'GENERAL_MERCHANDISE_ELECTRONICS'],
+        'Clothing' => ['card', ['Uniqlo', 'Target', 'Nike'], [20, 120], [0, 2], 'GENERAL_MERCHANDISE', 'GENERAL_MERCHANDISE_CLOTHING_AND_ACCESSORIES'],
+        'Events' => ['card', ['Ticketmaster', 'AMC Theatres'], [15, 120], [0, 2], 'ENTERTAINMENT', 'ENTERTAINMENT_SPORTING_EVENTS_AMUSEMENT_PARKS_AND_MUSEUMS'],
+        'Games' => ['card', ['Steam', 'Nintendo eShop'], [10, 60], [0, 1], 'ENTERTAINMENT', 'ENTERTAINMENT_VIDEO_GAMES'],
+        'Pharmacy' => ['card', ['CVS Pharmacy', 'Walgreens'], [8, 55], [0, 2], 'MEDICAL', 'MEDICAL_PHARMACIES_AND_SUPPLEMENTS'],
+        'Gym' => ['card', ['Planet Fitness'], [25, 25], [1, 1], 'PERSONAL_CARE', 'PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS'],
+        'Flights' => ['card', ['Delta Air Lines', 'United Airlines'], [180, 460], [0, 1], 'TRAVEL', 'TRAVEL_FLIGHTS'],
+        'Hotels' => ['card', ['Marriott', 'Airbnb'], [120, 380], [0, 1], 'TRAVEL', 'TRAVEL_LODGING'],
+        'Pets' => ['card', ['Chewy', 'Petco'], [20, 90], [1, 2], 'GENERAL_MERCHANDISE', 'GENERAL_MERCHANDISE_OTHER_GENERAL_MERCHANDISE'],
+    ];
+
+    /** @var array<string, float> merchant => fixed monthly charge on the card */
+    private const array SUBSCRIPTIONS = ['Netflix' => 15.49, 'Spotify' => 11.99, 'iCloud+' => 2.99];
 
     public function run(): void
     {
@@ -101,11 +138,11 @@ class DemoDataSeeder extends Seeder
             // mid-month never shows a "recent transaction" dated later than today.
             $maxDay = $monthsAgo === 0 ? now()->day - 1 : 27;
 
-            $this->seedPaycheck($checking, $categories['Paycheck'], $original['Paycheck'], $monthStart, $maxDay);
-            $this->seedExpenses($checking, $categories, $original, $monthStart, $maxDay);
-            $this->seedCreditCardActivity($creditCard, $categories['Entertainment'], $original['Entertainment'], $monthStart, $maxDay);
-            $this->seedCreditCardPayment($checking, $creditCard, $original['CreditCardPayment'], $monthStart, $maxDay);
-            $this->seedSavingsTransfer($checking, $savings, $original['Transfer'], $monthStart, $maxDay);
+            $this->seedIncome($checking, $savings, $categories, $original, $monthStart, $maxDay);
+            $this->seedExpenses(['checking' => $checking, 'card' => $creditCard], $categories, $original, $monthStart, $maxDay);
+            $this->seedSubscriptions($creditCard, $categories['Subscriptions'], $original['Subscriptions'], $monthStart, $maxDay);
+            $this->seedCreditCardPayment($checking, $creditCard, $categories['Transfers'], $original['CreditCardPayment'], $monthStart, $maxDay);
+            $this->seedSavingsTransfer($checking, $savings, $categories['Transfers'], $original['Transfer'], $monthStart, $maxDay);
         }
 
         ReconcileLinkedAccountTransactions::run($linkedAccount);
@@ -118,14 +155,21 @@ class DemoDataSeeder extends Seeder
      */
     private function buildOriginalCategoryTaxonomy(): array
     {
-        return [
-            'Groceries' => upsertPlaidCategory(['Food and Drink', 'Groceries'], 'demo_groceries', ['primary' => 'FOOD_AND_DRINK', 'detailed' => 'FOOD_AND_DRINK_GROCERIES']),
-            'Dining' => upsertPlaidCategory(['Food and Drink', 'Restaurants'], 'demo_dining', ['primary' => 'FOOD_AND_DRINK', 'detailed' => 'FOOD_AND_DRINK_RESTAURANT']),
-            'Utilities' => upsertPlaidCategory(['Rent and Utilities', 'Gas and Electricity'], 'demo_utilities', ['primary' => 'RENT_AND_UTILITIES', 'detailed' => 'RENT_AND_UTILITIES_GAS_AND_ELECTRICITY']),
-            'Transportation' => upsertPlaidCategory(['Transportation', 'Gas'], 'demo_transportation', ['primary' => 'TRANSPORTATION', 'detailed' => 'TRANSPORTATION_GAS']),
-            'Shopping' => upsertPlaidCategory(['General Merchandise', 'Online Marketplaces'], 'demo_shopping', ['primary' => 'GENERAL_MERCHANDISE', 'detailed' => 'GENERAL_MERCHANDISE_ONLINE_MARKETPLACES']),
-            'Entertainment' => upsertPlaidCategory(['Entertainment', 'Streaming Services'], 'demo_entertainment', ['primary' => 'ENTERTAINMENT', 'detailed' => 'ENTERTAINMENT_TV_AND_MOVIES']),
+        $original = [];
+
+        foreach (self::EXPENSE_BUCKETS as $label => [, , , , $primary, $detailed]) {
+            $original[$label] = upsertPlaidCategory(
+                [Str::headline(strtolower($primary)), $label],
+                'demo_'.Str::snake($label),
+                ['primary' => $primary, 'detailed' => $detailed],
+            );
+        }
+
+        return $original + [
+            'Subscriptions' => upsertPlaidCategory(['Entertainment', 'Streaming Services'], 'demo_subscriptions', ['primary' => 'ENTERTAINMENT', 'detailed' => 'ENTERTAINMENT_TV_AND_MOVIES']),
             'Paycheck' => upsertPlaidCategory(['Income', 'Wages'], 'demo_income', ['primary' => 'INCOME', 'detailed' => 'INCOME_WAGES']),
+            'Freelance' => upsertPlaidCategory(['Income', 'Other Income'], 'demo_freelance', ['primary' => 'INCOME', 'detailed' => 'INCOME_OTHER_INCOME']),
+            'Interest' => upsertPlaidCategory(['Income', 'Interest Earned'], 'demo_interest', ['primary' => 'INCOME', 'detailed' => 'INCOME_INTEREST_EARNED']),
             'CreditCardPayment' => upsertPlaidCategory(['Loan Payments', 'Credit Card Payment'], 'demo_cc_payment', ['primary' => 'LOAN_PAYMENTS', 'detailed' => 'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT']),
             'Transfer' => upsertPlaidCategory(['Transfer', 'Account Transfer'], 'demo_transfer', ['primary' => 'TRANSFER_OUT', 'detailed' => 'TRANSFER_OUT_ACCOUNT_TRANSFER']),
         ];
@@ -133,131 +177,112 @@ class DemoDataSeeder extends Seeder
 
     /**
      * Uses CreateOrAdoptCategoryAction (not a raw Category::create()) so re-running this seeder
-     * against a database that already has "Income"/"Expenses" categories reuses them instead of
-     * creating fresh duplicates, and so the demo user actually adopts everything it seeds — under
-     * the per-user category model, its own transaction chips/reports wouldn't render colors or be
-     * browsable otherwise.
+     * against a database that already has these categories reuses them instead of creating fresh
+     * duplicates, and so the demo user actually adopts everything it seeds — under the per-user
+     * category model, its own transaction chips/reports wouldn't render colors or be browsable
+     * otherwise. A top level with no subcategories is itself the leaf transactions are filed under.
      *
      * @return array<string, Category>
      */
     private function buildCategoryTree(User $user): array
     {
-        $income = CreateOrAdoptCategoryAction::run($user, null, 'Income', '#16a34a');
-        $expenses = CreateOrAdoptCategoryAction::run($user, null, 'Expenses', '#dc2626');
+        $categories = [];
 
-        return [
-            'Paycheck' => CreateOrAdoptCategoryAction::run($user, $income->id, 'Paycheck', '#3b82f6'),
-            'Groceries' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Groceries', '#3b82f6'),
-            'Dining' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Dining', '#3b82f6'),
-            'Utilities' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Utilities', '#3b82f6'),
-            'Transportation' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Transportation', '#3b82f6'),
-            'Shopping' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Shopping', '#3b82f6'),
-            'Entertainment' => CreateOrAdoptCategoryAction::run($user, $expenses->id, 'Entertainment', '#3b82f6'),
-        ];
-    }
+        foreach (self::CATEGORY_TREE as $name => [$color, $children]) {
+            $parent = CreateOrAdoptCategoryAction::run($user, null, $name, $color);
+            $categories[$name] = $parent;
 
-    private function seedPaycheck(Account $checking, Category $category, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
-    {
-        foreach ([1, 15] as $dayOfMonth) {
-            if ($dayOfMonth - 1 > $maxDay) {
-                continue;
+            foreach ($children as $childName => $childColor) {
+                $categories[$childName] = CreateOrAdoptCategoryAction::run($user, $parent->id, $childName, $childColor);
             }
-
-            $transaction = Transaction::create([
-                'account_id' => $checking->id,
-                'name' => 'Acme Corp Payroll',
-                'amount' => random_int(2100, 2600),
-                'currency' => 'USD',
-                'type' => 'income',
-                'original_category_id' => $originalCategory->id,
-                'created_at' => $monthStart->copy()->addDays($dayOfMonth - 1),
-                'updated_at' => $monthStart->copy()->addDays($dayOfMonth - 1),
-            ]);
-            $transaction->categories()->attach($category->id);
         }
+
+        return $categories;
     }
 
     /**
      * @param  array<string, Category>  $categories
      * @param  array<string, OriginalCategory>  $original
      */
-    private function seedExpenses(Account $checking, array $categories, array $original, CarbonInterface $monthStart, int $maxDay): void
+    private function seedIncome(Account $checking, Account $savings, array $categories, array $original, CarbonInterface $monthStart, int $maxDay): void
     {
-        foreach (self::EXPENSE_BUCKETS as $label => [, $merchants, [$min, $max], [$countMin, $countMax]]) {
+        foreach ([0, 14] as $day) {
+            if ($day <= $maxDay) {
+                $this->record($checking, 'Acme Corp Payroll', random_int(2100, 2600), 'income', $categories['Paycheck'], $original['Paycheck'], $monthStart->copy()->addDays($day));
+            }
+        }
+
+        if (random_int(0, 1) === 1) {
+            $day = random_int(0, $maxDay);
+            $this->record($checking, ['Upwork Payout', 'Stripe Transfer'][random_int(0, 1)], random_int(300, 1200), 'income', $categories['Freelance'], $original['Freelance'], $monthStart->copy()->addDays($day));
+        }
+
+        if ($maxDay >= 27) {
+            $this->record($savings, 'Interest Payment', random_int(8, 25), 'income', $categories['Interest'], $original['Interest'], $monthStart->copy()->addDays(27));
+        }
+    }
+
+    /**
+     * @param  array{checking: Account, card: Account}  $accounts
+     * @param  array<string, Category>  $categories
+     * @param  array<string, OriginalCategory>  $original
+     */
+    private function seedExpenses(array $accounts, array $categories, array $original, CarbonInterface $monthStart, int $maxDay): void
+    {
+        foreach (self::EXPENSE_BUCKETS as $label => [$account, $merchants, [$min, $max], [$countMin, $countMax]]) {
             $count = random_int($countMin, $countMax);
 
             for ($i = 0; $i < $count; $i++) {
-                $day = random_int(0, $maxDay);
-                $transaction = Transaction::create([
-                    'account_id' => $checking->id,
-                    'name' => $merchants[array_rand($merchants)],
-                    'amount' => -random_int($min, $max),
-                    'currency' => 'USD',
-                    'type' => 'expense',
-                    'original_category_id' => $original[$label]->id,
-                    'created_at' => $monthStart->copy()->addDays($day),
-                    'updated_at' => $monthStart->copy()->addDays($day),
-                ]);
-
-                // Leave ~15% uncategorized on purpose — demo data should show the "only
-                // uncategorized" filter actually finding something, not a fully-tagged fantasy.
-                if (random_int(1, 100) > 15) {
-                    $transaction->categories()->attach($categories[$label]->id);
-                }
+                // Leave ~15% of variable spending uncategorized on purpose — demo data should show
+                // the "only uncategorized" filter finding something, not a fully-tagged fantasy.
+                // Fixed-amount bills (rent, gym) always are, as a rule would catch them.
+                $this->record(
+                    $accounts[$account],
+                    $merchants[array_rand($merchants)],
+                    -random_int($min, $max),
+                    'expense',
+                    $min === $max || random_int(1, 100) > 15 ? $categories[$label] : null,
+                    $original[$label],
+                    $monthStart->copy()->addDays(random_int(0, $maxDay)),
+                );
             }
         }
     }
 
-    private function seedCreditCardActivity(Account $creditCard, Category $entertainmentCategory, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
+    private function seedSubscriptions(Account $creditCard, Category $category, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
-        foreach (['Netflix', 'Spotify'] as $merchant) {
-            $day = random_int(0, $maxDay);
-            $transaction = Transaction::create([
-                'account_id' => $creditCard->id,
-                'name' => $merchant,
-                'amount' => -random_int(10, 20),
-                'currency' => 'USD',
-                'type' => 'expense',
-                'original_category_id' => $originalCategory->id,
-                'created_at' => $monthStart->copy()->addDays($day),
-                'updated_at' => $monthStart->copy()->addDays($day),
-            ]);
-            $transaction->categories()->attach($entertainmentCategory->id);
+        foreach (self::SUBSCRIPTIONS as $merchant => $price) {
+            $day = (crc32($merchant) % 25) + 1;
+
+            if ($day <= $maxDay) {
+                $this->record($creditCard, $merchant, -$price, 'expense', $category, $originalCategory, $monthStart->copy()->addDays($day));
+            }
         }
     }
 
-    private function seedCreditCardPayment(Account $checking, Account $creditCard, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
+    /**
+     * Pays off the card's spending so far this month, so its balance doesn't drift up forever.
+     */
+    private function seedCreditCardPayment(Account $checking, Account $creditCard, Category $category, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
         if ($maxDay < 20) {
             return;
         }
 
         $day = $monthStart->copy()->addDays(20);
+        $spent = -Transaction::query()
+            ->where('account_id', $creditCard->id)
+            ->where('type', 'expense')
+            ->whereBetween('created_at', [$monthStart, $monthStart->copy()->endOfMonth()])
+            ->get()
+            ->sum('amount'); // through MoneyCast: the column itself holds cents
 
-        $outgoing = Transaction::create([
-            'account_id' => $checking->id,
-            'name' => 'Rewards Card Payment',
-            'amount' => -random_int(80, 150),
-            'currency' => 'USD',
-            'type' => 'transfer',
-            'original_category_id' => $originalCategory->id,
-            'created_at' => $day,
-            'updated_at' => $day,
-        ]);
-        $incoming = Transaction::create([
-            'account_id' => $creditCard->id,
-            'name' => 'Payment Thank You',
-            'amount' => -$outgoing->amount,
-            'currency' => 'USD',
-            'type' => 'transfer',
-            'original_category_id' => $originalCategory->id,
-            'created_at' => $day,
-            'updated_at' => $day,
-        ]);
+        $outgoing = $this->record($checking, 'Rewards Card Payment', -round($spent, 2), 'transfer', $category, $originalCategory, $day);
+        $incoming = $this->record($creditCard, 'Payment Thank You', round($spent, 2), 'transfer', $category, $originalCategory, $day);
         $outgoing->pairWith($incoming);
     }
 
-    private function seedSavingsTransfer(Account $checking, Account $savings, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
+    private function seedSavingsTransfer(Account $checking, Account $savings, Category $category, OriginalCategory $originalCategory, CarbonInterface $monthStart, int $maxDay): void
     {
         if ($maxDay < 2) {
             return;
@@ -265,26 +290,28 @@ class DemoDataSeeder extends Seeder
 
         $day = $monthStart->copy()->addDays(2);
 
-        $outgoing = Transaction::create([
-            'account_id' => $checking->id,
-            'name' => 'Transfer to Savings',
-            'amount' => -300,
-            'currency' => 'USD',
-            'type' => 'transfer',
-            'original_category_id' => $originalCategory->id,
-            'created_at' => $day,
-            'updated_at' => $day,
-        ]);
-        $incoming = Transaction::create([
-            'account_id' => $savings->id,
-            'name' => 'Transfer from Checking',
-            'amount' => 300,
-            'currency' => 'USD',
-            'type' => 'transfer',
-            'original_category_id' => $originalCategory->id,
-            'created_at' => $day,
-            'updated_at' => $day,
-        ]);
+        $outgoing = $this->record($checking, 'Transfer to Savings', -300, 'transfer', $category, $originalCategory, $day);
+        $incoming = $this->record($savings, 'Transfer from Checking', 300, 'transfer', $category, $originalCategory, $day);
         $outgoing->pairWith($incoming);
+    }
+
+    private function record(Account $account, string $name, float|int $amount, string $type, ?Category $category, OriginalCategory $originalCategory, CarbonInterface $date): Transaction
+    {
+        $transaction = Transaction::create([
+            'account_id' => $account->id,
+            'name' => $name,
+            'amount' => $amount,
+            'currency' => 'USD',
+            'type' => $type,
+            'original_category_id' => $originalCategory->id,
+            'created_at' => $date,
+            'updated_at' => $date,
+        ]);
+
+        if ($category instanceof Category) {
+            $transaction->categories()->attach($category->id);
+        }
+
+        return $transaction;
     }
 }
