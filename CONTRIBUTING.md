@@ -82,7 +82,10 @@ the rest of the suite doesn't:
 - The `sockets` and `pcntl` PHP extensions (bare-metal only — already included in the Docker image
   via `docker/setup-dev-container.sh`).
 - Playwright's Chromium browser: `npm install && npx playwright install --with-deps chromium`
-  (also already baked into the Docker image; bare-metal needs it run once manually).
+  (also already baked into the Docker image; bare-metal needs it run once manually). The image only
+  picks up a new Playwright version when it's rebuilt, so after a `playwright` bump in
+  `package.json`, run `docker compose build app && docker compose up -d app`, or the browser suite
+  fails with `PlaywrightOutdatedException`.
 
 ## Code style
 
