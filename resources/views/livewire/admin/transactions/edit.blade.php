@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Volt\Component;
 
@@ -57,12 +57,7 @@ new class extends Component
 
     public function with(): array
     {
-        $categories = Category::query()
-            ->with('children')
-            ->with('parent')
-            ->with('transactions')
-            ->orderBy('parent_id')
-            ->get();
+        $categories = auth()->user()->categories()->with(['children', 'parent'])->orderBy('parent_id')->get();
 
         $accounts = auth()
             ->user()
@@ -129,14 +124,12 @@ new class extends Component
 
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'categories' => ['array'],
+            'categories.*' => [Rule::in(auth()->user()->categories()->pluck('categories.id')->all())],
         ]);
 
         $account = Account::findOrFail($this->account_id);
         $this->authorize('update', $account);
-
-        $original = [
-            'manual' => true,
-        ];
 
         $attributes = [
             'account_id' => $this->account_id,
@@ -145,9 +138,13 @@ new class extends Component
             'amount' => $this->amount,
             'merchant_name' => $this->merchant_name,
             'currency' => $this->currency,
-            'original' => $original,
             'type' => $this->type,
         ];
+
+        // A Plaid-synced row keeps its payload; only manually entered rows are marked manual.
+        if (! isset($transaction) || ! $transaction->transaction_id) {
+            $attributes['original'] = ['manual' => true];
+        }
 
         // Not updateOrCreate(['id' => $this->transaction_id], ...) — with no transaction_id yet
         // (creating), that mass-assigns 'id' => null into the model constructor, which primary
@@ -182,7 +179,7 @@ new class extends Component
 
             <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Categories</label>
-                <select wire:model="categories" class="border border-zinc-300 dark:border-zinc-600 dark:bg-zinc-800 rounded-xl p-4 w-full">
+                <select wire:model="categories" multiple class="border border-zinc-300 dark:border-zinc-600 dark:bg-zinc-800 rounded-xl p-4 w-full">
                     @foreach($all_categories as $category)
                     <option value="{{ $category->id }}" class="p-2">{{ $category->name }}</option>
                     @endforeach

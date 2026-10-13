@@ -72,7 +72,7 @@ final class PullLinkedAccountTransactionsAction
 
         foreach ($types as $type) {
             foreach ($result[$type] ?? [] as $transaction) {
-                UpdateAccountTransactionsAction::run($transaction, $type);
+                UpdateAccountTransactionsAction::run($transaction, $type, $linkedAccount);
             }
         }
 
