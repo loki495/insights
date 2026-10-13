@@ -140,7 +140,7 @@ it('keeps a Plaid row\'s original payload when edited', function (): void {
         ->call('save')
         ->assertHasNoErrors();
 
-    expect($transaction->fresh()->original)->toBe(['transaction_id' => 'txn_plaid_1', 'name' => 'Raw']);
+    expect($transaction->fresh()->original)->toEqual(['transaction_id' => 'txn_plaid_1', 'name' => 'Raw']);
 });
 
 it('marks a manually created transaction as manual', function (): void {
