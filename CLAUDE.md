@@ -18,8 +18,9 @@ rules, Chart.js dashboards. See the repo root `README.md` for the full feature l
   three separate times in one session before this rule was written down. If one of those
   symptoms shows up, check `find storage bootstrap/cache /tmp -not -user www-data` before
   assuming it's a real bug.
-- Vite dev server: `insights-vite`, routed via Traefik at
-  `insights-vite.ac495.net`. App itself at `insights.ac495.net`.
+- Vite dev server: the `insights-vite` container, routed via Traefik at the host set in
+  `VITE_HOST` (`.env`; defaults to `insights-vite.localhost`). Set `VITE_HMR_HOST` to the same
+  host so the browser's HMR client reaches it. The app is served at your configured `APP_URL`.
 - `vite.config.js` sets `refresh: ['resources/views/**/*']` — almost any request
   touching a blade file triggers a full browser reload in local dev. If a page
   unexpectedly resets mid-interactive-test (e.g. a filter reverts to defaults),
