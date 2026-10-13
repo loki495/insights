@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Models\Account;
+use App\Models\LinkedAccount;
 use App\Models\OriginalCategory;
 use App\Models\Transaction;
 
@@ -13,15 +14,17 @@ final class UpdateAccountTransactionsAction
     /**
      * @param  array<string, mixed>  $transaction_info
      */
-    public static function run(array $transaction_info, string $action): void
+    public static function run(array $transaction_info, string $action, LinkedAccount $linkedAccount): void
     {
         if ($action === 'removed') {
-            Transaction::where('transaction_id', $transaction_info['transaction_id'])->delete();
+            Transaction::where('transaction_id', $transaction_info['transaction_id'])
+                ->whereHas('account', fn ($query) => $query->where('linked_account_id', $linkedAccount->id))
+                ->delete();
 
             return;
         }
 
-        $transaction_usable = self::getUsableTransaction($transaction_info);
+        $transaction_usable = self::getUsableTransaction($transaction_info, $linkedAccount);
 
         $category = plaid()->resolveCategory($transaction_info);
 
@@ -29,10 +32,12 @@ final class UpdateAccountTransactionsAction
             $transaction_usable['original_category_id'] = $category->id;
         }
 
-        $transaction = Transaction::updateOrCreate(
-            ['transaction_id' => $transaction_info['transaction_id']],
-            $transaction_usable
-        );
+        $transaction = Transaction::query()
+            ->whereHas('account', fn ($query) => $query->where('linked_account_id', $linkedAccount->id))
+            ->updateOrCreate(
+                ['transaction_id' => $transaction_info['transaction_id']],
+                $transaction_usable
+            );
 
         $transaction->refreshType();
 
@@ -45,9 +50,9 @@ final class UpdateAccountTransactionsAction
      * @param  array<string, mixed>  $transaction_info
      * @return array<string, mixed>
      */
-    private static function getUsableTransaction(array $transaction_info): array
+    private static function getUsableTransaction(array $transaction_info, LinkedAccount $linkedAccount): array
     {
-        $account = Account::query()->where('plaid_account_id', $transaction_info['account_id'])->first();
+        $account = Account::query()->where('linked_account_id', $linkedAccount->id)->where('plaid_account_id', $transaction_info['account_id'])->first();
         if (! $account) {
             throw new \Exception('Account not found - '.$transaction_info['account_id']);
         }

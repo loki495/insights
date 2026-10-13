@@ -135,7 +135,7 @@ it('sets type=transfer at ingest when Plaid classifies the transaction as TRANSF
         'amount' => -100, // Plaid raw positive=out; negative=in, so this is money arriving
         'category' => ['Transfer', 'Deposit'],
         'personal_finance_category' => ['primary' => 'TRANSFER_IN', 'detailed' => 'TRANSFER_IN_ACCOUNT_TRANSFER'],
-    ]), 'added');
+    ]), 'added', onlyLinkedAccount());
 
     $transaction = Transaction::where('account_id', $account->id)->firstOrFail();
     expect($transaction->type)->toBe('transfer');
@@ -149,7 +149,7 @@ it('sets type=expense at ingest for an ordinary purchase', function (): void {
         'amount' => 25, // Plaid raw positive = money out
         'category' => ['Food and Drink', 'Restaurants'],
         'personal_finance_category' => ['primary' => 'FOOD_AND_DRINK', 'detailed' => 'FOOD_AND_DRINK_RESTAURANT'],
-    ]), 'added');
+    ]), 'added', onlyLinkedAccount());
 
     $transaction = Transaction::where('account_id', $account->id)->firstOrFail();
     expect($transaction->type)->toBe('expense')
@@ -164,7 +164,7 @@ it('sets type=transfer at ingest for a credit-card payment even though Plaid buc
         'amount' => -150,
         'category' => ['Payment', 'Credit Card'],
         'personal_finance_category' => ['primary' => 'LOAN_PAYMENTS', 'detailed' => 'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT'],
-    ]), 'added');
+    ]), 'added', onlyLinkedAccount());
 
     $transaction = Transaction::where('account_id', $account->id)->firstOrFail();
     expect($transaction->type)->toBe('transfer');
@@ -192,7 +192,7 @@ it('deletes a transaction when Plaid reports it as removed', function (): void {
     UpdateAccountTransactionsAction::run(plaidTransactionPayload([
         'account_id' => 'plaid_checking_removed',
         'transaction_id' => 'txn_to_remove',
-    ]), 'added');
+    ]), 'added', onlyLinkedAccount());
 
     expect(Transaction::where('transaction_id', 'txn_to_remove')->exists())->toBeTrue();
 
@@ -201,7 +201,7 @@ it('deletes a transaction when Plaid reports it as removed', function (): void {
     UpdateAccountTransactionsAction::run([
         'transaction_id' => 'txn_to_remove',
         'account_id' => 'plaid_checking_removed',
-    ], 'removed');
+    ], 'removed', onlyLinkedAccount());
 
     expect(Transaction::where('transaction_id', 'txn_to_remove')->exists())->toBeFalse();
 });
