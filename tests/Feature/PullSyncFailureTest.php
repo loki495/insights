@@ -63,6 +63,7 @@ it('clears a previously recorded failure once a pull succeeds', function (): voi
 });
 
 it('does not let one failing institution block the others in the scheduled command', function (): void {
+    config(['app.debug' => false]);
     $userA = User::factory()->create();
     $userB = User::factory()->create();
     $failing = LinkedAccount::factory()->for($userA)->create([
@@ -86,4 +87,39 @@ it('does not let one failing institution block the others in the scheduled comma
 
     expect($failing->fresh()->last_sync_failed_at)->not->toBeNull()
         ->and($succeeding->fresh()->last_pulled_at)->not->toBeNull();
+});
+
+it('stores a generic message instead of a non-Plaid exception message', function (): void {
+    $linkedAccount = LinkedAccount::factory()->for(User::factory()->create())->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1',
+    ]);
+
+    fakeFailingPlaid(new RuntimeException('SQLSTATE[HY000]: connection to db.internal:3306 refused'));
+
+    expect(fn () => PullLinkedAccountTransactionsAction::run($linkedAccount))
+        ->toThrow(RuntimeException::class);
+
+    $linkedAccount->refresh();
+    expect($linkedAccount->last_sync_error)->toBe(PullLinkedAccountTransactionsAction::GENERIC_SYNC_ERROR);
+});
+
+it('logs a failed institution and exits with failure when debug is off', function (): void {
+    config(['app.debug' => false]);
+    LinkedAccount::factory()->for(User::factory()->create())->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1', 'auto_pull_enabled' => true,
+    ]);
+    fakeFailingPlaid(new CurlRequestException('ITEM_LOGIN_REQUIRED', 400, ['error_code' => 'ITEM_LOGIN_REQUIRED']));
+
+    $this->artisan('transactions:pull', ['linked_account_id' => LinkedAccount::first()->id])->assertFailed();
+});
+
+it('rethrows a failed institution from transactions:pull when debug is on', function (): void {
+    config(['app.debug' => true]);
+    $linkedAccount = LinkedAccount::factory()->for(User::factory()->create())->create([
+        'item_id' => 'item_1', 'access_token' => 'token_1',
+    ]);
+    fakeFailingPlaid(new CurlRequestException('ITEM_LOGIN_REQUIRED', 400, ['error_code' => 'ITEM_LOGIN_REQUIRED']));
+
+    expect(fn () => $this->artisan('transactions:pull', ['linked_account_id' => $linkedAccount->id])->run())
+        ->toThrow(CurlRequestException::class, 'ITEM_LOGIN_REQUIRED');
 });

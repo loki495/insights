@@ -10,7 +10,7 @@ return [
     | Get these from your Plaid dashboard (https://dashboard.plaid.com/).
     | A free "sandbox" account is enough for local development — it gives you
     | fake institutions/transactions without needing a production Plaid
-    | agreement. See README.md for the full linking flow.
+    | agreement. See docs/SETUP.md ("Linking a bank account") for the full linking flow.
     |
     */
 
