@@ -8,7 +8,7 @@ A Laravel + Livewire application for aggregating and tracking personal financial
 multiple bank accounts and credit cards using [Plaid](https://plaid.com/).
 
 **Live demo:** [insights-demo.ac495.net](https://insights-demo.ac495.net) (sample data, sign in
-with `test@example.com` / `password`; each visitor gets their own copy, reset daily).
+with `test@example.com` / `password`; everyone signs in with that shared login, and each visitor gets their own copy of the data, reset daily).
 
 ## Screenshots
 

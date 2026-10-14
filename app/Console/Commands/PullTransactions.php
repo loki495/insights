@@ -59,6 +59,10 @@ class PullTransactions extends Command
                         'linked_account_id' => $linkedAccount->id,
                         'exception' => $e,
                     ]);
+
+                    if (config('app.debug')) {
+                        throw $e;
+                    }
                 }
             });
 

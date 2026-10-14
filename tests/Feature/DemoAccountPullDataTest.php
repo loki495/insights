@@ -105,7 +105,7 @@ it('keeps manual pull failures graceful when debug mode is disabled', function (
         ->call('pullData')
         ->assertRedirect(route('linked-accounts.accounts.index', $linkedAccount));
 
-    expect($linkedAccount->fresh()->last_sync_error)->toBe('Visible sync failure');
+    expect($linkedAccount->fresh()->last_sync_error)->toBe(PullLinkedAccountTransactionsAction::GENERIC_SYNC_ERROR);
 
     Exceptions::assertReported(
         fn (RuntimeException $exception): bool => $exception->getMessage() === 'Visible sync failure',

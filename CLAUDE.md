@@ -107,6 +107,11 @@ unexpected exception for graceful production handling must rethrow it when `app.
 must `report()` it before handling it in non-debug mode. Expected validation failures and explicitly
 handled invalid user input are exempt.
 
+`transactions:pull` follows the same rule: a failing institution is logged and counted (exit code
+failure) in production, and rethrown when `app.debug` is true. `linked_accounts.last_sync_error` is
+shown in the UI, so it only holds Plaid's own error codes (`CurlRequestException`); any other
+exception stores `PullLinkedAccountTransactionsAction::GENERIC_SYNC_ERROR` and is reported by the caller.
+
 ## Active work
 
 The maintainer's backlog is tracked outside this repo. Contributor-facing work is in the GitHub

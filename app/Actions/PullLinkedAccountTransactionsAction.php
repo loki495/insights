@@ -6,10 +6,13 @@ namespace App\Actions;
 
 use App\Models\LinkedAccount;
 use App\Models\Transaction;
+use App\Services\Curl\CurlRequestException;
 use Illuminate\Database\Eloquent\Builder;
 
 final class PullLinkedAccountTransactionsAction
 {
+    public const string GENERIC_SYNC_ERROR = 'Sync failed, see the application log.';
+
     public static function run(LinkedAccount $linkedAccount, bool $force = false): void
     {
         if ($linkedAccount->isClosed() || $linkedAccount->is_demo) {
@@ -34,7 +37,12 @@ final class PullLinkedAccountTransactionsAction
             );
             $linkedAccount->update(['last_sync_failed_at' => null, 'last_sync_error' => null]);
         } catch (\Throwable $e) {
-            $linkedAccount->update(['last_sync_failed_at' => now(), 'last_sync_error' => $e->getMessage()]);
+            // Only Plaid's own error codes are safe to show in the UI; anything else (driver or
+            // network errors) can carry internals, so it is logged by the caller and hidden here.
+            $linkedAccount->update([
+                'last_sync_failed_at' => now(),
+                'last_sync_error' => $e instanceof CurlRequestException ? $e->getMessage() : self::GENERIC_SYNC_ERROR,
+            ]);
             throw $e;
         }
     }

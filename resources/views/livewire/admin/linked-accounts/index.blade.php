@@ -61,7 +61,6 @@ new class extends Component
             'language' => 'en',
             'user' => [
                 'client_user_id' => (string) auth()->user()->id,
-                // 'phone_number' => '415-555-0012',
             ],
         ];
 

@@ -48,6 +48,8 @@ class PlaidService extends API
             return config('plaid.secret_production');
         }
 
+        // Only the status client reaches here: Plaid's status endpoint needs no secret, so the
+        // environment string is sent as a harmless placeholder.
         return $this->environment;
     }
 
