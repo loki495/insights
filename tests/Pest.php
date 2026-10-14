@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use App\Models\Category;
+use App\Models\LinkedAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -101,4 +102,9 @@ function plaidStatusResponse(): string
         'page' => ['name' => 'Plaid'],
         'status' => ['indicator' => 'none', 'description' => 'All Systems Operational'],
     ]);
+}
+
+function onlyLinkedAccount(): LinkedAccount
+{
+    return LinkedAccount::query()->firstOrFail();
 }

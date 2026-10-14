@@ -223,14 +223,12 @@
                     const { width, height } = entry.contentRect;
                     if (width === 0) return;
                     localStorage.setItem('sidebar_width', width);
-                    //console.log('Sidebar width SET:', width);
                 }
             }, 100);
 
             const observer = new ResizeObserver(debouncedResize);
 
             observer.observe(sidebar);
-            //console.log('Observing sidebar width');
         }
 
         function updateSidebarWidth() {
@@ -238,7 +236,6 @@
             const sidebar_width = localStorage.getItem('sidebar_width');
             if (sidebar_width) {
                 // sidebar.style.width = `${sidebar_width}px`;
-                //console.log('Sidebar width GET:', sidebar_width);
             }
         }
 </script>

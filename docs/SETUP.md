@@ -21,7 +21,7 @@ overview; this doc is the detailed operator's manual.
   `pdo_mysql` if you point `DB_CONNECTION` at MySQL instead), plus `intl` (used for currency
   formatting)
 - Composer 2.x
-- Node.js 20 or newer (Tailwind's native CSS engine requires it) and npm
+- Node.js 22 or newer (Tailwind's native CSS engine requires it) and npm
 - A Plaid account, **only if you want to link real bank accounts** — see
   [Linking a bank account](#linking-a-bank-account) below for the sandbox-vs-production
   distinction. Not needed at all if you're just exploring — see
@@ -199,7 +199,8 @@ docker compose up -d --build
 Use the base `docker-compose.yml` as-is (skip the override file above) and point your reverse
 proxy at the `app` service (port 80) and `vite` service (port 5173) on whatever hostname you like.
 If you use Traefik with an external network named `web`, the existing labels will pick it up
-automatically. Set `VITE_HMR_HOST` (and `VITE_HMR_CLIENT_PORT` if your proxy isn't on port 80) in
+automatically; set `VITE_HOST` in `.env` to the hostname Traefik should route to the Vite container
+(default `insights-vite.localhost`). Set `VITE_HMR_HOST` (and `VITE_HMR_CLIENT_PORT` if your proxy isn't on port 80) in
 `.env` to your chosen hostname so Vite's hot-reload websocket connects correctly — see the comments
 in `.env.example`. Set `TRUSTED_PROXIES` to the proxy's address or network if it terminates TLS.
 
