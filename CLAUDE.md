@@ -53,6 +53,9 @@ hand-split via patch, or leave uncommitted) rather than guessing.
   elsewhere without a prior hard load, that listener never registers. Fix: use
   `@script` / `@endscript` instead (see `admin/linked-accounts/index.blade.php`
   and `components/chart.blade.php` for the working pattern).
+- Never make a `<template x-for>` the direct child of a `<template x-if>`: with Livewire 4.4 the
+  rows silently stop rendering. Wrap the `x-for` in a `<div class="contents">` (see the category
+  picker modal).
 - `Category::descendants()` (`app/Models/Category.php`) returns a flat array of
   plain integer ids (including itself), not objects — never wrap it in
   `collect(...)->pluck('id')`, that silently produces an all-null array.

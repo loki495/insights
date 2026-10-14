@@ -148,53 +148,57 @@
 
                 <div class="overflow-y-auto flex flex-col gap-1 min-h-0 flex-1">
                     <template x-if="categorySearch.trim()">
-                        <template x-for="cat in filteredCategories()" :key="cat.id">
-                            <button
-                                type="button"
-                                @click="selectCategory(cat.id)"
-                                class="cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
-                                :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
-                            >
-                                <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
-                                <span x-text="cat.full_name" class="grow"></span>
-                                <flux:icon.check x-show="cat.id === editing_category_id" class="size-4 shrink-0" />
-                            </button>
-                        </template>
-                    </template>
-
-                    <template x-if="!categorySearch.trim()">
-                        <template x-for="cat in categoriesAtCurrentLevel()" :key="cat.id">
-                            <div class="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    x-show="categoryHasChildren(cat.id)"
-                                    @click="drillInto(cat.id)"
-                                    title="Browse subcategories"
-                                    class="cursor-pointer shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400"
-                                >
-                                    <flux:icon.chevron-right class="size-4" />
-                                </button>
+                        <div class="contents">
+                            <template x-for="cat in filteredCategories()" :key="cat.id">
                                 <button
                                     type="button"
                                     @click="selectCategory(cat.id)"
-                                    class="grow cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
+                                    class="cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
                                     :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
                                 >
                                     <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
-                                    <span x-text="cat.name" class="grow"></span>
+                                    <span x-text="cat.full_name" class="grow"></span>
                                     <flux:icon.check x-show="cat.id === editing_category_id" class="size-4 shrink-0" />
                                 </button>
-                                <button
-                                    type="button"
-                                    x-show="categoryHasChildren(cat.id)"
-                                    @click="drillInto(cat.id)"
-                                    title="Browse subcategories"
-                                    class="cursor-pointer shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400"
-                                >
-                                    <flux:icon.chevron-right class="size-4" />
-                                </button>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="!categorySearch.trim()">
+                        <div class="contents">
+                            <template x-for="cat in categoriesAtCurrentLevel()" :key="cat.id">
+                                <div class="flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        x-show="categoryHasChildren(cat.id)"
+                                        @click="drillInto(cat.id)"
+                                        title="Browse subcategories"
+                                        class="cursor-pointer shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400"
+                                    >
+                                        <flux:icon.chevron-right class="size-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="selectCategory(cat.id)"
+                                        class="grow cursor-pointer text-left px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center gap-2"
+                                        :class="{ 'bg-zinc-100 dark:bg-white/10 ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600': cat.id === editing_category_id }"
+                                    >
+                                        <span class="inline-block size-3 rounded-full shrink-0" :style="`background-color: ${cat.color}`"></span>
+                                        <span x-text="cat.name" class="grow"></span>
+                                        <flux:icon.check x-show="cat.id === editing_category_id" class="size-4 shrink-0" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        x-show="categoryHasChildren(cat.id)"
+                                        @click="drillInto(cat.id)"
+                                        title="Browse subcategories"
+                                        class="cursor-pointer shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400"
+                                    >
+                                        <flux:icon.chevron-right class="size-4" />
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
                     </template>
 
                     <div x-show="(categorySearch.trim() ? filteredCategories() : categoriesAtCurrentLevel()).length === 0" class="text-zinc-500 dark:text-zinc-400 text-sm px-2 py-1.5">No matching categories</div>
