@@ -76,7 +76,7 @@ as soon as the container starts.
 
 Instead of building, you can pull a prebuilt image from GHCR:
 `docker compose -f docker-compose.prod.yml pull` fetches `ghcr.io/loki495/insights:latest`, the
-newest release. Set `INSIGHTS_TAG` in `.env` to pin a version (`INSIGHTS_TAG=0.2.0`) or follow
+newest release. Set `INSIGHTS_TAG` in `.env` to pin a version (`INSIGHTS_TAG=` a release number, e.g. `0.2.1`) or follow
 `main` (`INSIGHTS_TAG=main`, unreleased and less tested). Every tag is built only after CI passes.
 
 It also starts a second `scheduler` service running `php artisan schedule:work` — required for
@@ -89,19 +89,6 @@ just checks which institutions are actually due.
 **Never re-run `key:generate` against a database that already has data** — `linked_accounts.access_token`
 is encrypted with `APP_KEY`; rotating it makes every existing linked account's stored token
 permanently unreadable. Generate it once, before the first `up -d`, and keep it.
-
-**Upgrading an existing deployment from before the sqlite location moved:** older versions of
-this file mounted `insights-database` over the whole `database/` directory instead of
-`storage/app` — that directory-wide mount silently shadowed `database/migrations` after the first
-boot, so new migrations shipped in later updates never actually reached the running container.
-The volume itself doesn't need to change (`database.sqlite` already sits at its root either way,
-since both the old and new mount points are directory mounts) — just pull this update, rebuild,
-and `up -d` as usual; your existing `insights-database` volume is picked up at the new mount point
-automatically. You'll end up with a few harmless unused leftover files (`migrations/`,
-`factories/`, `seeders/`, `.gitignore`) sitting alongside `database.sqlite` in the volume from the
-old directory structure — safe to ignore, or delete via
-`docker compose -f docker-compose.prod.yml exec app sh -c 'cd storage/app && rm -rf migrations factories seeders .gitignore'`
-if you'd rather clean them up.
 
 ### Bare metal
 
@@ -374,13 +361,17 @@ config options.
 ## Maintenance commands
 
 `transactions:pull` (documented above, via the scheduler) isn't the only artisan command this
-app ships — two more exist for one-off/manual maintenance:
+app ships — these exist for one-off/manual maintenance:
 
 - `php artisan transactions:reconcile {linked_account_id} {force?}` — re-reconciles already-saved
   transactions for one linked account against what Plaid currently has, without doing a full sync.
 - `php artisan transactions:backfill-types` — classifies type (income/expense/transfer) on
   existing transactions and matches internal transfer pairs. Useful after a schema/logic change
   to that classification, to backfill data that predates it.
+- `php artisan demo:build-template` — rebuilds the demo-mode sample database (see the demo section
+  above); the scheduler runs it daily in demo mode.
+- `php artisan demo:cleanup {--hours=24}` — deletes per-visitor demo databases older than the given
+  number of hours; the scheduler runs it too in demo mode.
 
 ## Linking a bank account
 

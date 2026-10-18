@@ -35,6 +35,7 @@ banks needs your own Plaid developer account, and Plaid must approve it for prod
 before it returns real institutions. Core functionality (account linking, transaction sync,
 categorization, type classification, autocategorize rules, and reporting) is implemented. Budgeting tools are not
 built yet — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned.
+The project is still evolving, so some routes and UI components may change.
 
 ## Features
 
@@ -205,10 +206,6 @@ Apply a change with `docker compose up -d`; a plain image pull keeps the old env
 ## Contributing
 
 Want to run the test suite, work on a fix, or open a PR? See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Notes
-
-This project is actively evolving; some routes and UI components may still change.
 
 ## License
 

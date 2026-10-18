@@ -17,8 +17,9 @@ Roughly in priority order:
 2. **Security hardening pass** — a few concrete improvements identified while researching what
    compliance standards actually apply to a self-hosted personal-finance app at this scale (short
    answer: PCI-DSS and GLBA don't, Plaid's own developer policy does and is already substantially
-   met). Includes documenting safe backup practices for `APP_KEY`, recommending host-level disk
-   encryption for self-hosters, and confirming production TLS is properly enforced.
+   met). Includes recommending host-level disk encryption for self-hosters and confirming production
+   TLS is properly enforced. (`APP_KEY` backup practice is already documented in
+   [SETUP.md](SETUP.md).)
 3. **REST API** — token-based external access to a user's own data. The auth model (personal
    access tokens vs. Laravel Sanctum) needs deciding as part of the design, not bolted on after.
 
