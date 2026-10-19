@@ -1,5 +1,7 @@
 # Insights — project notes for Claude
 
+Delivery: PR. The default branch has required status checks, so changes land through a throwaway-branch PR (git-workflow skill, GH006); the remote branch name doesn't matter. Commit on the default branch locally; push only after explicit confirmation.
+
 Laravel + Livewire Volt + Flux personal-finance app. Plaid integration for bank
 transactions, hierarchical (nested, no depth limit enforced) categories with per-user autocategorize
 rules, Chart.js dashboards. See the repo root `README.md` for the full feature list and
