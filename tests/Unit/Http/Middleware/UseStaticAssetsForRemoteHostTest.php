@@ -9,13 +9,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 beforeEach(function (): void {
-    config(['app.static_asset_hosts' => ['insights.ac495.net']]);
+    config(['app.static_asset_hosts' => ['insights.example.test']]);
     config(['session.secure' => false]);
 });
 
 it('forces the built manifest and a secure cookie for a configured remote host', function (): void {
     $middleware = new UseStaticAssetsForRemoteHost;
-    $request = Request::create('https://insights.ac495.net/');
+    $request = Request::create('https://insights.example.test/');
 
     $seenHotFile = null;
     $seenSecure = null;
@@ -51,7 +51,7 @@ it('leaves LAN hosts on the default hot file and existing cookie setting', funct
 
 it('restores the original hot file path and session secure flag after the response', function (): void {
     $middleware = new UseStaticAssetsForRemoteHost;
-    $request = Request::create('https://insights.ac495.net/');
+    $request = Request::create('https://insights.example.test/');
 
     $middleware->handle($request, fn ($req): ResponseFactory|\Illuminate\Http\Response => response('ok'));
 
