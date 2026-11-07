@@ -6,7 +6,7 @@
         "dev": "node ./node_modules/vite/bin/vite.js"
     },
     "dependencies": {
-        "@tailwindcss/vite": "^4.0.7",
+        "@tailwindcss/vite": "^4.3.4",
         "autoprefixer": "^10.6.1",
         "axios": "^1.7.4",
         "chart.js": "^4.5.1",
